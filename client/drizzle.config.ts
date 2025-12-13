@@ -10,7 +10,7 @@ if (!process.env.DATABASE_URL) {
 
 // Development fallback (you provided this Neon connection string).
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "postgresql://neondb_owner:npg_g4BOXLHIw9uv@ep-super-dawn-ahjzzy2h-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+  process.env.DATABASE_URL = "";
 }
 
 export default defineConfig({
