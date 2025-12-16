@@ -37,16 +37,16 @@ const LEVEL_IMAGES = [
 ];
 
 const LEVELS = [
-  { name: "Trail Initiate", xp: 0 },
-  { name: "Pathfinder", xp: 1000 },
-  { name: "Scout of Lore", xp: 3000 },
-  { name: "Relic Runner", xp: 6000 },
-  { name: "Rune Raider", xp: 10000 },
-  { name: "Vault Sever", xp: 15000 },
-  { name: "Crypt Diver", xp: 20000 },
-  { name: "Temple Warden", xp: 30000 },
-  { name: "Relic Master", xp: 40000 },
-  { name: "Nexon Vanguard", xp: 50000 },
+  { name: "Trail Initiate", xp: 1000 },
+  { name: "Pathfinder", xp: 3000 },
+  { name: "Scout of Lore", xp: 6000 },
+  { name: "Relic Runner", xp: 10000 },
+  { name: "Rune Raider", xp: 15000 },
+  { name: "Vault Sever", xp: 20000 },
+  { name: "Crypt Diver", xp: 30000 },
+  { name: "Temple Warden", xp: 40000 },
+  { name: "Relic Master", xp: 50000 },
+  { name: "Nexon Vanguard", xp: 65000 },
 ].map((lvl, idx) => ({ ...lvl, img: `/profile/${LEVEL_IMAGES[idx]}` }));
 
 function WalletDropdown() {
@@ -104,28 +104,28 @@ export default function Profile() {
   const [loadingReferrals, setLoadingReferrals] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?._id) {
       setLoadingReferrals(true);
-      apiRequest("GET", `/api/referrals/stats/${user.id}`)
+      apiRequest("GET", `/api/referrals/stats/${user._id}`)
         .then(r => r.json())
         .then(data => { if (data?.totalReferrals !== undefined) setReferralCount(data.totalReferrals); })
         .catch(err => console.warn("Failed to fetch referral stats:", err))
         .finally(() => setLoadingReferrals(false));
     }
-  }, [user?.id]);
+  }, [user?._id]);
 
   // Wallet → default display name
   const userData = useMemo(() => {
     let base = {
-      id: "",
+      _id: "",
       username: "Guest",
       displayName: address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Guest User",
       avatar: "/profile/trail-initiate.png",
       xp: 0,
       questsCompleted: 0,
-      tasksCompleted: 0,
+      campaignsCompleted: 0,
       dateJoined: "Recently",
-      rewards: { xp: 0, trust: 0 },
+      trust: 0,
       badges: [],
       socialProfiles: { twitter: "", discord: "" },
     };
@@ -139,15 +139,16 @@ export default function Profile() {
       (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "User");
 
     return {
-      ...user,
+      // ...user,
       displayName: finalName,
+      avatar: user.avatar ?? "",
       level: user.level ?? 1,
       xp: user.xp ?? 0,
-      questsCompleted: user.questsCompleted ?? user.quests_completed ?? 0,
-      tasksCompleted: user.tasksCompleted ?? user.tasks_completed ?? 0,
+      questsCompleted: user.questsCompleted ?? 0,
+      campaignsCompleted: user.campaignsCompleted ?? 0,
       username: user.username ?? "user",
       dateJoined: user.dateJoined ?? user.created_at ?? "Recently",
-      rewards: user.rewards ?? { xp: 0, trust: 0 },
+      trust: user.trustEarned,
       badges: user.badges ?? [],
       socialProfiles: {
         twitter: user.socialProfiles?.twitter ?? "",
@@ -158,29 +159,32 @@ export default function Profile() {
 
   const levelInfo = useMemo(() => {
     const xp = userData?.xp ?? 0;
+
+    // Find current level
     let idx = LEVELS.findIndex((lvl, i) => {
       const next = LEVELS[i + 1];
-      return xp >= lvl.xp && (!next || xp < next.xp);
+      return xp <= lvl.xp && (!next || xp < next.xp);
     });
-    if (idx === -1) idx = 0;
+
+    if (idx === -1) idx = LEVELS.length - 1;
 
     const current = LEVELS[idx];
-    const next = LEVELS[idx + 1] || current;
-    const pct =
-      next.xp !== current.xp
-        ? ((xp - current.xp) / (next.xp - current.xp)) * 100
-        : 100;
+
+    const maxXp = current.xp; // cap based on current level
+
+    const progressPercentage = Math.min((xp / maxXp) * 100, 100);
 
     return {
       levelName: current.name,
       levelValue: idx + 1,
       xpValue: xp,
-      nextLevelXp: next.xp,
-      neededXp: next.xp - xp,
-      progressPercentage: pct,
+      nextLevelXp: maxXp,
+      neededXp: maxXp - xp,
       currentLevelIndex: idx,
+      progressPercentage,
     };
   }, [userData?.xp]);
+
 
   const { levelName, levelValue, xpValue, nextLevelXp, neededXp, progressPercentage, currentLevelIndex } =
     levelInfo;
@@ -289,7 +293,7 @@ export default function Profile() {
             { title: "Total XP", value: xpValue, label: "XP earned" },
             { title: "Current Level", value: `${levelName}`, label: "" },
             { title: "Quests Completed", value: userData?.questsCompleted ?? 0, label: "Completed" },
-            { title: "Total Rewards", value: `${userData?.rewards?.xp ?? 0} XP, ${userData?.rewards?.trust ?? 0} $TRUST`, label: "Earned" },
+            { title: "Total Rewards", value: `${userData?.xp ?? 0} XP, ${userData?.trust ?? 0} TRUST`, label: "Earned" },
             { title: "Nexons", value: totalMinted, label: "Minted" },
           ].map((stat) => (
             <Card key={stat.title} className="glass glass-hover rounded-3xl flex flex-col h-full">
@@ -359,7 +363,7 @@ export default function Profile() {
                   <Progress value={progress} className="h-3 mt-1 rounded-full bg-gray-800/50" />
 
                   <div className="text-xs text-white/60 mt-1">
-                    {isAchieved ? "Reached" : `Earn ${lvl.xp - xpValue} XP to reach Level ${idx + 1}`}
+                    {isAchieved ? "Reached" : `Earn ${lvl.xp - xpValue} XP to reach Level ${idx + 2}`}
                   </div>
                 </div>
 
