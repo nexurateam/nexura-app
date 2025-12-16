@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { getStoredAccessToken, apiRequestV2, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type Quest = {
   text: string;
@@ -30,6 +31,7 @@ export default function QuestEnvironment() {
   const [visitedQuests, setVisitedQuests] = useState<string[]>([]);
 
   const { questId } = useParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     (async () => {
@@ -45,31 +47,36 @@ export default function QuestEnvironment() {
   }, []);
 
   const claimReward = async (miniQuestId: string) => {
-    // const quest = quests[index];
+    try {
+      // const quest = quests[index];
 
-    // if (quest.status === "notStarted") {
-    //   // Open quest link
-    //   window.open(quest.link, "_blank");
-    //   setQuests(prev => prev.map((t, i) => i === index ? { ...t, status: "inProgress" } : t));
-    // } else if (quest.status === "inProgress") {
-    //   // Claim reward
-    //   setQuests(prev => prev.map((t, i) => i === index ? { ...t, status: "completed" } : t));
-    //   setTotalXP(prev => prev + parseInt(quest.reward));
-    // }
+      // if (quest.status === "notStarted") {
+      //   // Open quest link
+      //   window.open(quest.link, "_blank");
+      //   setQuests(prev => prev.map((t, i) => i === index ? { ...t, status: "inProgress" } : t));
+      // } else if (quest.status === "inProgress") {
+      //   // Claim reward
+      //   setQuests(prev => prev.map((t, i) => i === index ? { ...t, status: "completed" } : t));
+      //   setTotalXP(prev => prev + parseInt(quest.reward));
+      // }
 
-    if (!getStoredAccessToken()) {
-      alert("You must be logged in to claim rewards.");
-      return;
+      if (!getStoredAccessToken()) {
+        toast.error({ title: "Error", description: "You must be logged in to claim rewards.", variant: "destructive" });
+        return;
+      }
+
+      if (!claimedQuests.includes(miniQuestId)) {
+        setClaimedQuests([...claimedQuests, miniQuestId]);
+      }
+
+      const res = await apiRequest("POST", `/api/quest/claim-mini-quest`, { id: miniQuestId, questId });
+      if (!res.ok) return;
+
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      toast.error({ title: "Error", description: "Failed to claim reward. Please try again.", variant: "destructive" });
     }
-
-    if (!claimedQuests.includes(miniQuestId)) {
-      setClaimedQuests([...claimedQuests, miniQuestId]);
-    }
-
-    const res = await apiRequest("POST", `/api/quest/claim-mini-quest`, { id: miniQuestId, questId });
-    if (!res.ok) return;
-
-    window.location.reload();
   };
 
   const visitQuest = (quest: Quest) => {

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Play } from "lucide-react";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { apiRequestV2, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type Quest = {
   quest: string;
@@ -34,6 +35,7 @@ export default function CampaignEnvironment() {
   const [reward, setReward] = useState<{trustTokens: number, xp: number}>({ trustTokens: 0, xp: 0 });
 
   const { campaignId } = useParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     (async () => {
@@ -59,24 +61,28 @@ export default function CampaignEnvironment() {
   }, []);
 
   const claimQuest = async (questId: string) => {
-    // setQuests(prev => {
-    //   const quest = prev[index];
-    //   let newStatus: Quest["status"] = quest.status;
+    try {
+      // setQuests(prev => {
+      //   const quest = prev[index];
+      //   let newStatus: Quest["status"] = quest.status;
 
-    //   if (quest.status === "notStarted") {
-    //     window.open(quest.link, "_blank");
-    //     newStatus = "inProgress";
-    //   } else if (quest.status === "inProgress") {
-    //     newStatus = "completed";
-    //   }
+      //   if (quest.status === "notStarted") {
+      //     window.open(quest.link, "_blank");
+      //     newStatus = "inProgress";
+      //   } else if (quest.status === "inProgress") {
+      //     newStatus = "completed";
+      //   }
 
-    //   return prev.map((t, i) => i === index ? { ...t, status: newStatus } : t);
-    // });
+      //   return prev.map((t, i) => i === index ? { ...t, status: newStatus } : t);
+      // });
 
-    const res = await apiRequest("POST", `/api/quest/perform-campaign-quest`, { id: questId, campaignId });
-    if (!res.ok) return;
+      const res = await apiRequest("POST", `/api/quest/perform-campaign-quest`, { id: questId, campaignId });
+      if (!res.ok) return;
 
-    window.location.reload();
+      window.location.reload();
+    } catch (error) {
+      toast.error({ title: "Error", description: "failed to claim campaign quest", variant: "destructive" })
+    }
   };
 
   const markQuestAsVisted = (quest: Quest) => {
