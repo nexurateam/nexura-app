@@ -152,9 +152,11 @@ export const fetchMiniQuests = async (req: GlobalRequest, res: GlobalResponse) =
 			miniQuests.push(mergedQuest);
 		}
 
+		const mainQuestCompleted = await questCompleted.findOne({ user: req.id, quest: id });
+
 		const questNumber = padNumber(mainQuest.questNumber!);
 
-		res.status(OK).json({ message: "mini quests fetched", miniQuests, totalXp: mainQuest.reward, questNumber, sub_title: mainQuest?.sub_title, title: mainQuest.title });
+		res.status(OK).json({ message: "mini quests fetched", miniQuests, questCompleted: mainQuestCompleted?.done, totalXp: mainQuest.reward, questNumber, sub_title: mainQuest?.sub_title, title: mainQuest.title });
 	} catch (error) {
 		logger.error(error);
 		res.status(INTERNAL_SERVER_ERROR).json({ error: "error fetching mini quests" });
@@ -207,7 +209,7 @@ export const fetchCampaignQuests = async (
 			campaignQuests.push(mergedCampaignQuest);
 		}
 
-		if (currentCampaign.noOfQuests === campaignQuestsCompleted.length) {
+		if (currentCampaign.noOfQuests === campaignQuestsCompleted.length && !completedCampaign) {
 
 			// await performIntuitionOnchainAction({
 			// 	action: "allow-claim",
@@ -430,7 +432,7 @@ export const claimQuest = async (req: GlobalRequest, res: GlobalResponse) => {
 				quest: id,
 				user: questUser._id,
 				category,
-				expires: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
+				expires: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000),
 			});
 		} else {
 			await questCompleted.create({
@@ -440,6 +442,8 @@ export const claimQuest = async (req: GlobalRequest, res: GlobalResponse) => {
 				category,
 			});
 		}
+
+		await questUser.save();
 
 		res.status(OK).json({ message: "quest done!" });
 	} catch (error) {
