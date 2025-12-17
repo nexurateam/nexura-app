@@ -182,7 +182,7 @@ export default function QuestEnvironment() {
                 onClick={() => claimQuestReward()} 
                 disabled={completed} 
                 className={`w-full font-semibold rounded-xl py-3 mt-6 
-                  ${completed 
+                  ${!completed 
                     ? "bg-purple-600 hover:bg-purple-700 text-white"
                     : "bg-gray-600 cursor-not-allowed text-gray-300"
                   }`
