@@ -36,7 +36,7 @@ export default function QuestEnvironment() {
     return JSON.parse(localStorage.getItem('nexura:quest:claimed') || '[]');
   });
   const [questCompleted, setQuestCompleted] = useState<boolean>(() => {
-    return Boolean(JSON.parse(localStorage.getItem('nexura:quest:completed') || ""));
+    try { return Boolean(JSON.parse(localStorage.getItem('nexura:quest:completed') || "")?.questCompleted); } catch (error) { return false }
   });
 
   const { questId } = useParams();
@@ -76,7 +76,7 @@ export default function QuestEnvironment() {
     localStorage.setItem('nexura:quest:claimed', JSON.stringify(claimedQuests))
   }, [claimedQuests]);
   useEffect(() => {
-    localStorage.setItem('nexura:quest:completed', JSON.stringify(questCompleted))
+    localStorage.setItem('nexura:quest:completed', JSON.stringify({ questCompleted }))
   }, [questCompleted]);
 
   const miniQuestsCompleted = miniQuests.filter((m) => m.done === true).length === miniQuests.length;
@@ -211,7 +211,7 @@ export default function QuestEnvironment() {
 
               <Button 
                 onClick={() => claimQuestReward()} 
-                disabled={!miniQuestsCompleted || !(claimedQuests.length === miniQuests.length) || completed || questCompleted} 
+                disabled={!miniQuestsCompleted || completed || !(claimedQuests.length === miniQuests.length) || questCompleted} 
                 className={`w-full font-semibold rounded-xl py-3 mt-6 
                   ${miniQuestsCompleted || !completed || claimedQuests.length === miniQuests.length || !questCompleted
                     ? "bg-purple-600 hover:bg-purple-700 text-white"
