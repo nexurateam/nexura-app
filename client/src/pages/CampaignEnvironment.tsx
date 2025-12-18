@@ -6,6 +6,7 @@ import { CheckCircle2, Play } from "lucide-react";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { apiRequestV2, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 
 type Quest = {
   quest: string;
@@ -25,15 +26,18 @@ const campaignQuestsInitial: Quest[] = [
 ];
 
 export default function CampaignEnvironment() {
+  const { user } = useAuth();
+  const userId = user._id;
+
   const [quests, setQuests] = useState<Quest[]>(campaignQuestsInitial);
-  const [visitedQuests, setVisitedQuests] = useState<String[]>(() => {
-    return JSON.parse(localStorage.getItem('nexura:campaign:visited') || '[]');
+  const [visitedQuests, setVisitedQuests] = useState<string[]>(() => {
+    return JSON.parse(localStorage.getItem('nexura:campaign:visited') || '[]')[userId] || [];
   });
-  const [claimedQuests, setClaimedQuests] = useState<String[]>(() => {
-    return JSON.parse(localStorage.getItem('nexura:campaign:claimed') || '[]');
+  const [claimedQuests, setClaimedQuests] = useState<string[]>(() => {
+    return JSON.parse(localStorage.getItem('nexura:campaign:claimed') || '[]')[userId] || [];
   });
   const [campaignCompleted, setCampaignCompleted] = useState<boolean>(() => {
-    try { return Boolean(JSON.parse(localStorage.getItem('nexura:campaign:completed') || "")?.campaignCompleted) } catch (error) { return false }
+    try { return Boolean(JSON.parse(localStorage.getItem('nexura:campaign:completed') || "")[userId]) } catch (error) { return false }
   });
   const [description, setDescription] = useState("");
   const [title, setTitle] = useState("");
@@ -77,13 +81,22 @@ export default function CampaignEnvironment() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('nexura:campaign:visited', JSON.stringify(visitedQuests))
+    const value: Record<string, string[]> = {};
+    value[userId] = visitedQuests;
+
+    localStorage.setItem('nexura:campaign:visited', JSON.stringify(value))
   }, [visitedQuests]);
   useEffect(() => {
-    localStorage.setItem('nexura:campaign:claimed', JSON.stringify(claimedQuests))
+    const value: Record<string, string[]> = {};
+    value[userId] = claimedQuests;
+
+    localStorage.setItem('nexura:campaign:claimed', JSON.stringify(value))
   }, [claimedQuests]);
   useEffect(() => {
-    localStorage.setItem('nexura:campaign:completed', JSON.stringify({ campaignCompleted }))
+    const value: Record<string, boolean> = {};
+    value[userId] = campaignCompleted;
+
+    localStorage.setItem('nexura:campaign:completed', JSON.stringify(value))
   }, [campaignCompleted]);
 
   const claimQuest = async (questId: string) => {

@@ -28,6 +28,7 @@ interface Dapp {
 export default function EcosystemDapps() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const userId = user._id;
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [dapps, setDapps] = useState<Dapp[]>([]);
@@ -48,17 +49,27 @@ export default function EcosystemDapps() {
 
   // Track visited and claimed state locally for UI. Authoritative state is server-side.
   const [visitedDapps, setVisitedDapps] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('nexura:visited:dapps') || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('nexura:visited:dapps') || '[]')[userId]; } catch { return []; }
   });
   const [claimedDapps, setClaimedDapps] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('nexura:claimed:dapps') || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('nexura:claimed:dapps') || '[]')[userId]; } catch { return []; }
   });
 
   useEffect(() => {
-    try { localStorage.setItem('nexura:visited:dapps', JSON.stringify(visitedDapps)); } catch { }
+    try {
+      const value: Record<string, string[]> = {};
+      value[userId] = visitedDapps;
+
+      localStorage.setItem('nexura:visited:dapps', JSON.stringify(value));
+    } catch { }
   }, [visitedDapps]);
   useEffect(() => {
-    try { localStorage.setItem('nexura:claimed:dapps', JSON.stringify(claimedDapps)); } catch { }
+    try {
+      const value: Record<string, string[]> = {};
+      value[userId] = claimedDapps;
+
+      localStorage.setItem('nexura:claimed:dapps', JSON.stringify(value));
+    } catch { }
   }, [claimedDapps]);
 
   const markVisited = async (dapp: Dapp) => {
