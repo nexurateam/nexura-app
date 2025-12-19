@@ -9,7 +9,7 @@ import { Play, CheckCircle2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import AnimatedBackground from "@/components/AnimatedBackground";
-import { BACKEND_URL, apiRequestV2, getStoredAccessToken } from "@/lib/queryClient";
+import { apiRequestV2, getStoredAccessToken } from "@/lib/queryClient";
 
 interface Quest {
   _id: string;
