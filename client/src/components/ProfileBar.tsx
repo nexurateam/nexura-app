@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/auth";
 import { useWallet } from "@/hooks/use-wallet";
 import SignUpPopup from "@/components/SignUpPopup";
 import { getIntuitionNetworkParams } from "@/lib/utils";
+import { network } from "@/lib/constants";
 
 interface ProfileBarProps {
   userId?: string;
@@ -57,7 +58,7 @@ export default function ProfileBar({ userId = "user-123" }: ProfileBarProps) {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const isMainnet = import.meta.env.network === "mainnet";
+  const isMainnet = network === "mainnet";
   const chainId = isMainnet ? "0x483" : "0x350b";
 
   const handleLogout = () => {
@@ -111,23 +112,28 @@ export default function ProfileBar({ userId = "user-123" }: ProfileBarProps) {
   const NetworkBadge = () => (
     <button
       onClick={handleAddAndSwitchNetwork}
-      className="flex items-center gap-2 glass glass-hover px-4 py-2 rounded-full transition-all cursor-pointer"
-      title="Add Intuition Testnet to wallet"
+      className="flex items-center gap-2 glass glass-hover px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all cursor-pointer"
+      title={`Add Intuition ${isMainnet ? "Mainnet" : "Testnet"} to wallet`}
     >
-      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-      <span className="text-sm font-medium text-white">Intuition {isMainnet ? "Mainnet" : "Testnet"}</span>
+      {/* <img src="/claim1.jpg" alt="" className="w-8 h-auto rounded-full" /> */}
+      <span className="text-xs sm:text-sm font-medium text-white hidden sm:inline">
+        Intuition {isMainnet ? "Mainnet" : "Testnet"}
+      </span>
     </button>
   );
 
   const LevelBadge = () => (
     <Link href="/profile">
-      <div className="flex items-center gap-2 cursor-pointer glass glass-hover p-2 px-4 rounded-full transition-all">
-        <div className="relative w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-          <span className="text-white text-sm font-bold">{levelNumber}</span>
+      <div className="flex items-center gap-2 cursor-pointer glass glass-hover p-2 sm:px-4 rounded-full transition-all">
+<div className="relative w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-[0_0_12px_rgba(99,102,241,0.6)]">
+          <span className="text-white text-sm font-bold"></span>
         </div>
         <div className="flex flex-col">
           <span className="text-xs text-white/50 font-medium">Level</span>
-          <span className="text-sm font-bold text-white">{levelName}</span>
+          <span className="text-xs sm:text-sm font-bold text-white hidden sm:block">
+  {levelName}
+</span>
+
         </div>
       </div>
     </Link>
@@ -144,8 +150,12 @@ export default function ProfileBar({ userId = "user-123" }: ProfileBarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div className="relative">
-              <Button variant="ghost" className="relative h-16 w-16 rounded-full p-0" data-testid="profile-dropdown">
-                <Avatar className="h-16 w-16 border-2 border-border">
+<Button
+  variant="ghost"
+  className="relative h-12 w-12 sm:h-16 sm:w-16 rounded-full p-0 transition-transform duration-200 hover:scale-[1.05] active:scale-95" 
+ data-testid="profile-dropdown"
+>
+                <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-border">
                   <AvatarImage src={user.avatar ?? ""} />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     <User className="h-6 w-6" />
@@ -158,7 +168,8 @@ export default function ProfileBar({ userId = "user-123" }: ProfileBarProps) {
               </div> */}
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-64 p-2 glass rounded-3xl border-white/10" align="end" data-testid="profile-dropdown-menu">
+          <DropdownMenuContent className="w-56 sm:w-64 p-2 glass rounded-2xl sm:rounded-3xl border-white/10 animate-in fade-in zoom-in-95 duration-150"
+ align="end" data-testid="profile-dropdown-menu">
             <DropdownMenuItem className="cursor-default p-3 text-base text-white">
               <span>{address ? `${address.slice(0,6)}...${address.slice(-4)}` : 'No wallet connected'}</span>
             </DropdownMenuItem>
@@ -212,4 +223,4 @@ export default function ProfileBar({ userId = "user-123" }: ProfileBarProps) {
       )}
     </div>
   );
-}
+};
