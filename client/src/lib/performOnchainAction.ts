@@ -1,5 +1,6 @@
 import chain from "./chain";
 import { getWalletClient } from "./viem";
+import { network } from "./constants";
 import { parseAbi, type Address } from "viem";
 
 export const createCampaignOnchain = async () => {
@@ -15,12 +16,18 @@ export const claimCampaignOnchainReward = async ({ campaignAddress, userId }: { 
   try {
     const walletClient = getWalletClient();
 
+    const mainnet = network === "mainnet";
+
+    await walletClient.switchChain({ id: mainnet ? 1155 : 13579 });
+
+    const account = await walletClient.getAddresses();
+
     await walletClient.writeContract({
       address: campaignAddress as Address,
       abi: parseAbi(["function claimReward(string memory userId)"]),
       functionName: "claimReward",
       args: [userId],
-      account: walletClient.account!.address,
+      account: account[0],
       chain
     });
   } catch (error: any) {
