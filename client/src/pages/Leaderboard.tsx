@@ -324,7 +324,6 @@ export default function Leaderboard() {
                   {entry.xp}
                 </span>
               </div>
-              <div className="text-xs text-white/50">XP</div>
             </div>
           </div>
         </Card>
@@ -346,14 +345,16 @@ export default function Leaderboard() {
   const accent = { border: "#f5c542", text: "#f5c542", bg: "bg-[#f5c542]/20" };
 
   return (
-    <Card
-      className="fixed bottom-6 right-6 p-4 rounded-3xl z-50 border-2"
-      style={{
-        width: "26rem", // match remaining users
-        borderColor: accent.border,
-        boxShadow: `0 0 8px ${accent.border}/60, 0 0 16px ${accent.border}/40`,
-        background: "linear-gradient(to right, rgba(255,255,255,0.05), rgba(0,0,0,0.4))",
-      }}
+<div className="relative w-full max-w-[26rem] mx-auto">
+  <Card
+
+className="fixed bottom-6 p-4 rounded-3xl z-50 border-2 w-full  mx-auto left-40 right-50"
+style={{
+  borderColor: "#f5c542", // gold border
+  boxShadow: "0 0 8px #f5c542/60, 0 0 16px #f5c542/40", // subtle glow
+  background: "linear-gradient(to right, rgba(255,255,255,0.05), rgba(0,0,0,0.4))",
+}}
+
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -384,7 +385,7 @@ export default function Leaderboard() {
             <h3 className="font-semibold text-lg">{name}</h3>
             <div className="text-sm text-white/50 flex items-center gap-1 mt-1">
               <img src="/nexura-xp.png" alt="XP" className="w-5 h-5" />
-              {user.xp} XP
+              {user.xp}
             </div>
           </div>
         </div>
@@ -404,12 +405,9 @@ export default function Leaderboard() {
         Your Ranking
       </Badge>
     </Card>
+    </div>
   );
 })()}
-
-
-
-
       </div>
     </div>
   );
