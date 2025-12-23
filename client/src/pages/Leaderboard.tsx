@@ -1,7 +1,7 @@
 // Leaderboard.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -33,12 +33,28 @@ const MOCK_LEADERBOARD: Entry[] = [
   { id: "8", username: "David", xp: 400, level: 3, quests_completed: 1, tasks_completed: 7 },
   { id: "9", username: "Omotola", xp: 300, level: 2, quests_completed: 1, tasks_completed: 5 },
   { id: "10", username: "Fiyin", xp: 200, level: 1, quests_completed: 0, tasks_completed: 3 },
+  { id: "11", username: "Chinedu", xp: 180, level: 1, quests_completed: 0, tasks_completed: 2 },
+  { id: "12", username: "Funke", xp: 170, level: 1, quests_completed: 0, tasks_completed: 2 },
+  { id: "13", username: "Tunde", xp: 160, level: 1, quests_completed: 0, tasks_completed: 1 },
+  { id: "14", username: "Ngozi", xp: 150, level: 1, quests_completed: 0, tasks_completed: 1 },
+  { id: "15", username: "Adeola", xp: 140, level: 1, quests_completed: 0, tasks_completed: 1 },
+  { id: "16", username: "Ifeanyi", xp: 130, level: 1, quests_completed: 0, tasks_completed: 1 },
+  { id: "17", username: "Aisha", xp: 120, level: 1, quests_completed: 0, tasks_completed: 1 },
+  { id: "18", username: "Segun", xp: 110, level: 1, quests_completed: 0, tasks_completed: 1 },
+  { id: "19", username: "Bolaji", xp: 100, level: 1, quests_completed: 0, tasks_completed: 1 },
+  { id: "20", username: "Kemi", xp: 90, level: 1, quests_completed: 0, tasks_completed: 1 },
 ];
 
 export default function Leaderboard() {
   const [list, setList] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cardHeight, setCardHeight] = useState<number>(0);
+    const currentUserRowRef = useRef<HTMLDivElement>(null);
+const placeholderRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+const bottomSentinelRef = useRef<HTMLDivElement>(null);
+
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -53,33 +69,81 @@ export default function Leaderboard() {
     return () => clearTimeout(timer);
   }, []);
 
+  /* ------------------- CURRENT USER FLOAT/STICK LOGIC ------------------- */
+  const currentUserId = "5"; // Logged-in user ID
+  const [cardState, setCardState] = useState<"floatingBottom" | "normal" | "stickyTop">("normal");
+useEffect(() => {
+  if (!currentUserRowRef.current) return;
+
+  const cardEl = currentUserRowRef.current;
+  const topSentinel = topSentinelRef.current;
+  const bottomSentinel = bottomSentinelRef.current;
+  if (!topSentinel || !bottomSentinel) return;
+
+  // Measure card height dynamically
+  const resizeObserver = new ResizeObserver(() => {
+    setCardHeight(cardEl.offsetHeight);
+  });
+  resizeObserver.observe(cardEl);
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      let topVisible = true;
+      let bottomVisible = true;
+
+      entries.forEach((entry) => {
+        if (entry.target === topSentinel) {
+          topVisible = entry.isIntersecting;
+        }
+        if (entry.target === bottomSentinel) {
+          bottomVisible = entry.isIntersecting;
+        }
+      });
+
+      // PRIORITY FIX:
+      if (!topVisible) {
+  setCardState("floatingBottom");  // card below viewport → float bottom
+} else if (!bottomVisible) {
+  setCardState("stickyTop"); // scroll down past card → stick to top
+} else {
+  setCardState("normal"); // card in viewport → normal
+}
+
+    },
+    { threshold: 0 }
+  );
+
+  observer.observe(topSentinel);
+  observer.observe(bottomSentinel);
+
+  return () => {
+    observer.disconnect();
+    resizeObserver.disconnect();
+  };
+}, [list]);
+
+
   return (
-  <div className="min-h-screen bg-black text-white p-6 relative overflow-auto">
-    <AnimatedBackground />
+    <div className="min-h-screen bg-black text-white p-6 relative">
+      <AnimatedBackground />
 
-    <div className="max-w-4xl mx-auto space-y-6 relative z-10">
-<header className="flex items-center justify-between">
-  {/* Left side: icon + title */}
-  <div className="flex items-center gap-3">
-    <img
-      src="/nexura-gold.png"
-      alt="Leaderboard"
-      className="w-10 h-10"
-    />
-    <h1 className="text-3xl md:text-5xl font-bold">Leaderboard</h1>
+      <div className="max-w-4xl mx-auto space-y-6 relative z-10">
+        <header className="flex items-center justify-between">
+          {/* Left side: icon + title */}
+          <div className="flex items-center gap-3">
+            <img src={gold} alt="Leaderboard" className="w-10 h-10" />
+            <h1 className="text-3xl md:text-5xl font-bold">Leaderboard</h1>
+          </div>
 
-  </div>
+          {/* Right side: players badge */}
+          {!loading && !error && (
+            <Badge variant="outline" className="border-white/20 text-white">
+              {list.length} Players
+            </Badge>
+          )}
+        </header>
 
-  {/* Right side: players badge */}
-  {!loading && !error && (
-    <Badge variant="outline" className="border-white/20 text-white">
-      {list.length} Players
-    </Badge>
-  )}
-</header>
-
-
-{/* ------------------- PODIUM ------------------- */}
+        {/* ------------------- PODIUM ------------------- */}
 {!loading && !error && list.length > 0 && (
   <div className="relative mt-16">
     {/* Background gradient */}
@@ -257,157 +321,123 @@ export default function Leaderboard() {
   </div>
 )}
 
+        <div className="space-y-3 relative">
+  {list.map((entry, idx) => {
+    if (idx < 3) return null; // skip podium
 
-{/* ------------------- REMAINING USERS ------------------- */}
-{!loading && !error && list.length > 3 && (
-  <div className="space-y-3">
-    {list.slice(3).map((entry, idx) => {
-      const name = entry.display_name || entry.username || "Anonymous";
+    const name = entry.display_name || entry.username || "Anonymous";
+    const isCurrentUser = entry.id === currentUserId;
+    const rank = idx + 1;
 
-      const accents = [
-        { border: "#8e44ad", text: "#9b59b6", bg: "bg-[#8e44ad]/20" },
-        { border: "#2980b9", text: "#3498db", bg: "bg-[#2980b9]/20" },
-        { border: "#e84393", text: "#ff79b0", bg: "bg-[#e84393]/20" },
-        { border: "#16a085", text: "#1abc9c", bg: "bg-[#16a085]/20" },
-      ];
+    const accents = [
+      { border: "#8e44ad", text: "#9b59b6", bg: "bg-[#8e44ad]/20" },
+      { border: "#2980b9", text: "#3498db", bg: "bg-[#2980b9]/20" },
+      { border: "#e84393", text: "#ff79b0", bg: "bg-[#e84393]/20" },
+      { border: "#16a085", text: "#1abc9c", bg: "bg-[#16a085]/20" },
+    ];
 
-      const accent = accents[idx % accents.length];
+    const accent = accents[idx % accents.length];
 
-      return (
-        <Card
-          key={entry.id}
-          className="p-4 rounded-3xl relative border-2 transition hover:brightness-110"
-          style={{
-            borderColor: accent.border,
-            boxShadow: `0 0 8px ${accent.border}/60, 0 0 16px ${accent.border}/40`, // subtle glow
-            background: "linear-gradient(to right, rgba(255,255,255,0.05), rgba(0,0,0,0.4))",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Rank */}
-              <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center font-bold ${accent.text} ${accent.bg} border-2`}
-                style={{
-                  borderColor: accent.border,
-                  boxShadow: `0 0 6px ${accent.border}/60, 0 0 12px ${accent.border}/40`, // subtle glow
-                }}
-              >
-                #{idx + 4}
-              </div>
+let positionClass = "relative transition-[top,bottom] duration-300 ease-in-out";
+if (isCurrentUser) {
+  if (cardState === "floatingBottom") {
+    positionClass +=
+      " fixed bottom-4 p-4 rounded-3xl border-2 w-full max-w-4xl";
+  } else if (cardState === "stickyTop") {
+    positionClass +=
+      " fixed top-5 z-50 p-4 rounded-3xl border-2 w-full max-w-4xl z-[999]";
+  }
+}
 
-              {/* Avatar */}
-              <Avatar className="w-12 h-12">
-                {entry.avatar ? (
-                  <AvatarImage src={entry.avatar} />
-                ) : (
-                  <AvatarFallback className="bg-white/10 text-white">
-                    {name.charAt(0)}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-
-              <div>
-                <h3 className="font-semibold text-lg">{name}</h3>
-                <div className="text-sm text-white/50">
-                  {entry.quests_completed || 0} quests ·{" "}
-                  {entry.tasks_completed || 0} campaigns
-                </div>
-              </div>
-            </div>
-
-            {/* XP with logo */}
-            <div className="text-right flex flex-col items-end">
-              <div className="flex items-center gap-1">
-                <img src="/nexura-xp.png" alt="XP" className="w-5 h-5" />
-                <span className={`text-xl font-bold ${accent.text}`}>
-                  {entry.xp}
-                </span>
-              </div>
-            </div>
-          </div>
-        </Card>
-      );
-    })}
-  </div>
+        return ( 
+      <div key={entry.id} className="relative">
+        {isCurrentUser && <div ref={topSentinelRef} className="h-px w-full" />}
+        {/* PLACEHOLDER */}
+        {isCurrentUser && (
+  <div
+    ref={placeholderRef}
+    style={{
+      height: cardState === "normal" ? 0 : cardHeight, // occupy space only when card is fixed
+      transition: "height 0.3s ease-in-out",
+      pointerEvents: "none", // prevents accidental interactions
+    }}
+  />
 )}
-{/* ------------------- YOUR RANKING FLOATING CARD ------------------- */}
-{!loading && !error && list.length > 0 && (() => {
-  const currentUserId = "5"; // Example: Promise
-  const userIndex = list.findIndex(u => u.id === currentUserId);
-  if (userIndex === -1) return null; // user not found
 
-  const user = list[userIndex];
-  const name = user.display_name || user.username || "Anonymous";
-  const rank = userIndex + 1;
+        {isCurrentUser && <div ref={bottomSentinelRef} className="h-px w-full" />}
 
-  // Use gold accent for glow
-  const accent = { border: "#f5c542", text: "#f5c542", bg: "bg-[#f5c542]/20" };
-
-  return (
-<div className="relative w-full max-w-[26rem] mx-auto">
-  <Card
-
-className="fixed bottom-6 p-4 rounded-3xl z-50 border-2 w-full  mx-auto left-40 right-50"
-style={{
-  borderColor: "#f5c542", // gold border
-  boxShadow: "0 0 8px #f5c542/60, 0 0 16px #f5c542/40", // subtle glow
-  background: "linear-gradient(to right, rgba(255,255,255,0.05), rgba(0,0,0,0.4))",
-}}
-
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {/* Rank */}
-          <div
-            className={`w-12 h-12 rounded-full flex items-center justify-center font-bold ${accent.text} ${accent.bg} border-2`}
-            style={{
-              borderColor: accent.border,
-              boxShadow: `0 0 6px ${accent.border}/60, 0 0 12px ${accent.border}/40`,
-            }}
-          >
-            #{rank}
-          </div>
-
-          {/* Avatar */}
-          <Avatar className="w-12 h-12">
-            {user.avatar ? (
-              <AvatarImage src={user.avatar} />
-            ) : (
-              <AvatarFallback className="bg-white/10 text-white">
-                {name.charAt(0)}
-              </AvatarFallback>
-            )}
-          </Avatar>
-
-          {/* Name + XP */}
-          <div>
-            <h3 className="font-semibold text-lg">{name}</h3>
-            <div className="text-sm text-white/50 flex items-center gap-1 mt-1">
-              <img src="/nexura-xp.png" alt="XP" className="w-5 h-5" />
-              {user.xp}
-            </div>
-          </div>
-        </div>
-
-        {/* XP on right side */}
-        <div className="text-right flex flex-col items-end">
-          <div className="flex items-center gap-1">
-            <img src="/nexura-xp.png" alt="XP" className="w-5 h-5" />
-            <span className={`text-xl font-bold ${accent.text}`}>{user.xp}</span>
-          </div>
-          <div className="text-xs text-white/50">XP</div>
-        </div>
-      </div>
-
-      {/* Badge */}
-      <Badge className="mt-3 bg-gradient-to-r from-purple-700 via-blue-600 to-cyan-500 border-0 text-white text-xs">
-        Your Ranking
-      </Badge>
-    </Card>
+        {/* REAL CARD */}
+        <Card
+  ref={isCurrentUser ? currentUserRowRef : null}
+  className={`p-4 rounded-3xl border-4 hover:brightness-110 ${positionClass}`}
+  style={{
+    borderColor: isCurrentUser ? "#f5c542" : accent.border,
+    boxShadow: isCurrentUser
+      ? "0 0 20px #f5c54288, 0 0 24px #f5c54244"
+      : `0 0 14px ${accent.border}66, 0 0 26px ${accent.border}44`,
+    background:
+      "linear-gradient(to right, rgba(255,255,255,0.05), rgba(0,0,0,0.4))",
+    transition: "all 0.3s ease-in-out",
+    zIndex: isCurrentUser ? 50 : "auto", // extra guard
+  }}
+>
+<div className="flex flex-col">
+  {/* Display "Your Ranking" only for current user */}
+  {isCurrentUser && (
+    <div className="text-lg md:text-xl font-bold mb-2 text-blue-400 bg-gradient-to-r from-blue-300 via-blue-500 to-blue-400 bg-clip-text text-transparent animate-pulse">
+      Your Ranking
     </div>
-  );
-})()}
+  )}
+</div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {/* Rank */}
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center font-bold border-2 ${
+                          isCurrentUser ? "bg-[#f5c542]/20 text-[#f5c542]" : `${accent.text} ${accent.bg}`
+                        }`}
+                        style={{
+                          borderColor: isCurrentUser ? "#f5c542" : accent.border,
+                          boxShadow: isCurrentUser
+                            ? "0 0 6px #f5c54266, 0 0 12px #f5c54244"
+                            : `0 0 6px ${accent.border}66, 0 0 12px ${accent.border}44`,
+                        }}
+                      >
+                        #{rank}
+                      </div>
+
+                      {/* Avatar */}
+                      <Avatar className="w-12 h-12">
+                        {entry.avatar ? (
+                          <AvatarImage src={entry.avatar} />
+                        ) : (
+                          <AvatarFallback className="bg-white/10 text-white">{name.charAt(0)}</AvatarFallback>
+                        )}
+                      </Avatar>
+
+                      {/* Name */}
+                      <div>
+                        <h3 className="font-semibold text-lg">{name}</h3>
+                        <div className="text-sm text-white/50">
+                          {entry.quests_completed || 0} quests · {entry.tasks_completed || 0} campaigns
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* XP */}
+                    <div className="flex items-center gap-1">
+                      <img src={xpIcon} alt="XP" className="w-5 h-5" />
+                      <span className={`text-xl font-bold ${isCurrentUser ? "text-[#f5c542]" : accent.text}`}>
+                        {entry.xp}
+                      </span>
+                    </div>
+                  </div>
+
+        </Card>
+      </div>
+    );
+  })}
+</div>
       </div>
     </div>
   );
