@@ -355,12 +355,12 @@ export default function EcosystemDapps() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-auto p-6 relative" data-testid="ecosystem-dapps-page">
+    <div className="min-h-screen bg-black text-white overflow-auto p-4 sm:p-6 relative" data-testid="ecosystem-dapps-page">
       <AnimatedBackground />
       <div className="max-w-7xl mx-auto space-y-8 relative z-10">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Ecosystem Dapps</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Ecosystem Dapps</h1>
           <p className="text-muted-foreground">
             Explore popular dapps in the ecosystem and complete one-time quests to earn rewards
           </p>
@@ -452,7 +452,7 @@ export default function EcosystemDapps() {
                   </div>
                 </div>
                 
-                <div className="flex gap-2 mt-auto">
+                <div className="flex flex-col sm:flex-row gap-2 mt-auto">
                   <a
                     href={dapp.websiteUrl}
                     target="_blank"
@@ -467,7 +467,7 @@ export default function EcosystemDapps() {
 
                   <Button
                     size="sm"
-                    className="w-40"
+                    className="w-full sm:w-40"
                     variant={claimedDapps.includes(dapp.id) ? 'outline' : 'quest'}
                     disabled={!visitedDapps.includes(dapp.id) || claimedDapps.includes(dapp.id)}
                     onClick={(e) => { e.stopPropagation(); handleClaim(dapp); }}

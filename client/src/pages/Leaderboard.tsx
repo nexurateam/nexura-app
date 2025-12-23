@@ -124,15 +124,18 @@ useEffect(() => {
 
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 relative">
+    // <div className="min-h-screen bg-black text-white p-6 relative">
+    <div className="min-h-screen bg-black text-white px-3 sm:px-4 md:px-6 py-6 relative">
       <AnimatedBackground />
 
-      <div className="max-w-4xl mx-auto space-y-6 relative z-10">
-        <header className="flex items-center justify-between">
+      {/* <div className="max-w-4xl mx-auto space-y-6 relative z-10"> */}
+      <div className="max-w-4xl mx-auto space-y-6 relative z-10 px-1 sm:px-0">
+        {/* <header className="flex items-center justify-between"> */}
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           {/* Left side: icon + title */}
           <div className="flex items-center gap-3">
             <img src={gold} alt="Leaderboard" className="w-10 h-10" />
-            <h1 className="text-3xl md:text-5xl font-bold">Leaderboard</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold">Leaderboard</h1>
           </div>
 
           {/* Right side: players badge */}
@@ -159,15 +162,17 @@ useEffect(() => {
       "
     />
 
-    <div className="flex justify-center items-end gap-6 relative">
+    {/* <div className="flex justify-center items-end gap-6 relative"> */}
+    <div className="flex justify-center items-end gap-3 sm:gap-5 relative">
       {[1, 0, 2].map((userIndex, idx) => {
         const user = list[userIndex];
         const name = user.display_name || user.username || "Anonymous";
         const xp = user.xp;
 
-        const heights = [130, 200, 110];
+        // const heights = [130, 200, 110];
+        const heights = [90, 140, 80];
         const height = heights[idx];
-        const width = idx === 1 ? 180 : 160;
+        const width = idx === 1 ? 120 : 105;
         const topDepth = 26;
 
         // Visual order: 2 – 1 – 3
@@ -194,7 +199,8 @@ useEffect(() => {
             style={{ animationDelay: bounceDelay }}
           >
             {/* Avatar */}
-            <Avatar className="w-24 h-24 -translate-y-6 ring-2 ring-white/15">
+            {/* <Avatar className="w-24 h-24 -translate-y-6 ring-2 ring-white/15"> */}
+            <Avatar className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 -translate-y-4 sm:-translate-y-6 ring-2 ring-white/15">
               <AvatarImage
                 src={
                   user.avatar ||
@@ -342,10 +348,10 @@ let positionClass = "relative transition-[top,bottom] duration-300 ease-in-out";
 if (isCurrentUser) {
   if (cardState === "floatingBottom") {
     positionClass +=
-      " fixed bottom-4 p-4 rounded-3xl border-2 w-full max-w-4xl";
+      "fixed bottom-3 left-1/2 -translate-x-1/2 p-4 rounded-3xl border-2 w-[95%] sm:w-full max-w-4xl";
   } else if (cardState === "stickyTop") {
     positionClass +=
-      " fixed top-5 z-50 p-4 rounded-3xl border-2 w-full max-w-4xl z-[999]";
+      " fixed top-3 left-1/2 -translate-x-1/2 z-[999] p-4 rounded-3xl border-2 w-[95%] sm:w-full max-w-4xl";
   }
 }
 
@@ -369,7 +375,8 @@ if (isCurrentUser) {
         {/* REAL CARD */}
         <Card
   ref={isCurrentUser ? currentUserRowRef : null}
-  className={`p-4 rounded-3xl border-4 hover:brightness-110 ${positionClass}`}
+  // className={`p-4 rounded-3xl border-4 hover:brightness-110 ${positionClass}`}
+  className={`p-3 sm:p-4 rounded-3xl border-4 hover:brightness-110 ${positionClass}`}
   style={{
     borderColor: isCurrentUser ? "#f5c542" : accent.border,
     boxShadow: isCurrentUser
@@ -417,13 +424,21 @@ if (isCurrentUser) {
 
                       {/* Name */}
                       <div>
-                        <h3 className="font-semibold text-lg">{name}</h3>
-                        <div className="text-sm text-white/50">
-                          {entry.quests_completed || 0} quests · {entry.tasks_completed || 0} campaigns
-                        </div>
-                      </div>
-                    </div>
+  <h3 className="font-semibold text-lg text-white tracking-wide">
+    {name}
+  </h3>
 
+  <div className="mt-1 flex items-center gap-3 text-sm">
+    <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-400/20">
+      {entry.quests_completed || 0} quests
+    </span>
+
+    <span className="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-400/20">
+      {entry.tasks_completed || 0} campaigns
+    </span>
+  </div>
+</div>
+</div>
                     {/* XP */}
                     <div className="flex items-center gap-1">
                       <img src={xpIcon} alt="XP" className="w-5 h-5" />
