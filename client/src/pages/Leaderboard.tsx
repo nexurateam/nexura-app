@@ -1,4 +1,4 @@
-// Leaderboard.tsx
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -61,7 +61,7 @@ const bottomSentinelRef = useRef<HTMLDivElement>(null);
       try {
         setList(MOCK_LEADERBOARD);
       } catch (err: any) {
-        setError(err.message || "Failed to load leaderboard");
+        setError(err.message  "Failed to load leaderboard");
       } finally {
         setLoading(false);
       }
@@ -78,7 +78,11 @@ useEffect(() => {
   const cardEl = currentUserRowRef.current;
   const topSentinel = topSentinelRef.current;
   const bottomSentinel = bottomSentinelRef.current;
+<<<<<<< HEAD
   if (!topSentinel || !bottomSentinel) return;
+=======
+  if (!topSentinel  !bottomSentinel) return;
+>>>>>>> origin/backend-dev
 
   // Measure card height dynamically
   const resizeObserver = new ResizeObserver(() => {
@@ -86,7 +90,11 @@ useEffect(() => {
   });
   resizeObserver.observe(cardEl);
 
+<<<<<<< HEAD
   const observer = new IntersectionObserver(
+=======
+const observer = new IntersectionObserver(
+>>>>>>> origin/backend-dev
     (entries) => {
       let topVisible = true;
       let bottomVisible = true;
@@ -124,6 +132,7 @@ useEffect(() => {
 
 
   return (
+<<<<<<< HEAD
     // <div className="min-h-screen bg-black text-white p-6 relative">
     <div className="min-h-screen bg-black text-white px-3 sm:px-4 md:px-6 py-6 relative">
       <AnimatedBackground />
@@ -136,6 +145,17 @@ useEffect(() => {
           <div className="flex items-center gap-3">
             <img src={gold} alt="Leaderboard" className="w-10 h-10" />
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold">Leaderboard</h1>
+=======
+    <div className="min-h-screen bg-black text-white p-6 relative">
+      <AnimatedBackground />
+
+      <div className="max-w-4xl mx-auto space-y-6 relative z-10">
+        <header className="flex items-center justify-between">
+          {/* Left side: icon + title */}
+          <div className="flex items-center gap-3">
+            <img src={gold} alt="Leaderboard" className="w-10 h-10" />
+            <h1 className="text-3xl md:text-5xl font-bold">Leaderboard</h1>
+>>>>>>> origin/backend-dev
           </div>
 
           {/* Right side: players badge */}
@@ -162,11 +182,15 @@ useEffect(() => {
       "
     />
 
+<<<<<<< HEAD
     {/* <div className="flex justify-center items-end gap-6 relative"> */}
     <div className="flex justify-center items-end gap-3 sm:gap-5 relative">
+=======
+    <div className="flex justify-center items-end gap-6 relative">
+>>>>>>> origin/backend-dev
       {[1, 0, 2].map((userIndex, idx) => {
         const user = list[userIndex];
-        const name = user.display_name || user.username || "Anonymous";
+        const name = user.display_name  user.username  "Anonymous";
         const xp = user.xp;
 
         // const heights = [130, 200, 110];
@@ -188,22 +212,35 @@ useEffect(() => {
 
         const medalWidth = idx === 1 ? 120 : 100;
         const medalHeight = idx === 1 ? 84 : 70;
+<<<<<<< HEAD
 
         const delayOrder = [0.3, 0, 0.6];
         const bounceDelay = `${delayOrder[idx]}s`;
+=======
+>>>>>>> origin/backend-dev
 
-        return (
+        const delayOrder = [0.3, 0, 0.6];
+        const bounceDelay = ${delayOrder[idx]}s;
+
+return (
           <div
             key={user.id}
             className="flex flex-col items-center text-center relative animate-bounce-slow"
             style={{ animationDelay: bounceDelay }}
           >
             {/* Avatar */}
+<<<<<<< HEAD
             {/* <Avatar className="w-24 h-24 -translate-y-6 ring-2 ring-white/15"> */}
             <Avatar className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 -translate-y-4 sm:-translate-y-6 ring-2 ring-white/15">
               <AvatarImage
                 src={
                   user.avatar ||
+=======
+            <Avatar className="w-24 h-24 -translate-y-6 ring-2 ring-white/15">
+              <AvatarImage
+                src={
+                  user.avatar 
+>>>>>>> origin/backend-dev
                   `https://api.dicebear.com/7.x/identicon/png?seed=${encodeURIComponent(
                     name
                   )}`
@@ -315,7 +352,12 @@ useEffect(() => {
                 height="26"
               >
                 <div className="flex items-center justify-center gap-1 text-sm font-semibold text-white/90">
+<<<<<<< HEAD
                   <img src={xpIcon} className="w-5 h-5" />
+=======
+
+<img src={xpIcon} className="w-5 h-5" />
+>>>>>>> origin/backend-dev
                   {xp}
                 </div>
               </foreignObject>
@@ -331,7 +373,11 @@ useEffect(() => {
   {list.map((entry, idx) => {
     if (idx < 3) return null; // skip podium
 
+<<<<<<< HEAD
     const name = entry.display_name || entry.username || "Anonymous";
+=======
+    const name = entry.display_name  entry.username  "Anonymous";
+>>>>>>> origin/backend-dev
     const isCurrentUser = entry.id === currentUserId;
     const rank = idx + 1;
 
@@ -348,10 +394,17 @@ let positionClass = "relative transition-[top,bottom] duration-300 ease-in-out";
 if (isCurrentUser) {
   if (cardState === "floatingBottom") {
     positionClass +=
+<<<<<<< HEAD
       "fixed bottom-3 left-1/2 -translate-x-1/2 p-4 rounded-3xl border-2 w-[95%] sm:w-full max-w-4xl";
   } else if (cardState === "stickyTop") {
     positionClass +=
       " fixed top-3 left-1/2 -translate-x-1/2 z-[999] p-4 rounded-3xl border-2 w-[95%] sm:w-full max-w-4xl";
+=======
+      " fixed bottom-4 p-4 rounded-3xl border-2 w-full max-w-4xl";
+  } else if (cardState === "stickyTop") {
+    positionClass +=
+      " fixed top-5 z-50 p-4 rounded-3xl border-2 w-full max-w-4xl z-[999]";
+>>>>>>> origin/backend-dev
   }
 }
 
@@ -375,8 +428,12 @@ if (isCurrentUser) {
         {/* REAL CARD */}
         <Card
   ref={isCurrentUser ? currentUserRowRef : null}
+<<<<<<< HEAD
   // className={`p-4 rounded-3xl border-4 hover:brightness-110 ${positionClass}`}
   className={`p-3 sm:p-4 rounded-3xl border-4 hover:brightness-110 ${positionClass}`}
+=======
+  className={`p-4 rounded-3xl border-4 hover:brightness-110 ${positionClass}`}
+>>>>>>> origin/backend-dev
   style={{
     borderColor: isCurrentUser ? "#f5c542" : accent.border,
     boxShadow: isCurrentUser
@@ -428,9 +485,15 @@ if (isCurrentUser) {
     {name}
   </h3>
 
+<<<<<<< HEAD
   <div className="mt-1 flex items-center gap-3 text-sm">
     <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-400/20">
       {entry.quests_completed || 0} quests
+=======
+<div className="mt-1 flex items-center gap-3 text-sm">
+    <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-400/20">
+      {entry.quests_completed  0} quests
+>>>>>>> origin/backend-dev
     </span>
 
     <span className="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-400/20">
@@ -439,10 +502,18 @@ if (isCurrentUser) {
   </div>
 </div>
 </div>
+<<<<<<< HEAD
                     {/* XP */}
                     <div className="flex items-center gap-1">
                       <img src={xpIcon} alt="XP" className="w-5 h-5" />
                       <span className={`text-xl font-bold ${isCurrentUser ? "text-[#f5c542]" : accent.text}`}>
+=======
+
+{/* XP */}
+<div className="flex items-center gap-1">
+                      <img src={xpIcon} alt="XP" className="w-5 h-5" />
+                      <span className={text-xl font-bold ${isCurrentUser ? "text-[#f5c542]" : accent.text}}>
+>>>>>>> origin/backend-dev
                         {entry.xp}
                       </span>
                     </div>

@@ -1,6 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-
-export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+import { BACKEND_URL } from "./constants";
 
 export const buildUrl = (path: string) =>  {
   const base = (BACKEND_URL || "").replace(/\/+$/g, "");
@@ -10,14 +9,14 @@ export const buildUrl = (path: string) =>  {
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    const text = (await res.json()).error || res.statusText;
+    throw new Error(`${text}`);
   }
 }
 
 export function getStoredAccessToken() {
   try {
-    return localStorage.getItem("accessToken");
+    return localStorage.getItem("nexura:token");
   } catch (e) {
     return null;
   }
@@ -70,7 +69,6 @@ export async function apiRequestV2(
   endpoint: string,
   data?: unknown | undefined,
 ): Promise<any> {
-  console.log({ BACKEND_URL });
   const headers = { "Content-Type": "application/json" , "Authorization": `Bearer ${getStoredAccessToken()}`};
 
   const res = await fetch(`${BACKEND_URL}${endpoint}`, {

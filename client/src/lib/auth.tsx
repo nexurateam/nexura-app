@@ -9,6 +9,7 @@ type User = any;
 type AuthContextType = {
   user: User | null;
   loading: boolean;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
   signUp: (username: string, referrer?: string) => Promise<void>;
   signOut: () => void;
 };
@@ -27,28 +28,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const token = getSessionToken();
         if (token) {
           headers["Authorization"] = `Bearer ${token}`;
-          console.log("🔑 Sending Authorization header for /api/me");
+          console.log("🔑 Sending Authorization header for /api/user/profile");
         } else {
-          console.log("❌ No accessToken found for /api/me");
+          console.log("❌ No accessToken found for /api/user/profile");
         }
 
         // Use apiRequest which includes Authorization: Bearer <token> when present
-        const res = await apiRequest("GET", "/api/me").catch(err => {
+        const res = await apiRequest("GET", "/api/user/profile").catch(err => {
           console.warn("Network error fetching profile:", String(err));
           return null;
         });
 
         console.log("passed first fetch");
         
-        if (!res || !res.ok) {
-          console.warn("Could not restore session: API returned", res?.status || "no response");
-          try { clearSession(); } catch { /* ignore */ }
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-        
-        const json = await res.json().catch(() => null);
+        const json = await res?.json().catch(() => null);
         if (!json) {
           console.warn("Could not parse profile response");
           setUser(null);
@@ -62,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Validate that user is an object before setting
         const userData = json?.user ? { ...json.user, ...(json.profile || {}) } : null;
         
-        console.log('[AuthProvider] Received data from /api/me:', {
+        console.log('[AuthProvider] Received data from /api/user/profile:', {
           hasUser: !!json?.user,
           hasProfile: !!json?.profile,
           userDataType: typeof userData,
@@ -70,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isNull: userData === null,
           keys: userData ? Object.keys(userData) : []
         });
-        
+
         if (userData && typeof userData === 'object' && !Array.isArray(userData) && userData !== null) {
           console.log('[AuthProvider] Setting valid user data');
           console.log("dilly");
@@ -92,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const unsub = onSessionChange(async () => {
       try {
-        const res = await apiRequest("GET", "/api/me");
+        const res = await apiRequest("GET", "/api/user/profile");
         if (res.ok) {
           const json = await res.json();
           const userData = json?.user ? { ...json.user, ...(json.profile || {}) } : null;
@@ -156,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         // call server to clear httpOnly cookie/session
-        await apiRequest("POST", "/auth/logout");
+        await apiRequest("POST", "/api/user/logout");
       } catch (e) {
         // ignore server logout errors, proceed to clear client state
         console.warn("server logout failed", e);
@@ -174,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signUp, signOut, setUser }}>
       {children}
     </AuthContext.Provider>
   );

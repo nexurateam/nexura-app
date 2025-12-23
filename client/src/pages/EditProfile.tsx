@@ -12,22 +12,9 @@ import { FaDiscord, FaTwitter } from "react-icons/fa";
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { emitSessionChange } from "@/lib/session";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequestV2 } from "@/lib/queryClient";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AnimatedBackground from "@/components/AnimatedBackground";
-
-// Prefer a runtime-injected backend URL (window.__BACKEND_URL__), then build-time Vite env var.
-// Do not default to localhost — if no backend is configured the app will make requests
-// relative to the current origin.
-const RUNTIME_BACKEND = (typeof window !== 'undefined' && (window as any).__BACKEND_URL__) || undefined;
-const BACKEND_BASE = RUNTIME_BACKEND || ((import.meta as any).env?.VITE_BACKEND_URL as string) || "";
-
-function buildUrl(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  const base = (BACKEND_BASE || "").replace(/\/+$/g, "");
-  const p = path.replace(/^\/+/, "");
-  return `${base}/${p}`;
-}
 
 export default function EditProfile() {
   const [, setLocation] = useLocation();
@@ -73,28 +60,29 @@ export default function EditProfile() {
     }
 
     const updatePayload = {
-      displayName: profileData.displayName,
+      username: profileData.displayName,
       avatar: avatarUrl,
       socialProfiles: profileData.socialProfiles,
     };
 
     // Send update to backend
-    await apiRequest('PUT', '/api/users/profile', updatePayload);
+    await apiRequestV2('PATCH', '/api/user/update', updatePayload);
 
     // Optimistically update local user context immediately
-    updateUserContext({
-  ...user,
-  displayName: profileData.displayName,
-  avatar: avatarUrl,
-  socialProfiles: profileData.socialProfiles,
-});
+    // updateUserContext({
+    //   ...user,
+    //   displayName: profileData.displayName,
+    //   avatar: avatarUrl,
+    //   socialProfiles: profileData.socialProfiles,
+    // });
 
     // Emit session change to backend if needed
-    await emitSessionChange();
+    // await emitSessionChange();
 
     // Show toast and navigate
     toast({ title: "Profile updated", description: "Your profile has been successfully updated." });
     setLocation("/profile");
+    window.location.reload();
   } catch (e) {
     console.error('Profile update error:', e);
     toast({ title: "Update failed", description: String(e), variant: "destructive" });
