@@ -42,13 +42,6 @@ const TASKS_CARD: Quest = {
   status: "open"
 };
 
-const ONE_TIME_QUESTS: Quest[] = [
-  { _id: 'onetime-discord-join', title: 'Connect Discord', description: 'Link your Discord account', reward: '50 XP', status: 'one-time', url: 'https://discord.gg/caK9kATBya', actionLabel: 'Connect Discord', starts_at: new Date().toISOString(), ends_at: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365).toISOString() },
-  { _id: 'onetime-join-discord', title: 'Join Discord', description: 'Join our Discord server to chat with the community', reward: '50 XP', status: 'one-time', url: 'https://discord.gg/caK9kATBya', actionLabel: 'Join Discord', starts_at: new Date().toISOString(), ends_at: new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365).toISOString() },
-];
-
-// 693de4b916cf5512ad6f2dbd
-
 export default function Quests() {
   const [, setLocation] = useLocation();
   const [visitedTasks, setVisitedTasks] = useState<string[]>([]);
