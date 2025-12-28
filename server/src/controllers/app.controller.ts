@@ -227,7 +227,7 @@ export const saveCv = async (req: GlobalRequest, res: GlobalResponse) => {
       return;
     }
 
-    await cvModel.create({ codeVerifier, state });
+    await cvModel.create({ cv: codeVerifier, state });
 
     res.status(OK).json({ message: "saved" });
   } catch (error) {
