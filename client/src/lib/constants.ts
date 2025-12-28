@@ -12,7 +12,3 @@ export const discordAuthUrl =
 		? "https://discord.com/oauth2/authorize?client_id=1452214561238286419&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A5173%2Fdiscord%2Fcallback&scope=identify"
 		: "https://discord.com/oauth2/authorize?client_id=1452214561238286419&response_type=code&redirect_uri=https%3A%2F%2Fnexura-app.vercel.app%2Fdiscord%2Fcallback&scope=identify";
 
-export const twitterAuthUrl =
-	import.meta.env.VITE_ENV === "development"
-		? ""
-    : "";
