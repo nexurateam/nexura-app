@@ -15,7 +15,7 @@ import { apiRequestV2 } from "@/lib/queryClient";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { discordAuthUrl } from "@/lib/constants";
-import { xAuthUrl } from "@/lib/generateXAuthUrl";
+import { getAuthUrl } from "@/lib/generateXAuthUrl";
 
 export default function EditProfile() {
   const [, setLocation] = useLocation();
@@ -143,10 +143,10 @@ export default function EditProfile() {
     }
   };
 
-  const handleConnect = (service: "x" | "discord") => {
+  const handleConnect = async (service: "x" | "discord") => {
     // Redirect to actual social media connection sites
     const urls = {
-      x: xAuthUrl,
+      x: await getAuthUrl(),
       discord: discordAuthUrl
     };
 
@@ -156,7 +156,7 @@ export default function EditProfile() {
     });
 
     // Open in new tab for OAuth flow
-    window.open(urls[service]);
+    window.location.href = urls[service];
   };
 
   const handleDisconnect = (service: "x" | "discord") => {
