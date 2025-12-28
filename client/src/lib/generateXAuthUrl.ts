@@ -1,14 +1,22 @@
-import {
-	generateCodeVerifier,
-	generateCodeChallenge,
-} from "@xdevplatform/xdk";
+import crypto from "crypto"
 import cryptoRandomString from "crypto-random-string";
+
+const base64url = (buffer: Buffer) => {
+	return buffer
+		.toString("base64")
+		.replace(/\+/g, "-")
+		.replace(/\//g, "_")
+		.replace(/=/g, "")
+}
 
 const getAuthUrl = async () => {
 
 	const state: string = cryptoRandomString({ length: 22 });
-	const codeVerifier: string = generateCodeVerifier();
-	const CODE_CHALLENGE: string = await generateCodeChallenge(codeVerifier);
+
+	const codeVerifier = base64url(crypto.randomBytes(32))
+	const CODE_CHALLENGE = base64url(
+		crypto.createHash("sha256").update(codeVerifier).digest()
+	)
 
 	localStorage.setItem("codeVerifier", codeVerifier);
 
