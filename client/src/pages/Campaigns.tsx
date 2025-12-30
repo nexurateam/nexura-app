@@ -40,7 +40,7 @@ const TASKS_CARD: Campaign = {
 
 export default function Campaigns() {
   const [, setLocation] = useLocation();
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([TASKS_CARD]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadingCampaign, setLoadingCampaign] = useState<string | null>(null);
 
@@ -87,7 +87,7 @@ export default function Campaigns() {
   };
 
   const now = new Date();
-  const allCampaigns = [TASKS_CARD, ...campaigns];
+  const allCampaigns = [...campaigns];
 
   const activeCampaigns = allCampaigns.filter((c) => {
     const start = c.starts_at ? new Date(c.starts_at) : null;
