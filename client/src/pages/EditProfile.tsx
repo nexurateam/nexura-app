@@ -43,6 +43,7 @@ export default function EditProfile() {
           discord: { connected: false, username: "" }
         }
       });
+
       // Set initial avatar preview
       if (user.avatar) {
         setAvatarPreview(user.avatar);
@@ -152,7 +153,6 @@ export default function EditProfile() {
 
     if (service === "x") {
       const authUrl = await getAuthUrl();
-      console.log(authUrl)
       urls.x = authUrl;
     }
 
@@ -162,7 +162,7 @@ export default function EditProfile() {
     });
 
     // Open in new tab for OAuth flow
-    window.location.href = urls[service];
+    window.location.assign(urls[service]);
   };
 
   const handleDisconnect = (service: "x" | "discord") => {
