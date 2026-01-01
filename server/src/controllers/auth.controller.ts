@@ -29,6 +29,7 @@ import { uploadImg } from "@/utils/img.utils";
 import { referredUsers } from "@/models/referrer.model";
 import axios from "axios";
 import { cvModel } from "@/models/cv.models";
+import { token } from "@/models/tokens.models";
 
 export const discordCallback = async (req: GlobalRequest, res: GlobalResponse) => {
 	try {
@@ -85,7 +86,7 @@ export const xCallback = async (req: GlobalRequest, res: GlobalResponse) => {
 			return;
 		}
 
-		const { data: { access_token } } = await axios.post(
+		const { data: { access_token, refresh_token } } = await axios.post(
 			`https://api.x.com/2/oauth2/token?grant_type=authorization_code&client_id=${X_API_CLIENT_ID}&redirect_uri=${X_REDIRECT_URI}&code=${code}&code_verifier=${fetchState.cv}`, 
 			{ headers: 
 			{
@@ -103,6 +104,8 @@ export const xCallback = async (req: GlobalRequest, res: GlobalResponse) => {
 				{ "Authorization": `Bearer ${access_token}` }
 			}
 		);
+
+		await token.create({ userId: id, accessToken: access_token, refreshToken: refresh_token });
 
 		res.redirect(X_CLIENT_REDIRECT_URI + `?x_id=${id}&username=${username}`);
 	} catch (error: any) {
