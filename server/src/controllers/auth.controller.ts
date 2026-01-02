@@ -105,7 +105,15 @@ export const xCallback = async (req: GlobalRequest, res: GlobalResponse) => {
 			}
 		);
 
-		await token.create({ userId: id, accessToken: access_token, refreshToken: refresh_token });
+		const userExists = await token.findOne({ userId: id });
+		if (!userExists) {
+			await token.create({ userId: id, accessToken: access_token, refreshToken: refresh_token });
+		} else {
+			userExists.accessToken = access_token;
+			userExists.refreshToken = refresh_token;
+
+			await userExists.save();
+		}
 
 		res.redirect(X_CLIENT_REDIRECT_URI + `?x_id=${id}&username=${username}`);
 	} catch (error: any) {
