@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
 	fetchUser,
 	referralInfo,
-	updateUsername,
+	updateUser,
 	allowRefRewardClaim,
 	claimReferreralReward
 } from "@/controllers/app.controller";
@@ -19,6 +19,6 @@ router
 	.get("/referral-info", authenticateUser, referralInfo)
 	// .post("/sign-up", signUp)
 	.post("/sign-in", signIn)
-	.patch("/update", authenticateUser, upload.single("profilePic"), updateUsername);
+	.patch("/update", authenticateUser, upload.single("profilePic"), updateUser);
 
 export default router;
