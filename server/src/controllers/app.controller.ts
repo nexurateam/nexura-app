@@ -23,8 +23,9 @@ export const home = async (req: GlobalRequest, res: GlobalResponse) => {
 	res.send("hi!");
 };
 
-export const updateUsername = async (req: GlobalRequest, res: GlobalResponse) => {
+export const updateUser = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
+    const profilePic = req.file ? req.file.path : undefined;
     const { username }: { username: string } = req.body;
 
     const userToUpdate = await user.findById(req.id);
@@ -41,6 +42,11 @@ export const updateUsername = async (req: GlobalRequest, res: GlobalResponse) =>
     }
 
     userToUpdate.username = username;
+
+    if (profilePic) {
+      userToUpdate.profilePic = profilePic;
+    }
+
     await userToUpdate.save();
 
     const userReferred = await referredUsers.findOne({ newUser: userToUpdate._id });
@@ -49,10 +55,10 @@ export const updateUsername = async (req: GlobalRequest, res: GlobalResponse) =>
       await userReferred.save();
     }
 
-    res.status(OK).json({ message: "username updated!" });
+    res.status(OK).json({ message: "user updated!" });
   } catch (error) {
     logger.error(error);
-    res.status(INTERNAL_SERVER_ERROR).json({ error: "error updating username" });
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error updating user" });
   }
 }
 

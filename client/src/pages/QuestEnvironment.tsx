@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Play, CheckCircle2, RotateCcw } from "lucide-react";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { getStoredAccessToken, apiRequestV2, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -17,11 +18,14 @@ type Quest = {
 };
 
 const questsInitial: Quest[] = [
-  { done: false, _id: "id-id", text: "Like and Comment on this Nexura tweet", reward: "100 XP", link: "#" },
-  { done: false, _id: "id-id", text: "Support or Oppose the #Tribe Claim on Intuition Portal", reward: "100 XP", link: "#" },
-  { done: false, _id: "id-id", text: "Support or Oppose the TNS Claim on Intuition Portal", reward: "100 XP", link: "#" },
-  { done: false, _id: "id-id", text: "Support or Oppose the Sofia on Intuition Portal", reward: "100 XP", link: "#" },
+  { done: false, _id: "id-like", text: "Like this Nexura tweet", reward: "40 XP", link: "#" },
+  { done: false, _id: "id-comment", text: "Comment on this Nexura tweet", reward: "40 XP", link: "#" },
+  { done: false, _id: "id-repost", text: "Repost this Nexura tweet", reward: "40 XP", link: "#" },
+  { done: false, _id: "id-tribe", text: "Support or Oppose the #Tribe Claim on Intuition Portal", reward: "100 XP", link: "#" },
+  { done: false, _id: "id-tns", text: "Support or Oppose the TNS Claim on Intuition Portal", reward: "140 XP", link: "#" },
+  { done: false, _id: "id-sofia", text: "Support or Oppose the Sofia Claim on Intuition Portal", reward: "140 XP", link: "#" },
 ];
+
 
 export default function QuestEnvironment() {
   const [miniQuests, setMiniQuests] = useState<Quest[]>(questsInitial);
@@ -44,6 +48,12 @@ export default function QuestEnvironment() {
   const [questCompleted, setQuestCompleted] = useState<boolean>(() => {
     try { return Boolean(JSON.parse(localStorage.getItem('nexura:quest:completed') || "")[userId]); } catch (error) { return false }
   });
+  const [failedQuests, setFailedQuests] = useState<string[]>([]);
+  const completedQuestsCount = miniQuests.filter((q) => q.done || claimedQuests.includes(q._id)).length;
+
+  const progressPercentage = miniQuests.length
+    ? Math.round((completedQuestsCount / miniQuests.length) * 100)
+    : 0;
 
   const { questId } = useParams();
   const { toast } = useToast();
@@ -179,10 +189,12 @@ export default function QuestEnvironment() {
 
   const renderQuestRow = (quest: Quest, index: number) => {
     const visited = visitedQuests.includes(quest._id);
+    const claimed = claimedQuests.includes(quest._id);
+    const failed = failedQuests.includes(quest._id);
 
     let buttonText = "Start Quest";
-    if (visited) buttonText = `Claim`;
-    if (quest.done || claimedQuests.includes(quest._id)) buttonText = "Completed";
+    if (visited) buttonText = "Claim";
+    if (claimed) buttonText = "Completed";
 
     return (
       <div
@@ -205,26 +217,39 @@ export default function QuestEnvironment() {
     );
   };
 
+
   return (
     <div className="min-h-screen bg-[#0a0615] text-white relative p-6">
       <AnimatedBackground />
 
       <div className="max-w-4xl mx-auto relative z-10 space-y-10">
 
-        {/* Banner */}
-        <div className="w-full bg-gradient-to-r from-purple-700/40 to-purple-900/40 border border-white/10 rounded-2xl p-5 md:p-6 flex flex-col md:flex-row gap-4 md:gap-0 md:justify-between md:items-center">
-          <div>
-            <p className="uppercase text-xs opacity-60">{title}</p>
-            <p className="text-lg md:text-xl font-semibold">{sub_title}</p>
-          </div>
+        {/* Banner with Progress */}
+        <div className="w-full bg-gradient-to-r from-purple-700/40 to-purple-900/40 border border-white/10 rounded-2xl p-4 sm:p-6 space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <p className="uppercase text-[0.6rem] sm:text-xs opacity-60">{title}</p>
+              <p className="text-lg sm:text-xl font-semibold">{sub_title}</p>
+            </div>
 
-          <div className="flex items-center gap-3">
-            <p className="text-sm opacity-70 uppercase">Total XP</p>
-            <div className="bg-purple-600/30 border border-purple-500/40 px-4 py-2 rounded-full flex items-center gap-2">
-              <span className="font-bold">{totalXP} XP</span>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <p className="text-[0.65rem] sm:text-sm opacity-70 uppercase">Total XP</p>
+              <div className="bg-purple-600/30 border border-purple-500/40 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full flex items-center gap-1 sm:gap-2">
+                <span className="font-bold text-xs sm:text-sm">{totalXP} XP</span>
+              </div>
             </div>
           </div>
+
+          <div className="w-full bg-white/10 h-2 sm:h-3 rounded-full overflow-hidden mt-2 sm:mt-3">
+            <div
+              className="h-2 sm:h-3 bg-purple-600 transition-all duration-500"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+          <p className="text-[0.65rem] sm:text-sm opacity-60 mt-1">{progressPercentage}% completed</p>
         </div>
+
+
 
         {/* Main Quest Card */}
         <Card className="rounded-2xl bg-white/5 border-white/10 overflow-hidden shadow-xl">
