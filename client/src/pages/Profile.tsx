@@ -58,7 +58,7 @@ function WalletDropdown() {
       <Button
         size="sm"
         onClick={async () => {
-          try { await connectWallet(); } finally { try { emitSessionChange(); } catch (e) {} }
+          try { await connectWallet(); } finally { try { emitSessionChange(); } catch (e) { } }
         }}
       >
         Connect Wallet
@@ -80,9 +80,9 @@ function WalletDropdown() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => {
-            try { disconnect(); } catch(e){}
-            try { signOut(); } catch(e){}
-            try { emitSessionChange(); } catch(e){}
+            try { disconnect(); } catch (e) { }
+            try { signOut(); } catch (e) { }
+            try { emitSessionChange(); } catch (e) { }
           }}
           className="cursor-pointer p-2 text-base"
         >
@@ -139,7 +139,7 @@ export default function Profile() {
     return {
       // ...user,
       displayName: finalName,
-      avatar: user.avatar ?? "",
+      avatar: user.profilePic ?? "",
       level: user.level ?? 1,
       xp: user.xp ?? 0,
       questsCompleted: user.questsCompleted ?? 0,
@@ -291,7 +291,7 @@ export default function Profile() {
             { title: "Total XP", value: xpValue, label: "XP earned" },
             { title: "Current Level", value: `${levelName}`, label: "" },
             { title: "Quests Completed", value: userData?.questsCompleted ?? 0, label: "Completed" },
-            { title: "Total Rewards", value:`${userData?.trust ?? 0} TRUST`, label: "Earned" },
+            { title: "Total Rewards", value: `${userData?.trust ?? 0} TRUST`, label: "Earned" },
             { title: "Nexons", value: totalMinted, label: "Minted" },
           ].map((stat) => (
             <Card key={stat.title} className="glass glass-hover rounded-3xl flex flex-col h-full">
@@ -316,8 +316,8 @@ export default function Profile() {
               xpValue >= lvl.xp
                 ? 100
                 : xpValue > prevXp
-                ? ((xpValue - prevXp) / (lvl.xp - prevXp)) * 100
-                : 0;
+                  ? ((xpValue - prevXp) / (lvl.xp - prevXp)) * 100
+                  : 0;
 
             const isCurrent = idx === currentLevelIndex;
             const isMinted = mintedLevels.includes(idx);
@@ -329,9 +329,8 @@ export default function Profile() {
             return (
               <Card
                 key={lvl.name}
-                className={`glass glass-hover rounded-3xl flex flex-col md:flex-row items-center gap-4 p-4 transition-all relative ${
-                  isCurrent ? "border-2 border-blue-400 shadow-lg" : ""
-                }`}
+                className={`glass glass-hover rounded-3xl flex flex-col md:flex-row items-center gap-4 p-4 transition-all relative ${isCurrent ? "border-2 border-blue-400 shadow-lg" : ""
+                  }`}
               >
                 {/* MINT BUTTON — ONLY WHEN ALLOWED */}
                 {showMint && (

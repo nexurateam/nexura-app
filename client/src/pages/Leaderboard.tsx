@@ -106,12 +106,12 @@ export default function Leaderboard() {
 
         // PRIORITY FIX:
         if (topVisible && bottomVisible) {
-  setCardState("normal");
-} else if (!topVisible && bottomVisible) {
-  setCardState("stickyTop");
-} else if (!bottomVisible) {
-  setCardState("floatingBottom");
-}
+          setCardState("normal");
+        } else if (!topVisible && bottomVisible) {
+          setCardState("stickyTop");
+        } else if (!bottomVisible) {
+          setCardState("floatingBottom");
+        }
       }, { threshold: 0 }
     );
 
@@ -205,7 +205,7 @@ export default function Leaderboard() {
                     <Avatar className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 -translate-y-4 sm:-translate-y-6 ring-2 ring-white/15">
                       <AvatarImage
                         src={
-                          user.avatar ||
+                          user.profilePic ||
                           `https://api.dicebear.com/7.x/identicon/png?seed=${encodeURIComponent(
                             name
                           )}`
