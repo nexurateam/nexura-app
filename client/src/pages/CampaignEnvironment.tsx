@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Play } from "lucide-react";
+import { CheckCircle2, Play, RotateCcw } from "lucide-react";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { apiRequestV2, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +44,7 @@ export default function CampaignEnvironment() {
     const stored = JSON.parse(localStorage.getItem("nexura:campaign:claimed") || "{}");
     return stored[userId] || [];
   });
+  const [failedQuests, setFailedQuests] = useState<string[]>([]);
   const [campaignCompleted, setCampaignCompleted] = useState<boolean>();
 
   const [description, setDescription] = useState("");
@@ -108,45 +109,60 @@ export default function CampaignEnvironment() {
   }
 
   const claimQuest = async (quest: Quest) => {
+  try {
+    const id = getId(quest.link);
+
     try {
-      const id = getId(quest.link);
-
-      try {
-        if (["like", "follow", "comment", "repost"].includes(quest.tag)) {
-          if (!user?.socialProfiles.x.connected) {
-            throw new Error("x not connected yet, go to profile to connect.");
-          }
-          const { success } = await apiRequestV2("POST", "/api/check-x", { id, tag: quest.tag, questId: quest._id });
-          if (!success) {
-            // alert(`Kindly ${quest.tag !== "follow" ? quest.tag + " the post" : "follow the account"}`);
-            throw new Error(`Kindly ${quest.tag !== "follow" ? quest.tag + " the post" : "follow the account"}`);
-          }
-        } else if (["join", "message"].includes(quest.tag)) {
-          if (!user?.socialProfiles.discord.connected) {
-            // toast({ title: "Error", description: "discord not connected yet, go to profile to connect", variant: "destructive" });
-            throw new Error("discord not connected yet, go to profile to connect");
-          }
-
-          const { success } = await apiRequestV2("POST", "/api/check-discord", { channelId: id, tag: quest.tag });
-          if (!success) {
-            // toast({ title: "Error", description: `Kindly ${quest.tag} the discord channel`, variant: "destructive"});
-            throw new Error(`Kindly ${quest.tag} the discord channel`);
-          }
+      if (["like", "follow", "comment", "repost"].includes(quest.tag)) {
+        if (!user?.socialProfiles.x.connected) {
+          throw new Error("x not connected yet, go to profile to connect.");
         }
-      } catch (error: any) {
-        console.error(error);
-        // toast({title: "Error", description: error.message, variant: "destructive" });
-        throw new Error(error.message);
+        const { success } = await apiRequestV2("POST", "/api/check-x", { id, tag: quest.tag });
+        if (!success) {
+          // alert(`Kindly ${quest.tag !== "follow" ? quest.tag + " the post" : "follow the account"}`);
+          throw new Error(
+            `Kindly ${quest.tag !== "follow" ? quest.tag + " the post" : "follow the account"}`
+          );
+        }
+      } else if (["join", "message"].includes(quest.tag)) {
+        if (!user?.socialProfiles.discord.connected) {
+          // toast({ title: "Error", description: "discord not connected yet, go to profile to connect", variant: "destructive" });
+          throw new Error("discord not connected yet, go to profile to connect");
+        }
+
+        const { success } = await apiRequestV2("POST", "/api/check-discord", {
+          channelId: id,
+          tag: quest.tag,
+        });
+        if (!success) {
+          // toast({ title: "Error", description: `Kindly ${quest.tag} the discord channel`, variant: "destructive"});
+          throw new Error(`Kindly ${quest.tag} the discord channel`);
+        }
       }
-
-      const res = await apiRequest("POST", `/api/quest/perform-campaign-quest`, { id: quest._id, campaignId });
-      if (!res.ok) return;
-
-      setClaimedQuests([...claimedQuests, quest._id]);
-      setQuests((prev) => prev.map((q) => (q._id === quest._id ? { ...q, done: true } : q)));
     } catch (error: any) {
       console.error(error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      throw new Error(error.message);
+    }
+
+    const res = await apiRequest(
+      "POST",
+      `/api/quest/perform-campaign-quest`,
+      { id: quest._id, campaignId }
+    );
+    if (!res.ok) return;
+
+    setClaimedQuests([...claimedQuests, quest._id]);
+    setFailedQuests((prev) => prev.filter((id) => id !== quest._id));
+    setQuests((prev) =>
+      prev.map((q) => (q._id === quest._id ? { ...q, done: true } : q))
+    );
+  } catch (error: any) {
+    console.error(error);
+    toast({ title: "Error", description: error.message, variant: "destructive" });
+
+    if (!failedQuests.includes(quest._id)) {
+      setFailedQuests((prev) => [...prev, quest._id]);
     }
   };
 
@@ -235,7 +251,10 @@ export default function CampaignEnvironment() {
             const visited = visitedQuests.includes(quest._id);
             const claimed = quest.done || claimedQuests.includes(quest._id);
 
+            const failed = failedQuests.includes(quest._id);
+
             let buttonText = "Start Quest";
+
 
             if (visited) buttonText = "Claim";
             if (claimed) buttonText = "Completed";
@@ -261,13 +280,29 @@ export default function CampaignEnvironment() {
                     {quest.quest}
                   </a>
                 </div>
-                <button
-                  disabled={claimed}
-                  onClick={() => (!visited ? markQuestAsVisited(quest) : claimQuest(quest))}
-                  className={`w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm sm:text-base font-semibold ${claimed ? "bg-gray-600 cursor-not-allowed" : "bg-purple-700 hover:bg-purple-800"}`}
-                >
-                  {buttonText}
-                </button>
+                <div className="flex gap-2 w-full sm:w-auto">
+  {failed && (
+    <button
+      onClick={() => {
+  markQuestAsVisited(quest);
+}}
+      className="px-3 py-2 rounded-full bg-red-600 hover:bg-red-700 flex items-center gap-1 text-sm font-semibold"
+    >
+      <RotateCcw className="w-4 h-4" />
+      Retry
+    </button>
+  )}
+
+  <button
+    disabled={claimed}
+    onClick={() => (!visited ? markQuestAsVisited(quest) : claimQuest(quest))}
+    className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm sm:text-base font-semibold ${
+      claimed ? "bg-gray-600 cursor-not-allowed" : "bg-purple-700 hover:bg-purple-800"
+    }`}
+  >
+    {buttonText}
+  </button>
+</div>
               </div>
             );
           }) : "No quests available"}

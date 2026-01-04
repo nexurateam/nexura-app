@@ -1,6 +1,8 @@
 import logger from "@/config/logger";
 import { cvModel } from "@/models/cv.models";
 import { firstMessage } from "@/models/msg.model";
+import { cvModel } from "@/models/cv.models";
+import { firstMessage } from "@/models/msg.model";
 import { referredUsers } from "@/models/referrer.model";
 import { token } from "@/models/tokens.model";
 import { miniQuest } from "@/models/quests.model";
