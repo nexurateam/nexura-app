@@ -155,7 +155,7 @@ export default function ProfileBar({ userId = "user-123" }: ProfileBarProps) {
                 data-testid="profile-dropdown"
               >
                 <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-border">
-                  <AvatarImage src={user.avatar ?? ""} />
+                  <AvatarImage src={user.profilePic ?? ""} />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     <User className="h-6 w-6" />
                   </AvatarFallback>
