@@ -73,7 +73,7 @@ export default function Leaderboard() {
   }, []);
 
   /* ------------------- CURRENT USER FLOAT/STICK LOGIC ------------------- */
-  const currentUserId = user?._id || "5"; // Logged-in user ID
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);// Logged-in user ID
   const [cardState, setCardState] = useState<"floatingBottom" | "normal" | "stickyTop">("normal");
 
   useEffect(() => {
@@ -105,13 +105,13 @@ export default function Leaderboard() {
         });
 
         // PRIORITY FIX:
-        if (!topVisible) {
-          setCardState("floatingBottom");  // card below viewport → float bottom
-        } else if (!bottomVisible) {
-          setCardState("stickyTop"); // scroll down past card → stick to top
-        } else {
-          setCardState("normal"); // card in viewport → normal
-        }
+        if (topVisible && bottomVisible) {
+  setCardState("normal");
+} else if (!topVisible && bottomVisible) {
+  setCardState("stickyTop");
+} else if (!bottomVisible) {
+  setCardState("floatingBottom");
+}
       }, { threshold: 0 }
     );
 
@@ -445,7 +445,6 @@ export default function Leaderboard() {
                       </span>
                     </div>
                   </div>
-
                 </Card>
               </div>
             );
