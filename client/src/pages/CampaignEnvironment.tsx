@@ -35,7 +35,7 @@ export default function CampaignEnvironment() {
   const { campaignId } = useParams();
   const { toast } = useToast();
 
-  const [quests, setQuests] = useState<Quest[]>(campaignQuestsInitial);
+  const [quests, setQuests] = useState<Quest[]>([]);
   const [visitedQuests, setVisitedQuests] = useState<string[]>(() => {
     const stored = JSON.parse(localStorage.getItem("nexura:campaign:visited") || "{}");
     return stored[userId] || [];
@@ -116,6 +116,7 @@ export default function CampaignEnvironment() {
         if (["like", "follow", "comment", "repost"].includes(quest.tag)) {
           if (!user?.socialProfiles.x.connected) {
             throw new Error("x not connected yet, go to profile to connect.");
+            return;
           }
           const { success } = await apiRequestV2("POST", "/api/check-x", { id, tag: quest.tag, questId: quest._id });
           if (!success) {
@@ -126,12 +127,14 @@ export default function CampaignEnvironment() {
           if (!user?.socialProfiles.discord.connected) {
             // toast({ title: "Error", description: "discord not connected yet, go to profile to connect", variant: "destructive" });
             throw new Error("discord not connected yet, go to profile to connect");
+            return;
           }
 
           const { success } = await apiRequestV2("POST", "/api/check-discord", { channelId: id, tag: quest.tag });
           if (!success) {
             // toast({ title: "Error", description: `Kindly ${quest.tag} the discord channel`, variant: "destructive"});
             throw new Error(`Kindly ${quest.tag} the discord channel`);
+            return;
           }
         }
 
@@ -265,17 +268,7 @@ export default function CampaignEnvironment() {
                   <div className="w-6 h-6 sm:w-6 sm:h-6 rounded-full flex items-center justify-center bg-white/10 text-white">
                     {claimed ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <Play className="w-4 h-4" />}
                   </div>
-                  <a
-                    href={quest.link}
-                    onClick={(e) => {
-                      e.preventDefault();
-                    }}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={`text-sm sm:text-base font-medium ${claimed ? "opacity-60 pointer-events-none" : "underline hover:opacity-90"}`}
-                  >
-                    {quest.quest}
-                  </a>
+                  <span className="text-sm sm:text-base font-medium">{quest.quest}</span>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
                   {failed && (
