@@ -118,17 +118,6 @@ export default function QuestEnvironment() {
 
   const claimReward = async (miniQuest: Quest) => {
     try {
-      // const quest = quests[index];
-
-      // if (quest.status === "notStarted") {
-      //   // Open quest link
-      //   window.open(quest.link, "_blank");
-      //   setQuests(prev => prev.map((t, i) => i === index ? { ...t, status: "inProgress" } : t));
-      // } else if (quest.status === "inProgress") {
-      //   // Claim reward
-      //   setQuests(prev => prev.map((t, i) => i === index ? { ...t, status: "completed" } : t));
-      //   setTotalXP(prev => prev + parseInt(quest.reward));
-      // }
 
       if (!getStoredAccessToken()) {
         toast({ title: "Error", description: "You must be logged in to claim rewards.", variant: "destructive" });
@@ -149,7 +138,7 @@ export default function QuestEnvironment() {
           if (!user?.socialProfiles.x.connected) {
             throw new Error("x not connected yet, go to profile to connect.");
           }
-          const { success } = await apiRequestV2("POST", "/api/check-x", { id, tag: miniQuest.tag, questId: miniQuest._id });
+          const { success } = await apiRequestV2("POST", "/api/check-x", { id, tag: miniQuest.tag, questId: miniQuest._id, page: "quest" });
           if (!success) {
             // alert(`Kindly ${miniQuest.tag !== "follow" ? miniQuest.tag + " the post" : "follow the account"}`);
             throw new Error(`Kindly ${miniQuest.tag !== "follow" ? miniQuest.tag + " the post" : "follow the account"}`);

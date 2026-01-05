@@ -114,11 +114,11 @@ export default function CampaignEnvironment() {
       try {
         const id = getId(quest.link);
         if (["like", "follow", "comment", "repost"].includes(quest.tag)) {
-          if (!user?.socialProfiles.x.connected) {
-            throw new Error("x not connected yet, go to profile to connect.");
-            return;
-          }
-          const { success } = await apiRequestV2("POST", "/api/check-x", { id, tag: quest.tag, questId: quest._id });
+          // if (!user?.socialProfiles.x.connected) {
+          //   throw new Error("x not connected yet, go to profile to connect.");
+          // }
+          console.log({ii: quest._id})
+          const { success } = await apiRequestV2("POST", "/api/check-x", { id, tag: quest.tag, questId: quest._id, page: "campaign" });
           if (!success) {
             // alert(`Kindly ${quest.tag !== "follow" ? quest.tag + " the post" : "follow the account"}`);
             throw new Error(`Kindly ${quest.tag !== "follow" ? quest.tag + " the post" : "follow the account"}`);
@@ -127,14 +127,12 @@ export default function CampaignEnvironment() {
           if (!user?.socialProfiles.discord.connected) {
             // toast({ title: "Error", description: "discord not connected yet, go to profile to connect", variant: "destructive" });
             throw new Error("discord not connected yet, go to profile to connect");
-            return;
           }
 
           const { success } = await apiRequestV2("POST", "/api/check-discord", { channelId: id, tag: quest.tag });
           if (!success) {
             // toast({ title: "Error", description: `Kindly ${quest.tag} the discord channel`, variant: "destructive"});
             throw new Error(`Kindly ${quest.tag} the discord channel`);
-            return;
           }
         }
 
