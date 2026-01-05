@@ -25,26 +25,26 @@ type Entry = {
 };
 
 const MOCK_LEADERBOARD: Entry[] = [
-  { id: "1", username: "Rchris", xp: 1500, level: 10, questsCompleted: 12, campaignsCompleted: 30 },
-  { id: "2", username: "Nuel", xp: 1200, level: 8, questsCompleted: 8, campaignsCompleted: 25 },
-  { id: "3", username: "Unknown", xp: 900, level: 7, questsCompleted: 5, campaignsCompleted: 20 },
-  { id: "4", username: "Beardless", xp: 800, level: 6, questsCompleted: 4, campaignsCompleted: 15 },
-  { id: "5", username: "Promise", xp: 700, level: 5, questsCompleted: 3, campaignsCompleted: 10 },
-  { id: "6", username: "Orion", xp: 600, level: 5, questsCompleted: 3, campaignsCompleted: 9 },
-  { id: "7", username: "Shebah", xp: 500, level: 4, questsCompleted: 2, campaignsCompleted: 8 },
-  { id: "8", username: "David", xp: 400, level: 3, questsCompleted: 1, campaignsCompleted: 7 },
-  { id: "9", username: "Omotola", xp: 300, level: 2, questsCompleted: 1, campaignsCompleted: 5 },
-  { id: "10", username: "Fiyin", xp: 200, level: 1, questsCompleted: 0, campaignsCompleted: 3 },
-  { id: "11", username: "Chinedu", xp: 180, level: 1, questsCompleted: 0, campaignsCompleted: 2 },
-  { id: "12", username: "Funke", xp: 170, level: 1, questsCompleted: 0, campaignsCompleted: 2 },
-  { id: "13", username: "Tunde", xp: 160, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
-  { id: "14", username: "Ngozi", xp: 150, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
-  { id: "15", username: "Adeola", xp: 140, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
-  { id: "16", username: "Ifeanyi", xp: 130, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
-  { id: "17", username: "Aisha", xp: 120, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
-  { id: "18", username: "Segun", xp: 110, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
-  { id: "19", username: "Bolaji", xp: 100, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
-  { id: "20", username: "Kemi", xp: 90, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
+  { _id: "1", username: "Rchris", xp: 1500, level: 10, questsCompleted: 12, campaignsCompleted: 30 },
+  { _id: "2", username: "Nuel", xp: 1200, level: 8, questsCompleted: 8, campaignsCompleted: 25 },
+  { _id: "3", username: "Unknown", xp: 900, level: 7, questsCompleted: 5, campaignsCompleted: 20 },
+  { _id: "4", username: "Beardless", xp: 800, level: 6, questsCompleted: 4, campaignsCompleted: 15 },
+  { _id: "5", username: "Promise", xp: 700, level: 5, questsCompleted: 3, campaignsCompleted: 10 },
+  { _id: "6", username: "Orion", xp: 600, level: 5, questsCompleted: 3, campaignsCompleted: 9 },
+  { _id: "7", username: "Shebah", xp: 500, level: 4, questsCompleted: 2, campaignsCompleted: 8 },
+  { _id: "8", username: "David", xp: 400, level: 3, questsCompleted: 1, campaignsCompleted: 7 },
+  { _id: "9", username: "Omotola", xp: 300, level: 2, questsCompleted: 1, campaignsCompleted: 5 },
+  { _id: "10", username: "Fiyin", xp: 200, level: 1, questsCompleted: 0, campaignsCompleted: 3 },
+  { _id: "11", username: "Chinedu", xp: 180, level: 1, questsCompleted: 0, campaignsCompleted: 2 },
+  { _id: "12", username: "Funke", xp: 170, level: 1, questsCompleted: 0, campaignsCompleted: 2 },
+  { _id: "13", username: "Tunde", xp: 160, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
+  { _id: "14", username: "Ngozi", xp: 150, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
+  { _id: "15", username: "Adeola", xp: 140, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
+  { _id: "16", username: "Ifeanyi", xp: 130, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
+  { _id: "17", username: "Aisha", xp: 120, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
+  { _id: "18", username: "Segun", xp: 110, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
+  { _id: "19", username: "Bolaji", xp: 100, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
+  { _id: "20", username: "Kemi", xp: 90, level: 1, questsCompleted: 0, campaignsCompleted: 1 },
 ];
 
 export default function Leaderboard() {
@@ -63,6 +63,7 @@ export default function Leaderboard() {
       try {
         const { leaderboardInfo: { leaderboardByXp } } = await apiRequestV2("GET", "/api/leaderboard");
         setList(leaderboardByXp || MOCK_LEADERBOARD);
+        setCurrentUserId(user?._id ?? null);
       } catch (err: any) {
         setError(err.message || "Failed to load leaderboard");
       } finally {
@@ -74,7 +75,6 @@ export default function Leaderboard() {
 
   /* ------------------- CURRENT USER FLOAT/STICK LOGIC ------------------- */
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);// Logged-in user ID
-  setCurrentUserId(user?._id ?? null);
   const [cardState, setCardState] = useState<"floatingBottom" | "normal" | "stickyTop">("normal");
 
   useEffect(() => {
@@ -202,11 +202,10 @@ export default function Leaderboard() {
                     style={{ animationDelay: bounceDelay }}
                   >
                     {/* Avatar */}
-                    {/* <Avatar className="w-24 h-24 -translate-y-6 ring-2 ring-white/15"> */}
                     <Avatar className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 -translate-y-4 sm:-translate-y-6 ring-2 ring-white/15">
                       <AvatarImage
                         src={
-                          user.profilePic ||
+                          user?.profilePic ||
                           `https://api.dicebear.com/7.x/identicon/png?seed=${encodeURIComponent(
                             name
                           )}`
@@ -332,7 +331,7 @@ export default function Leaderboard() {
             if (idx < 3) return null; // skip podium
 
             const name = entry.display_name || entry.username || "Anonymous";
-            const isCurrentUser = entry.id === currentUserId;
+            const isCurrentUser = entry._id === currentUserId;
             const rank = idx + 1;
 
             const accents = [
@@ -356,7 +355,7 @@ export default function Leaderboard() {
             }
 
             return (
-              <div key={entry.id} className="relative">
+              <div key={entry._id} className="relative">
                 {isCurrentUser && <div ref={topSentinelRef} className="h-px w-full" />}
                 {/* PLACEHOLDER */}
                 {isCurrentUser && (
@@ -414,8 +413,8 @@ export default function Leaderboard() {
 
                       {/* Avatar */}
                       <Avatar className="w-12 h-12">
-                        {entry.avatar ? (
-                          <AvatarImage src={entry.avatar} />
+                        {entry?.profilePic ? (
+                          <AvatarImage src={entry?.profilePic} />
                         ) : (
                           <AvatarFallback className="bg-white/10 text-white">{name.charAt(0)}</AvatarFallback>
                         )}
