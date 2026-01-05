@@ -52,6 +52,7 @@ export default function EditProfile() {
     try {
 
     let updateUser: FormData | Record<string, unknown>;
+    console.log({profileData})
 
     if (profileData.avatar instanceof File) {
       const formData = new FormData();
@@ -72,24 +73,13 @@ export default function EditProfile() {
     // Send update to backend
     await apiRequestV2('PATCH', '/api/user/update', updateUser);
 
-    // Optimistically update local user context immediately
-    // updateUserContext({
-    //   ...user,
-    //   displayName: profileData.displayName,
-    //   avatar: avatarUrl,
-    //   socialProfiles: profileData.socialProfiles,
-    // });
-
-    // Emit session change to backend if needed
-    // await emitSessionChange();
-
     // Show toast and navigate
     toast({ title: "Profile updated", description: "Your profile has been successfully updated." });
     setLocation("/profile");
     window.location.reload();
-  } catch (e) {
+  } catch (e: any) {
     console.error('Profile update error:', e);
-    toast({ title: "Update failed", description: String(e), variant: "destructive" });
+    toast({ title: "Update failed", description: e.message, variant: "destructive" });
   }
 };
 
@@ -100,7 +90,7 @@ export default function EditProfile() {
       toast({ title: "Invalid file", description: "Please select an image file", variant: "destructive" });
       return;
     }
-    
+
     if (file.size > 5 * 1024 * 1024) {
       toast({ title: "File too large", description: "Please select an image under 5MB", variant: "destructive" });
       return;
