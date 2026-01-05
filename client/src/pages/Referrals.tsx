@@ -102,7 +102,7 @@ export default function ReferralsPage() {
     })()
   }, []);
 
-  const referralLink = `${url}/${user ? user.referral.code : "referral-noobmaster"}`;
+  const referralLink = `${url}/ref/${user ? user.referral.code : "referral-noobmaster"}`;
 
   const progressBar = Math.round((parseFloat(trustEarned.toString()) / refReward) * 100);
 
