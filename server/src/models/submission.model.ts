@@ -5,6 +5,23 @@ const submissionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  status: {
+    type: String,
+    enum: ["pending", "retry", "done"],
+    default: "pending"
+  },
+  page: {
+    type: String,
+    required: true
+  },
+  questId: {
+    type: String,
+    required: true
+  },
+  questCompleted: {
+    type: String,
+    required: true
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "user"
@@ -12,5 +29,3 @@ const submissionSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 export const submission = mongoose.model("submissions", submissionSchema);
-
-
