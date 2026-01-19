@@ -42,7 +42,7 @@ interface Campaign {
 //   status: "Active",
 // };
 
-const DEV_CAMPAIGNS: Campaign[] = [
+export const DEV_CAMPAIGNS: Campaign[] = [
   {
     _id: "tasks-card",
     title: "Start Campaign Tasks",

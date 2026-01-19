@@ -20,7 +20,7 @@ export default function Home() {
   loop
   muted
   playsInline
-  className="w-full h-screen object-cover opacity-10 object-center"
+  className="w-full h-screen object-cover opacity-20 object-center"
 />
 
 
@@ -37,7 +37,7 @@ export default function Home() {
     initial={{ y: -50, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     transition={{ duration: 1.8 }}
-    className="font-geist text-2xl sm:text-4xl md:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6"
+    className="font-geist text-2xl sm:text-4xl md:text-3xl lg:text-4xl font-bold mb-2 sm:mb-6"
   >
     The <span className="text-purple-500 font-extrabold">Engagement</span> Engine For The Intuition{" "}
     <span className="block text-purple-500 font-extrabold">Ecosystem</span>
@@ -47,7 +47,7 @@ export default function Home() {
     initial={{ y: 20, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     transition={{ delay: 0.5, duration: 1.8 }}
-    className="font-geist text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 font-bold mb-4 sm:mb-5 max-w-xs sm:max-w-2xl"
+    className="font-geist text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 font-bold mb-8 sm:mb-5 max-w-xs sm:max-w-2xl"
   >
     Build participation. Boost exploration. Reward contributions.
   </motion.p>
@@ -79,13 +79,37 @@ export default function Home() {
   </motion.div>
 
       <div className="flex items-center justify-center space-x-3 sm:space-x-4 mt-3 sm:mt-5 py-3 px-3 sm:py-[14.4px] sm:px-[13.5px] rounded-[90px] border border-white/20">
-        <img src="/x-logo.png" alt="X Logo" className="w-4 h-4 sm:w-6 sm:h-6" />
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          <div className="w-[1px] h-4 sm:h-6 bg-white" />
-          <div className="w-[1px] h-4 sm:h-6 bg-white" />
-        </div>
-        <img src="/discord-logo.png" alt="Discord Logo" className="w-4 h-4 sm:w-6 sm:h-6" />
-      </div>
+  <a
+    href="https://x.com/NexuraXYZ"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="cursor-pointer"
+  >
+    <img
+      src="/x-logo.png"
+      alt="X Logo"
+      className="w-4 h-4 sm:w-6 sm:h-6"
+    />
+  </a>
+
+  <div className="flex items-center space-x-2 sm:space-x-3">
+    <div className="w-[1px] h-4 sm:h-6 bg-white" />
+    <div className="w-[1px] h-4 sm:h-6 bg-white" />
+  </div>
+
+  <a
+    href="https://discord.gg/bADTCtzyb"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="cursor-pointer"
+  >
+    <img
+      src="/discord-logo.png"
+      alt="Discord Logo"
+      className="w-4 h-4 sm:w-6 sm:h-6"
+    />
+  </a>
+</div>
     </div>
   </div>
 
@@ -193,7 +217,7 @@ export default function Home() {
         const x = radius + radius * Math.cos((icon.angle * Math.PI) / 180);
         const y = radius - radius * Math.sin((icon.angle * Math.PI) / 180);
         const isLeftSide = icon.angle === 225 || icon.angle === 135;
-        const labelOffset = isLeftSide ? -70 : 20;
+        const labelOffset = isLeftSide ? -85 : 30;
 
         return (
           <React.Fragment key={index}>
@@ -301,7 +325,7 @@ export default function Home() {
     transition={{ type: "spring", stiffness: 200, damping: 20 }}
   >
     <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full border border-purple-500 flex items-center justify-center mb-6">
-      <img src="/notebook.png" alt="Clear Guidance" className="w-full h-full object-contain" />
+      <img src="/notebook.png" alt="Clear Guidance" className="w-full h-full object-contain -mb-3" />
     </div>
 
     <h3 className="text-lg sm:text-xl font-bold mb-2">Clear Guidance</h3>
@@ -317,7 +341,7 @@ export default function Home() {
     transition={{ type: "spring", stiffness: 200, damping: 20 }}
   >
     <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full border border-purple-500 flex items-center justify-center mb-6">
-      <img src="/engager.png" alt="Real Engagement" className="w-full h-full object-contain" />
+      <img src="/engager.png" alt="Real Engagement" className="w-full h-full object-contain -mb-3" />
     </div>
 
     <h3 className="text-lg sm:text-xl font-bold mb-2">Real Engagement</h3>
@@ -573,11 +597,46 @@ export default function Home() {
     </p>
 
     {/* Social icons */}
-    <div className="flex items-center space-x-4 sm:space-x-6">
-      <img src="/x-logo-icon.png" alt="X" className="w-6 h-6 sm:w-8 sm:h-8 opacity-70 hover:opacity-100 cursor-pointer" />
-      <img src="/discord-logo-icon.png" alt="Discord" className="w-6 h-6 sm:w-8 sm:h-8 opacity-70 hover:opacity-100 cursor-pointer" />
-      <img src="/github-logo.png" alt="GitHub" className="w-6 h-6 sm:w-8 sm:h-8 opacity-70 hover:opacity-100 cursor-pointer" />
-    </div>
+<div className="flex items-center space-x-4 sm:space-x-6">
+  <a
+    href="https://x.com/NexuraXYZ"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="cursor-pointer"
+  >
+    <img
+      src="/x-logo-icon.png"
+      alt="X"
+      className="w-6 h-6 sm:w-8 sm:h-8 opacity-70 hover:opacity-100"
+    />
+  </a>
+
+  <a
+    href="https://discord.gg/bADTCtzyb"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="cursor-pointer"
+  >
+    <img
+      src="/discord-logo-icon.png"
+      alt="Discord"
+      className="w-6 h-6 sm:w-8 sm:h-8 opacity-70 hover:opacity-100"
+    />
+  </a>
+
+  <a
+    href="https://github.com/intuition-box/nexura-app"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="cursor-pointer"
+  >
+    <img
+      src="/github-logo.png"
+      alt="GitHub"
+      className="w-6 h-6 sm:w-8 sm:h-8 opacity-70 hover:opacity-100"
+    />
+  </a>
+</div>
   </div>
 </section>
 </motion.section>
