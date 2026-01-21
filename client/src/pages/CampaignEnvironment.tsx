@@ -352,22 +352,26 @@ export default function CampaignEnvironment() {
   </div>
 
   {isExpanded && isCommentQuest && (
-    <div className="mt-2 sm:mt-3 bg-black/30 border border-white/10 rounded-xl p-3 sm:p-4 space-y-2">
-      <input
-        type="url"
-        placeholder="Paste your comment link here"
-        value={proofLinks[quest._id] || ""}
-        onChange={(e) => setProofLinks({ ...proofLinks, [quest._id]: e.target.value })}
-        className="w-full bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
-      />
-      <button
-        onClick={() => submitCommentProof(quest)}
-        className="w-full bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800 text-white font-semibold py-2.5 rounded-lg transition"
-      >
-        Submit for Review
-      </button>
-    </div>
-  )}
+  <div className="mt-2 sm:mt-3 bg-black/30 border border-white/10 rounded-xl p-3 sm:p-4 space-y-2">
+    <p className="text-xs text-white/70">
+      ⚠️ It may take 10 minutes up to 24 hours to validate your submission.
+    </p>
+    <input
+      type="url"
+      placeholder="Paste your comment link here"
+      value={proofLinks[quest._id] || ""}
+      onChange={(e) => setProofLinks({ ...proofLinks, [quest._id]: e.target.value })}
+      className="w-full bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-purple-500"
+    />
+    <button
+      onClick={() => submitCommentProof(quest)}
+      className="w-full bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800 text-white font-semibold py-2.5 rounded-lg transition"
+    >
+      Submit for Review
+    </button>
+  </div>
+)}
+
 </div>
           );
         })

@@ -23,9 +23,7 @@ export default function Home() {
   />
 </div>
 
-
-
-    {/* Top-left Logo */}
+    {/* Top Left Logo */}
     <img
   src="/nexura-logo.png"
   alt="Nexura Logo"
