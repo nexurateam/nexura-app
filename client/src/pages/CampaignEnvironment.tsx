@@ -104,6 +104,14 @@ export default function CampaignEnvironment() {
     if (!visitedQuests.includes(quest._id)) setVisitedQuests([...visitedQuests, quest._id]);
   };
 
+  const retryQuest = async (quest: Quest) => {
+    window.open(quest.link, "_blank");
+
+    if (!visitedQuests.includes(quest._id)) setVisitedQuests([...visitedQuests, quest._id]);
+
+    await apiRequestV2("POST", "/api/quest/update-submission?questId=" + quest._id);
+  };
+
   // Claim quest
   const getId = (url: string) => {
     return url.split("/").pop(); // return the last item in the array
@@ -272,7 +280,7 @@ export default function CampaignEnvironment() {
                   {failed && (
                     <button
                       onClick={() => {
-                        markQuestAsVisited(quest);
+                        retryQuest(quest);
                       }}
                       className="px-3 py-2 rounded-full bg-red-600 hover:bg-red-700 flex items-center gap-1 text-sm font-semibold"
                     >

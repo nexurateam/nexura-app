@@ -169,6 +169,14 @@ export default function QuestEnvironment() {
     }
   };
 
+  const retryQuest = async (quest: Quest) => {
+    window.open(quest.link, "_blank");
+
+    if (!visitedQuests.includes(quest._id)) setVisitedQuests([...visitedQuests, quest._id]);
+
+    await apiRequestV2("POST", "/api/quest/update-submission?questId=" + quest._id);
+  };
+
   const visitQuest = (quest: Quest) => {
     if (!visitedQuests.includes(quest._id)) setVisitedQuests([...visitedQuests, quest._id]);
     if (quest.link) window.open(quest.link, "_blank");
