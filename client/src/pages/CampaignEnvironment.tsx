@@ -247,10 +247,10 @@ export default function CampaignEnvironment() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
+
   const progressPercentage = quests.length
     ? Math.round((quests.filter(q => q.done).length / quests.length) * 100)
     : 0;
-
 
   return (
 
@@ -268,9 +268,9 @@ export default function CampaignEnvironment() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <p className="text-[0.65rem] sm:text-sm opacity-70 uppercase">Total XP</p>
+              <p className="text-[0.65rem] sm:text-sm opacity-70 uppercase">Total Rewards</p>
               <div className="bg-purple-600/30 border border-purple-500/40 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full flex items-center gap-1 sm:gap-2">
-                <span className="font-bold text-xs sm:text-sm">{reward.xp} XP</span>
+                <span className="font-bold text-xs sm:text-sm">{reward.xp} XP + {reward.trustTokens} Trust</span>
               </div>
             </div>
           </div>
@@ -316,7 +316,7 @@ export default function CampaignEnvironment() {
 
               <Button
                 onClick={claimCampaignReward}
-                disabled={campaignCompleted}
+                disabled={!questsCompleted || campaignCompleted}
                 className={`w-full font-semibold rounded-xl py-3 mt-6 ${!campaignCompleted
                     ? "bg-purple-600 hover:bg-purple-700 text-white"
                     : "bg-gray-600 cursor-not-allowed text-gray-300"
