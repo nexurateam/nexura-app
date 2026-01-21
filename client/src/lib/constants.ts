@@ -1,7 +1,10 @@
 
 export const network = (import.meta as any).env?.VITE_NETWORK;
 
-export const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL;
+// export const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL;
+
+export const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || "https://api-nexura.intuition.box";
+
 
 export const url = (import.meta as any).env?.VITE_CLIENT_URL || "https://nexura-app.vercel.app";
 

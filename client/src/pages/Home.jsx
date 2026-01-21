@@ -359,7 +359,6 @@ export default function Home() {
 </section>
 </motion.section>
 
-
 <motion.section
   initial={{ opacity: 0, y: 100 }}
   whileInView={{ opacity: 1, y: 0 }}
