@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { Address } from "viem";
+import nodemailer from "nodemailer";
 
 declare global {
 	interface GlobalRequest extends Request {
@@ -17,5 +18,12 @@ declare global {
 		filename?: string;
 		folder: string;
 		maxSize?: number;
+	}
+
+	interface MailOptions extends nodemailer.SendMailOptions {
+		template?: string;
+		context?: {
+			[key: string]: any;
+		};
 	}
 }

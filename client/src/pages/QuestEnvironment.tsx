@@ -15,15 +15,16 @@ type Quest = {
   tag: string;
   reward: string;
   link: string;
+  status: string;
 };
 
 const questsInitial: Quest[] = [
-  { done: false, tag: "", _id: "id-like", text: "Like this Nexura tweet", reward: "40 XP", link: "https://x.com/i.status/1997778439366115502" },
-  { done: false, tag: "comment", _id: "id-comment", text: "Comment on this Nexura tweet", reward: "40 XP", link: "https://x.com/i.status/1997778439366115502" },
-  { done: false, tag: "", _id: "id-repost", text: "Repost this Nexura tweet", reward: "40 XP", link: "https://x.com/i.status/1997778439366115502" },
-  { done: false, tag: "", _id: "id-tribe", text: "Support or Oppose the #Tribe Claim on Intuition Portal", reward: "100 XP", link: "https://portal.intuition.systems/explore/triple/0xdce8ebb5bdb2668732d43cce5eca85d6a5119fd1bc92f36dd85998ab48ce7a63?tab=positions" },
-  { done: false, tag: "", _id: "id-tns", text: "Support or Oppose the TNS Claim on Intuition Portal", reward: "140 XP", link: "https://portal.intuition.systems/explore/triple/0xd9c06c57fced2eafcc71a6b46ad9acd58e6b035e7ccc2dc6eebc00f8ba71172f?tab=positions" },
-  { done: false, tag: "", _id: "id-sofia", text: "Support or Oppose the Sofia Claim on Intuition Portal", reward: "140 XP", link: "https://portal.intuition.systems/explore/triple/0x98ba47f4d18ceb7550c6c593ef92835864f0c0e09d6e56108feac8a8a6012038?tab=positions" },
+  { done: false, tag: "", status: "", _id: "id-like", text: "Like this Nexura tweet", reward: "40 XP", link: "https://x.com/i.status/1997778439366115502" },
+  { done: false, tag: "comment", status: "", _id: "id-comment", text: "Comment on this Nexura tweet", reward: "40 XP", link: "https://x.com/i.status/1997778439366115502" },
+  { done: false, tag: "", status: "", _id: "id-repost", text: "Repost this Nexura tweet", reward: "40 XP", link: "https://x.com/i.status/1997778439366115502" },
+  { done: false, tag: "", status: "", _id: "id-tribe", text: "Support or Oppose the #Tribe Claim on Intuition Portal", reward: "100 XP", link: "https://portal.intuition.systems/explore/triple/0xdce8ebb5bdb2668732d43cce5eca85d6a5119fd1bc92f36dd85998ab48ce7a63?tab=positions" },
+  { done: false, tag: "", status: "", _id: "id-tns", text: "Support or Oppose the TNS Claim on Intuition Portal", reward: "140 XP", link: "https://portal.intuition.systems/explore/triple/0xd9c06c57fced2eafcc71a6b46ad9acd58e6b035e7ccc2dc6eebc00f8ba71172f?tab=positions" },
+  { done: false, tag: "", status: "", _id: "id-sofia", text: "Support or Oppose the Sofia Claim on Intuition Portal", reward: "140 XP", link: "https://portal.intuition.systems/explore/triple/0x98ba47f4d18ceb7550c6c593ef92835864f0c0e09d6e56108feac8a8a6012038?tab=positions" },
 ];
 
 export default function QuestEnvironment() {
@@ -31,7 +32,7 @@ export default function QuestEnvironment() {
   const [totalXP, setTotalXP] = useState(0);
   const { user } = useAuth();
   const [expandedQuestId, setExpandedQuestId] = useState<string | null>(null);
-const [proofLinks, setProofLinks] = useState<Record<string, string>>({});
+  const [proofLinks, setProofLinks] = useState<Record<string, string>>({});
 
 
   const userId = user?._id || "";
@@ -47,24 +48,23 @@ const [proofLinks, setProofLinks] = useState<Record<string, string>>({});
   const [claimedQuests, setClaimedQuests] = useState<string[]>(() => {
     return JSON.parse(localStorage.getItem('nexura:quest:claimed') || '[]')[userId] || [];
   });
+  const [pendingQuests, setPendingQuests] = useState<string[]>(() => {
+    const stored = JSON.parse(localStorage.getItem("nexura:quest:pending") || "{}");
+    return stored[userId] || [];
+  });
   const [questCompleted, setQuestCompleted] = useState<boolean>(() => {
-    try { return Boolean(JSON.parse(localStorage.getItem('nexura:quest:completed') || "")[userId]); } catch (error) { return false }
+    try { return Boolean(JSON.parse(localStorage.getItem('nexura:quest:completed') || "{}")[userId]); } catch (error) { return false }
   });
   const [failedQuests, setFailedQuests] = useState<string[]>([]);
   const completedQuestsCount = miniQuests.filter(
-  (q) => q.done || claimedQuests.includes(q._id)
-).length;
-const [proofStatus, setProofStatus] = useState<
-  Record<string, "idle" | "pending" | "approved">
->({});
-const [pendingTasks, setPendingTasks] = useState<string[]>([]);
-
+    (q) => q.done || claimedQuests.includes(q._id)
+  ).length;
 
   const progressPercentage = miniQuests.length
     ? Math.round((completedQuestsCount / miniQuests.length) * 100)
     : 0;
-    
-    
+
+
   const { questId } = useParams();
   const { toast } = useToast();
 
@@ -90,17 +90,6 @@ const [pendingTasks, setPendingTasks] = useState<string[]>([]);
   }, []);
 
   useEffect(() => {
-  setProofStatus(prev => {
-    const next = { ...prev };
-    miniQuests.forEach(q => {
-      if (!next[q._id]) next[q._id] = "idle";
-    });
-    return next;
-  });
-}, [miniQuests]);
-
-
-  useEffect(() => {
     const value: Record<string, string[]> = {};
     value[userId] = visitedQuests;
 
@@ -109,18 +98,24 @@ const [pendingTasks, setPendingTasks] = useState<string[]>([]);
   useEffect(() => {
     const value: Record<string, string[]> = {};
     value[userId] = claimedQuests;
-    
+
     localStorage.setItem('nexura:quest:claimed', JSON.stringify(value))
   }, [claimedQuests]);
   useEffect(() => {
     const value: Record<string, boolean> = {};
     value[userId] = questCompleted;
-    
+
     localStorage.setItem('nexura:quest:completed', JSON.stringify(value))
   }, [questCompleted]);
 
+  useEffect(() => {
+    const pending: any = JSON.parse(localStorage.getItem("nexura:quest:pending") || "{}");
+    pending[userId] = pendingQuests;
+    localStorage.setItem("nexura:quest:pending", JSON.stringify(pending));
+  }, [pendingQuests]);
+
   const miniQuestsCompleted = miniQuests.filter((m) => m.done === true).length === miniQuests.length;
-  
+
   const claimQuestReward = async () => {
     try {
       await apiRequestV2("POST", `/api/quest/claim-quest?id=${questId}`);
@@ -139,45 +134,42 @@ const [pendingTasks, setPendingTasks] = useState<string[]>([]);
 
   const claimReward = async (miniQuest: Quest) => {
     try {
-      
+
       if (!getStoredAccessToken()) {
         toast({ title: "Error", description: "You must be logged in to claim rewards.", variant: "destructive" });
         return;
       }
-      
+
       if (claimedQuests.includes(miniQuest._id)) {
         toast({ title: "Already Claimed", description: "Task already completed", variant: "destructive" });
         return;
       }
 
-if (
-  miniQuest.tag === "comment" &&
-  proofStatus[miniQuest._id] !== "approved"
-) {
-  toast({
-    title: "Pending verification",
-    description: "Wait for admin approval.",
-    variant: "destructive",
-  });
-  return;
-}
+      if (miniQuest.tag === "comment") {
+        toast({
+          title: "Manual verification required",
+          description: "Submit proof instead.",
+          variant: "destructive",
+        });
+        return;
+      }
 
 
-      
       const id = getId(miniQuest.link);
       // const isCommentQuest = quest.tag === "comment";
-      
+
       try {
-        if (["like", "follow", "repost"].includes(miniQuest.tag)) {
-          if (!user?.socialProfiles.x.connected) {
-            throw new Error("x not connected yet, go to profile to connect.");
-          }
-          const { success } = await apiRequestV2("POST", "/api/check-x", { id, tag: miniQuest.tag, questId: miniQuest._id, page: "quest" });
-          if (!success) {
-            // alert(`Kindly ${miniQuest.tag !== "follow" ? miniQuest.tag + " the post" : "follow the account"}`);
-            throw new Error(`Kindly ${miniQuest.tag !== "follow" ? miniQuest.tag + " the post" : "follow the account"}`);
-          }
-        } else if (["join", "message"].includes(miniQuest.tag)) {
+        // if (["follow", "repost"].includes(miniQuest.tag)) {
+        //   if (!user?.socialProfiles.x.connected) {
+        //     throw new Error("x not connected yet, go to profile to connect.");
+        //   }
+        //   const { success } = await apiRequestV2("POST", "/api/check-x", { id, tag: miniQuest.tag, questId: miniQuest._id, page: "quest" });
+        //   if (!success) {
+        //     // alert(`Kindly ${miniQuest.tag !== "follow" ? miniQuest.tag + " the post" : "follow the account"}`);
+        //     throw new Error(`Kindly ${miniQuest.tag !== "follow" ? miniQuest.tag + " the post" : "follow the account"}`);
+        //   }
+        // } else 
+        if (["join", "message"].includes(miniQuest.tag)) {
           if (!user?.socialProfiles.discord.connected) {
             // toast({ title: "Error", description: "discord not connected yet, go to profile to connect", variant: "destructive" });
             throw new Error("discord not connected yet, go to profile to connect");
@@ -200,12 +192,11 @@ if (
 
       setClaimedQuests((prev) => [...prev, miniQuest._id]);
 
-setMiniQuests((prev) =>
-  prev.map((q) =>
-    q._id === miniQuest._id ? { ...q, done: true } : q
-  )
-);
-
+      setMiniQuests((prev) =>
+        prev.map((q) =>
+          q._id === miniQuest._id ? { ...q, done: true } : q
+        )
+      );
 
       // window.location.reload();
     } catch (error: any) {
@@ -214,157 +205,143 @@ setMiniQuests((prev) =>
     }
   };
 
+  const retryQuest = async (quest: Quest) => {
+    window.open(quest.link, "_blank");
+
+    if (!visitedQuests.includes(quest._id)) setVisitedQuests([...visitedQuests, quest._id]);
+
+    await apiRequestV2("POST", "/api/quest/update-submission?questId=" + quest._id);
+  };
+
   const visitQuest = (quest: Quest) => {
     if (!visitedQuests.includes(quest._id)) setVisitedQuests([...visitedQuests, quest._id]);
     if (quest.link) window.open(quest.link, "_blank");
   };
 
   const submitCommentProof = async (quest: Quest) => {
-  const link = proofLinks[quest._id];
-  if (!link) {
-    toast({ title: "Missing link", description: "Please paste your comment link.", variant: "destructive" });
-    return;
-  }
+    const link = proofLinks[quest._id];
 
-  try {
-    // 1. Immediately mark as pending locally
-    setPendingTasks(prev => [...prev, quest._id]);
-    setProofStatus(prev => ({ ...prev, [quest._id]: "pending" }));
-    setExpandedQuestId(null);
-
-    // 2. Send to backend
-    await apiRequestV2("POST", "/api/quest/submit-quest", {
-      questId,
-      miniQuestId: quest._id,
-      proof: link,
-      type: "comment",
-    });
-
-    toast({ title: "Submitted", description: "Your proof has been submitted for review." });
-  } catch (err: any) {
-    // 3. Rollback if something fails
-    setPendingTasks(prev => prev.filter(id => id !== quest._id));
-    setProofStatus(prev => ({ ...prev, [quest._id]: "idle" }));
-    toast({ title: "Error", description: err.message, variant: "destructive" });
-  }
-};
-
-
-useEffect(() => {
-  if (!questId) return;
-
-  (async () => {
-    try {
-      const res = await apiRequestV2(
-        "GET",
-        `/api/quest/proof-status?questId=${questId}`
-      );
-
-      // expected shape:
-      // { statusMap: { [miniQuestId]: "idle" | "pending" | "approved" } }
-      setProofStatus(res.statusMap);
-    } catch (err) {
-      console.error(err);
+    if (!link) {
+      toast({
+        title: "Missing link",
+        description: "Please paste your comment link.",
+        variant: "destructive",
+      });
+      return;
     }
-  })();
-}, [questId]);
+
+    try {
+      await apiRequestV2("POST", "/api/quest/submit-quest", {
+        questId,
+        id: quest._id,
+        submissionLink: link,
+        page: "quest",
+        tag: quest.tag,
+      });
+
+      toast({
+        title: "Submitted",
+        description: "Your proof has been submitted for review.",
+      });
+
+      setExpandedQuestId(null);
+      setPendingQuests([...pendingQuests, quest._id]);
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
 
   const renderQuestRow = (quest: Quest, index: number) => {
-  const visited = visitedQuests.includes(quest._id);
-  const claimed = claimedQuests.includes(quest._id);
-  const isCommentQuest = quest.tag === "comment";
-  const isExpanded = expandedQuestId === quest._id;
+    const visited = visitedQuests.includes(quest._id);
+    const claimed = quest.done || claimedQuests.includes(quest._id);
+    const pending = quest.status === "pending" || pendingQuests.includes(quest._id);
+    const isCommentQuest = quest.tag === "comment";
+    const isExpanded = expandedQuestId === quest._id;
 
-  return (
-    <div
-      key={index}
-      className="w-full flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl p-4 transition"
-    >
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <p className="font-medium text-sm md:text-base">{quest.text}</p>
+    return (
+      <div
+        key={index}
+        className="w-full flex flex-col gap-3 bg-white/5 border border-white/10 rounded-xl p-4 transition"
+      >
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <p className="font-medium text-sm md:text-base">{quest.text}</p>
 
-        {!visited && (
-          <button
-            onClick={() => visitQuest(quest)}
-            className="px-5 py-2 rounded-full bg-purple-700 hover:bg-purple-800 text-sm font-semibold"
-          >
-            Start Quest
-          </button>
-        )}
+          {!visited && (
+            <button
+              onClick={() => visitQuest(quest)}
+              className="px-5 py-2 rounded-full bg-purple-700 hover:bg-purple-800 text-sm font-semibold"
+            >
+              Start Task
+            </button>
+          )}
 
-        {visited && !claimed && !isCommentQuest && (
-          <button
-            onClick={() => claimReward(quest)}
-            className="px-5 py-2 rounded-full bg-purple-700 hover:bg-purple-800 text-sm font-semibold"
-          >
-            Claim
-          </button>
-        )}
+          {visited && !claimed && !isCommentQuest && (
+            <button
+              onClick={() => claimReward(quest)}
+              className="px-5 py-2 rounded-full bg-purple-700 hover:bg-purple-800 text-sm font-semibold"
+            >
+              Claim
+            </button>
+          )}
 
-        {visited && isCommentQuest && proofStatus[quest._id] === "idle" && (
-  <button
-    onClick={() => setExpandedQuestId(isExpanded ? null : quest._id)}
-    className="px-5 py-2 rounded-full bg-purple-700 hover:bg-purple-800 text-sm font-semibold"
-  >
-    Submit Proof
-  </button>
-)}
+          {visited && isCommentQuest && !claimed && !pending && (
+            <button
+              onClick={() =>
+                setExpandedQuestId(isExpanded ? null : quest._id)
+              }
+              className="px-5 py-2 rounded-full bg-purple-700 hover:bg-purple-800 text-sm font-semibold"
+            >
+              Submit Proof
+            </button>
+          )}
 
-{visited && isCommentQuest && proofStatus[quest._id] === "pending" && (
-  <span className="px-5 py-2 rounded-full bg-yellow-600/20 text-yellow-400 text-sm font-semibold">
-    Pending
-  </span>
-)}
+          {claimed && !pending && (
+            <span className="text-sm text-green-400 font-semibold">Completed</span>
+          )}
+          {!claimed && pending && (
+            <span className="text-sm text-white font-semibold">Pending</span>
+          )}
 
-{visited && isCommentQuest && proofStatus[quest._id] === "approved" && (
-  <button
-    onClick={() => claimReward(quest)}
-    className="px-5 py-2 rounded-full bg-green-600 hover:bg-green-700 text-sm font-semibold"
-  >
-    Claim
-  </button>
-)}
+          {/* {pending && <button disabled={true} className="text-sm text-white bg-white/10 font-semibold">Pending</button>} */}
+        </div>
 
+        {/* DROPDOWN PROOF INPUT */}
+        {isExpanded && (
+          <div className="mt-3 bg-black/30 border border-white/10 rounded-xl p-4 space-y-2">
+            <p className="text-xs text-white/70">
+              ⚠️ It may take 10 minutes to 24 hours to validate your submission.
+            </p>
+            <input
+              type="url"
+              placeholder="Paste your comment link here"
+              value={proofLinks[quest._id] || ""}
+              onChange={(e) =>
+                setProofLinks({
+                  ...proofLinks,
+                  [quest._id]: e.target.value,
+                })
+              }
+              className="w-full bg-black/40 border border-white/20 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-purple-500"
+            />
 
-        {claimed && (
-          <span className="text-sm text-green-400 font-semibold">
-            Completed
-          </span>
-        )}
-      </div>
-
-      {/* DROPDOWN PROOF INPUT */}
-{isExpanded && (
-  <div className="mt-3 bg-black/30 border border-white/10 rounded-xl p-4 space-y-2">
-    <p className="text-xs text-white/70">
-      ⚠️ It may take 10 minutes up to 24 hours to validate your submission.
-    </p>
-    <input
-      type="url"
-      placeholder="Paste your comment link here"
-      value={proofLinks[quest._id] || ""}
-      onChange={(e) =>
-        setProofLinks({
-          ...proofLinks,
-          [quest._id]: e.target.value,
-        })
-      }
-      className="w-full bg-black/40 border border-white/20 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-purple-500"
-    />
-
-    <button
-      onClick={() => submitCommentProof(quest)}
-      className="w-full bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 
+            <button
+              onClick={() => submitCommentProof(quest)}
+              className="w-full bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 
                  hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800
                  text-white font-semibold py-2.5 rounded-lg transition"
-    >
-      Submit For Review
-    </button>
-  </div>
-)}
-    </div>
-  );
-};
+            >
+              Submit For Review
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0615] text-white relative p-6">

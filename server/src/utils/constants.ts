@@ -1,15 +1,13 @@
 
-type addressType = { [key: string]: `0x${string}` };
-
-export const NexonsAddress: addressType = {
-  lvl1: "0x",
-  lvl2: "0x",
-  lvl3: "0x",
-  lvl4: "0x",
-  lvl5: "0x",
-  lvl6: "0x",
-  lvl7: "0x",
-  lvl8: "0x",
-  lvl9: "0x",
-  lvl10: "0x",
+export const NexonsAddress: Record<string, `0x${string}`> = {
+  "1": "0x40826ddd8eac2028719Faf5E2D4A506E2B27c90F",
+	"2": "0x622eCFc001aE94C9fA8F4d2dFAf8620F9a2F7A95",
+	"3": "0x3b246FCf564Bb6Cd307baBd19Bf319598cd064de",
+	"4": "0xF8dB53d37a246FD27E7746aAa7C8dDCf24ceF8F7",
+	"5": "0xfddeecbf2cc6F3EEE73f6B81aF56730D482E4978",
+	"6": "0xCBF7e2Fcef3E58631170712227283b418E0869e2",
+	"7": "0x76772a1Aef435358C255c3Fc2DF49E1c1E3f38B5",
+	"8": "0xffC95e1Ef2E20489AA6574C1F7cb6267D11D4C35",
+	"9": "0x43Db0834e3C38F611cA8AA15277955Ff0A93C04C",
+	"10": "0x4518442FbA0A15E4eA8dF274Cf8C59Aa39D5680C",
 };

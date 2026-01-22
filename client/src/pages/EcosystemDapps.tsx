@@ -70,17 +70,17 @@ export default function EcosystemDapps() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [dapps, setDapps] = useState<Dapp[]>([]);
 
-  // useEffect(() => {
-  //   (async () => {
-  //     const { ecosystemQuests } = await apiRequestV2("GET", "/api/ecosystem-quests");
-
-  //     setDapps(ecosystemQuests);
-  //   })();
-  // }, []);
-
   useEffect(() => {
-  setDapps(DUMMY_DAPP);
-}, []);
+    (async () => {
+      const { ecosystemQuests } = await apiRequestV2("GET", "/api/ecosystem-quests");
+
+      setDapps(ecosystemQuests);
+    })();
+  }, []);
+
+  // useEffect(() => {
+  //   setDapps(DUMMY_DAPP);
+  // }, []);
 
 
   const categories = ["All", ...Array.from(new Set(dapps.map(d => d.category)))];
@@ -212,17 +212,6 @@ const markVisited = (dapp: Dapp) => {
           </p>
         </div>
 
-                {/* Disclaimer */}
-<div className="max-w-7xl mx-auto px-6 sm:px-4 md:px-6 mt-12 text-xs sm:text-sm text-white/60">
-  <p>
-    <strong>Disclaimer:</strong> All dapps listed on Nexura, except the Intuition Portal, are community-built. 
-    We only display them for discovery and visibility purposes. This does not mean we endorse, control, audit, 
-    or take responsibility for these projects. We do not have control over how these dapps function, how they manage 
-    user data, funds, or any issues you may encounter while using them. Users are advised to do their own research 
-    and exercise caution when interacting with any third-party dapps.
-  </p>
-</div>
-
         <div className="flex flex-wrap gap-2 justify-center">
           {categories.map((category) => (
             <Button
@@ -237,18 +226,29 @@ const markVisited = (dapp: Dapp) => {
           ))}
         </div>
 
+        {/* Disclaimer */}
+        <div className="max-w-7xl mx-auto px-6 sm:px-4 md:px-6 mt-12 text-xs sm:text-sm text-white/60">
+          <p>
+            <strong>Disclaimer:</strong> All dapps listed on Nexura, except the Intuition Portal, are community-built. 
+            We only display them for discovery and visibility purposes. This does not mean we endorse, control, audit, 
+            or take responsibility for these projects. We do not have control over how these dapps function, how they manage 
+            user data, funds, or any issues you may encounter while using them. Users are advised to do their own research 
+            and exercise caution when interacting with any third-party dapps.
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           {filteredDapps.map((dapp, index) => (
             <motion.div
               key={dapp._id}
               initial={{ opacity: 0, y: 40 }}
-animate={{ opacity: 1, y: 0 }}
-transition={{
-  duration: 0.45,
-  ease: "easeOut",
-  delay: index * 0.08
-}}
->
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.45,
+                ease: "easeOut",
+                delay: index * 0.08
+              }}
+            >
               <Card className="h-full flex flex-col overflow-hidden hover:border-primary/50 transition-colors group bg-card/50 backdrop-blur-sm border-white/10">
                 <div className="h-48 overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent z-10" />
@@ -279,12 +279,11 @@ transition={{
                 <CardContent className="mt-auto space-y-4">
 
                   <div className="flex items-center justify-between text-sm">
-  <span className="text-muted-foreground">Reward</span>
-  <span className="font-semibold text-primary">
-    {dapp.reward} XP
-  </span>
-</div>
-
+                    <span className="text-muted-foreground">Reward</span>
+                    <span className="font-semibold text-primary">
+                      {dapp.reward} XP
+                    </span>
+                  </div>
 
                   <div className="flex flex-col gap-3 mt-auto">
                     <a
@@ -300,20 +299,20 @@ transition={{
                     </a>
 
                     <Button
-  size="sm"
-  className={`
-    w-full sm:w-40
-    bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900
-    text-white
-    hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800
-    active:scale-[0.98]
-    transition-all
-  `}
-  disabled={!visitedDapps.includes(dapp._id) || claimedDapps.includes(dapp._id)}
-  onClick={(e) => { e.stopPropagation(); handleClaim(dapp); }}
->
-  {claimedDapps.includes(dapp._id) ? "Claimed" : `Claim ${dapp.reward}`}
-</Button>
+                      size="sm"
+                      className={`
+                        w-full sm:w-40
+                        bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900
+                        text-white
+                        hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800
+                        active:scale-[0.98]
+                        transition-all
+                      `}
+                      disabled={dapp.done || !visitedDapps.includes(dapp._id) || claimedDapps.includes(dapp._id)}
+                      onClick={(e) => { e.stopPropagation(); handleClaim(dapp); }}
+                    >
+                      {dapp.done ?? claimedDapps.includes(dapp._id) ? "Claimed" : `Claim ${dapp.reward}`}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

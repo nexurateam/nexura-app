@@ -118,7 +118,7 @@ export default function Quests() {
     localStorage.setItem('nexura:one-time-quest:claimed', JSON.stringify(value));
   }, [claimedTasks]);
 
-  const allQuests: Quest[] = DUMMY_QUESTS;
+  const allQuests: Quest[] = quests?.weeklyQuests ?? DUMMY_QUESTS;
 
   const activeQuests = allQuests.filter((q) => q.status === "active");
   const upcomingQuests = allQuests.filter((q) => q.status === "upcoming");
@@ -158,12 +158,12 @@ export default function Quests() {
               {quest.sub_title}
             </p>
 
-            {quest.project_name && (
+            {/* {quest.project_name && ( */}
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Project:</span>
-                <span className="text-white">{quest.project_name}</span>
+                <span className="text-white">{quest.project_name ?? "Intuition Ecosystem"}</span>
               </div>
-            )}
+            {/* )} */}
 
             <div className="flex justify-between text-sm items-center">
               <span className="text-gray-500">Reward:</span>
@@ -172,9 +172,9 @@ export default function Quests() {
 
             <Button
               className="w-full bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 
-                         hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800
-                         text-white font-medium rounded-lg mt-2 py-2 flex items-center justify-center space-x-2 
-                         active:scale-[0.98] transition-all"
+                hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800
+                text-white font-medium rounded-lg mt-2 py-2 flex items-center justify-center space-x-2 
+                active:scale-[0.98] transition-all"
               onClick={() => isActive && setLocation(`/quest/${quest._id}`)}
             >
               {isActive ? (

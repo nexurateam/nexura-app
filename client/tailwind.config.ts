@@ -89,7 +89,6 @@ export default {
         },
       },
       fontFamily: {
-        geist: ["Geist", "sans-serif"],
         sans: ["var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
