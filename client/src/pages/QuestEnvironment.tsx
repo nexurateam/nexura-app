@@ -109,9 +109,10 @@ export default function QuestEnvironment() {
   }, [questCompleted]);
 
   useEffect(() => {
-    const pending: any = JSON.parse(localStorage.getItem("nexura:quest:pending") || "{}");
-    pending[userId] = pendingQuests;
-    localStorage.setItem("nexura:quest:pending", JSON.stringify(pending));
+    const value: Record<string, string[]> = {};
+    value[userId] = pendingQuests;
+
+    localStorage.setItem("nexura:quest:pending", JSON.stringify(value));
   }, [pendingQuests]);
 
   const miniQuestsCompleted = miniQuests.filter((m) => m.done === true).length === miniQuests.length;
@@ -300,7 +301,7 @@ export default function QuestEnvironment() {
             </button>
           )}
 
-          {claimed && !pending && (
+          {claimed && (
             <span className="text-sm text-green-400 font-semibold">Completed</span>
           )}
           {!claimed && pending && (
