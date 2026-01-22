@@ -106,7 +106,7 @@ export default function CampaignEnvironment() {
       localStorage.setItem('nexura:campaign:visited', JSON.stringify(value))
     }
 
-  }, [visitedQuests, userId]);
+  }, [visitedQuests]);
 
   useEffect(() => {
     const value: Record<string, string[]> = {};
@@ -116,7 +116,7 @@ export default function CampaignEnvironment() {
       localStorage.setItem('nexura:campaign:claimed', JSON.stringify(value))
     }
 
-  }, [claimedQuests, userId]);
+  }, [claimedQuests]);
 
   useEffect(() => {
     const value: Record<string, string[]> = {};
@@ -126,7 +126,7 @@ export default function CampaignEnvironment() {
       localStorage.setItem('nexura:campaign:pending', JSON.stringify(value))
     }
 
-  }, [pendingQuests, userId]);
+  }, [pendingQuests]);
 
   // Open quest links
   const markQuestAsVisited = (quest: Quest) => {

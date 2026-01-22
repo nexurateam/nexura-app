@@ -97,7 +97,7 @@ export default function QuestEnvironment() {
       localStorage.setItem('nexura:quest:visited', JSON.stringify(value))
     }
 
-  }, [visitedQuests, userId]);
+  }, [visitedQuests]);
 
   useEffect(() => {
     const value: Record<string, string[]> = {};
@@ -107,7 +107,7 @@ export default function QuestEnvironment() {
       localStorage.setItem('nexura:quest:claimed', JSON.stringify(value))
     }
 
-  }, [claimedQuests, userId]);
+  }, [claimedQuests]);
 
   useEffect(() => {
     const value: Record<string, boolean> = {};
@@ -117,7 +117,7 @@ export default function QuestEnvironment() {
       localStorage.setItem('nexura:quest:completed', JSON.stringify(value))
     }
 
-  }, [questCompleted, userId]);
+  }, [questCompleted]);
 
   useEffect(() => {
     const value: Record<string, string[]> = {};
@@ -127,7 +127,7 @@ export default function QuestEnvironment() {
       localStorage.setItem('nexura:quest:pending', JSON.stringify(value))
     }
 
-  }, [pendingQuests, userId]);
+  }, [pendingQuests]);
 
   const miniQuestsCompleted = miniQuests.filter((m) => m.done === true).length === miniQuests.length;
 
