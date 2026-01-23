@@ -286,7 +286,7 @@ export default function QuestEnvironment() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <p className="font-medium text-sm md:text-base">{quest.text}</p>
 
-          {!visited && (
+          {!visited && !claimed && (
             <button
               onClick={() => visitQuest(quest)}
               className="px-5 py-2 rounded-full bg-purple-700 hover:bg-purple-800 text-sm font-semibold"
