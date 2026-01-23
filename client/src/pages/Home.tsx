@@ -339,7 +339,6 @@ export default function Home() {
 <section className="text-white py-20 lg:py-28 px-4 lg:px-6 relative overflow-hidden">
   <div className="relative z-10 max-w-7xl mx-auto">
 
-    {/* Mobile image: shown only on <lg */}
     <img
       src="/built-for-section.png"
       alt="Built For Mobile"
