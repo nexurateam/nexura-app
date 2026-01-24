@@ -68,7 +68,7 @@ export const performIntuitionOnchainAction = async ({
 			return;
 		case "allow-ref-reward":
 			await walletClient.writeContract({
-				address: network === "mainnet" ? "0x" : "0x55F8DbC90946976A234103ed7B7E6e3CeC1A9Af3",
+				address: network === "mainnet" ? "0xa13442fA08Cf107580098d3D1eD858450eeeEeEa" : "0x55F8DbC90946976A234103ed7B7E6e3CeC1A9Af3",
 				abi: parseAbi([
 					"function AllowReferralRewardClaim(string memory userId)",
 				]),
