@@ -82,7 +82,6 @@ export async function apiRequestV2(
     body: isFormData ? data : data ? JSON.stringify(data) : undefined,
   });
 
-  console.log({res});
   await throwIfResNotOk(res);
   return res.json();
 }
