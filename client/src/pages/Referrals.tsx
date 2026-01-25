@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Progress } from "../components/ui/progress";
 import { useAuth } from "../lib/auth";
+import { useToast } from "../hooks/use-toast";
 import { url } from "../lib/constants";
 import { claimReferralReward } from "../lib/performOnchainAction";
 import { InviteIcon, RegisterIcon, EarnIcon, UsersIcon, ActiveIcon, TrustIcon } from "../svgs/icons";
@@ -28,6 +29,7 @@ export default function ReferralsPage() {
   const [activeUsers, setActiveUsers] = useState(0);
   const [trustEarned, setTrustEarned] = useState<string | number>("0");
   const { user } = useAuth();
+  const { toast } = useToast();
   const [referralData, setReferralData] = useState<Referral[]>([]);
 
   useEffect(() => {
