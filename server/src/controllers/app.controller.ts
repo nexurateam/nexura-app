@@ -26,7 +26,6 @@ import {
 	campaignQuestCompleted,
 	miniQuestCompleted,
 } from "@/models/questsCompleted.models";
-import { bannedUser } from "@/models/bannedUser.model";
 
 export const home = async (req: GlobalRequest, res: GlobalResponse) => {
 	res.send("hi!");
@@ -37,12 +36,6 @@ export const updateUser = async (req: GlobalRequest, res: GlobalResponse) => {
     const profilePicBuffer = req.file?.buffer;
 
     const { username }: { username: string } = req.body;
-
-    const userBanned = await bannedUser.findOne({ userId: req.id });
-    if (userBanned) {
-      res.status(BAD_REQUEST).json({ error: "user is banned" });
-      return;
-    }
 
     const userToUpdate = await user.findById(req.id);
     if (!userToUpdate) {
@@ -85,12 +78,6 @@ export const updateSubmission = async (req: GlobalRequest, res: GlobalResponse) 
   try {
     const userId = req.id;
     const { miniQuestId, submissionLink }: { miniQuestId: string; submissionLink: string; } = req.body;
-
-    const userBanned = await bannedUser.findOne({ userId });
-    if (userBanned) {
-      res.status(BAD_REQUEST).json({ error: "user is banned" });
-      return;
-    }
 
     if (!submissionLink || !miniQuestId) {
       res.status(BAD_REQUEST).json({ error: "send the required details" });
@@ -209,12 +196,6 @@ export const updateBadge = async (req: GlobalRequest, res: GlobalResponse) => {
     const { level }: { level: number } = req.body
     const userToUpdate = await user.findById(req.id);
 
-    const userBanned = await bannedUser.findOne({ userId: req.id });
-    if (userBanned) {
-      res.status(BAD_REQUEST).json({ error: "user is banned" });
-      return;
-    }
-
     if (isNaN(level)) {
       res.status(BAD_REQUEST).json({ error: "send level as a number" });
       return;
@@ -244,12 +225,6 @@ export const updateBadge = async (req: GlobalRequest, res: GlobalResponse) => {
 export const claimReferreralReward = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
     const userId = req.id!;
-    
-    const userBanned = await bannedUser.findOne({ userId });
-    if (userBanned) {
-      res.status(BAD_REQUEST).json({ error: "user is banned" });
-      return;
-    }
 
     const referrer = await user.findById(userId);
     if (!referrer) {
@@ -593,12 +568,6 @@ export const updateX = async (req: GlobalRequest, res: GlobalResponse) => {
       return
     }
 
-    const userBanned = await bannedUser.findOne({ userId: id });
-    if (userBanned) {
-      res.status(BAD_REQUEST).json({ error: "user is banned" });
-      return;
-    }
-
     const userToUpdate = await user.findById(id);
     if (!userToUpdate) {
       res.status(BAD_REQUEST).json({ error: "invalid user id" });
@@ -662,12 +631,6 @@ export const updateDiscord = async (req: GlobalRequest, res: GlobalResponse) => 
   try {
     const { id } = req;
     const { discord_id, username } = req.query as { discord_id: string; username: string };
-
-    const userBanned = await bannedUser.findOne({ userId: id });
-    if (userBanned) {
-      res.status(BAD_REQUEST).json({ error: "user is banned" });
-      return;
-    }
 
     if (!discord_id || !username) {
       res.status(BAD_REQUEST).json({ error: "authorization was not successful" });
@@ -742,12 +705,6 @@ export const saveCv = async (req: GlobalRequest, res: GlobalResponse) => {
 export const checkDiscordTask = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
     const { guildId, tag } = req.body;
-
-    const userBanned = await bannedUser.findOne({ userId: req.id });
-    if (userBanned) {
-      res.status(BAD_REQUEST).json({ error: "user is banned" });
-      return;
-    }
 
     const userToCheck = await user.findById(req.id);
     if (!userToCheck) {

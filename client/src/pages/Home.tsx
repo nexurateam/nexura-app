@@ -1,6 +1,7 @@
 import AnimatedBackground from "../components/AnimatedBackground"
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
+import React from "react";
 
 export default function Home() {
   return (
