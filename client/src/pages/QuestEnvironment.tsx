@@ -245,7 +245,7 @@ export default function QuestEnvironment() {
 
     try {
       if (!user?.socialProfiles.x.connected) {
-        throw new Error("x not connected yet, go to profile to connect.");
+        throw new Error("X not connected yet, go to profile to connect.");
       }
 
       await apiRequestV2("POST", "/api/quest/submit-quest", {
