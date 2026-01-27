@@ -269,7 +269,7 @@ export const validatePortalTask =  async (req: GlobalRequest, res: GlobalRespons
         triple(term_id: $id) {
           positions (where:  {
             shares:  {
-              _gte: 2000000000000000000
+              _gte: 20000000000000000
             }
             account_id:  {
               _eq: $address
@@ -281,7 +281,7 @@ export const validatePortalTask =  async (req: GlobalRequest, res: GlobalRespons
 
           counter_positions (where:  {
             shares:  {
-              _gte: 2000000000000000000
+              _gte: 20000000000000000
             }
             account_id:  {
               _eq: $address
