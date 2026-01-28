@@ -227,8 +227,8 @@ export default function CampaignEnvironment() {
               throw new Error(`Kindly ${quest.tag} the discord channel`);
             }
           } else if (quest.tag === "portal") {
-              await apiRequestV2("POST", "/api/quest/check-portal-task", { termId: id });
-            }
+            await apiRequestV2("POST", "/api/quest/check-portal-task", { termId: id, id: quest._id, questId: campaignId, page: "campaign" });
+          }
         }
       } catch (error: any) {
         console.error(error);

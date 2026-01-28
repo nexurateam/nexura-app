@@ -167,7 +167,7 @@ export default function QuestEnvironment() {
             throw new Error(`Kindly ${miniQuest.tag} the discord channel`);
           }
         } else if (miniQuest.tag === "portal") {
-          await apiRequestV2("POST", "/api/quest/check-portal-task", { termId: id });
+          await apiRequestV2("POST", "/api/quest/check-portal-task", { termId: id, id: miniQuest._id, questId, page: "quest" });
         }
       } catch (error: any) {
         console.error(error);
