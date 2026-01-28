@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { CheckCircle2, Play, RotateCcw } from "lucide-react";
@@ -32,6 +32,7 @@ const campaignQuestsInitial: Quest[] = [
 
 export default function CampaignEnvironment() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
   const userId = user?._id || "";
 
@@ -48,6 +49,7 @@ export default function CampaignEnvironment() {
   const [pendingQuests, setPendingQuests] = useState<string[]>([]);
   const [failedQuests, setFailedQuests] = useState<string[]>([]);
   const [campaignCompleted, setCampaignCompleted] = useState<boolean>(false);
+  const [projectCoverImage, setProjectCoverImage] = useState<string>("");
 
   const [description, setDescription] = useState("");
   const [title, setTitle] = useState("");
@@ -67,6 +69,12 @@ export default function CampaignEnvironment() {
     (async () => {
       const res = await apiRequestV2("GET", `/api/campaign/quests?id=${campaignId}`);
 
+      if (!res.joined) {
+        setLocation("/campaigns");
+        toast({ title: "Error", description: "kindly join campaign to proceed", variant: "destructive" });
+        return;
+      }
+
       // Ensure every quest has a tag to prevent undefined errors
       const safeQuests = (res.campaignQuests || []).map((q: any) => ({
         _id: q._id,
@@ -79,6 +87,7 @@ export default function CampaignEnvironment() {
       }));
 
       setQuests(safeQuests);
+      setProjectCoverImage(res.projectCoverImage);
       setCampaignCompleted(res.campaignCompleted?.campaignCompleted || false);
       setCampaignAddress(res.address || "");
       setDescription(res.description || "");
@@ -314,8 +323,8 @@ export default function CampaignEnvironment() {
           <div className="grid grid-cols-1 md:grid-cols-2">
             <div className="h-48 md:h-full">
               <img
-                src="/campaign.png"
-                alt="Quest"
+                src={projectCoverImage}
+                alt="campaign cover image"
                 className="w-full h-full object-cover"
               />
             </div>
