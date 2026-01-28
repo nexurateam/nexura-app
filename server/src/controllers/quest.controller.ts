@@ -197,9 +197,11 @@ export const fetchCampaignQuests = async (
 
 			mergedCampaignQuest.done = campaign_questCompleted ? campaign_questCompleted.done : false;
 			mergedCampaignQuest.status = campaign_questCompleted ? campaign_questCompleted.status : "";
-
+			
 			campaignQuests.push(mergedCampaignQuest);
 		}
+
+		const joined = completedCampaign ? true : false;
 
 		if (currentCampaign.noOfQuests === campaignQuestsCompleted.length && !completedCampaign?.questsCompleted) {
 			if (currentCampaign.trustClaimed < 4000) {
@@ -226,7 +228,8 @@ export const fetchCampaignQuests = async (
 			trustClaimed: currentCampaign.trustClaimed,
 			reward: currentCampaign.reward,
 			sub_title: currentCampaign.sub_title,
-			project_name: currentCampaign.project_name,
+			projectCoverImage: currentCampaign.projectCoverImage,
+			joined,
 			campaignNumber,
 		});
 	} catch (error) {
@@ -340,17 +343,17 @@ export const performCampaignQuest = async (
 			campaignQuest: id,
 		});
 		if (!campaignDone) {
-			res.status(NOT_FOUND).json({ error: "mini quest has not been validated" });
+			res.status(NOT_FOUND).json({ error: "campaign quest has not been done" });
 			return
 		}
 
 		if (campaignDone.status !== "pending") {
-			res.status(BAD_REQUEST).json({ error: "quest needs to be marked as pending before it can be caimed" });
+			res.status(BAD_REQUEST).json({ error: "quest needs to be marked as pending before it can be claimed" });
 			return;
 		}
 
 		if (campaignDone.done === true) {
-			res.status(FORBIDDEN).json({ error: "quest already claimed" });
+			res.status(FORBIDDEN).json({ error: "campaign quest already claimed" });
 			return;
 		}
 
