@@ -177,7 +177,7 @@ export const fetchCampaignQuests = async (
 
 		const campaignQuestsCompleted = await campaignQuestCompleted.find({
 			user: userId,
-			campaign: id
+			campaign: id,
 		});
 
 		const completedCampaign = await campaignCompleted.findOne({
@@ -203,7 +203,9 @@ export const fetchCampaignQuests = async (
 
 		const joined = completedCampaign ? true : false;
 
-		if (currentCampaign.noOfQuests === campaignQuestsCompleted.length && !completedCampaign?.questsCompleted) {
+		const campaignQuestsMarkedAsDone = campaignQuestsCompleted.filter((c_q: { status: string }) => c_q.status === "done");
+
+		if (currentCampaign.noOfQuests === campaignQuestsMarkedAsDone.length && !completedCampaign?.questsCompleted) {
 			if (currentCampaign.trustClaimed < 4000) {
 				await performIntuitionOnchainAction({
 					action: "allow-claim",
@@ -469,7 +471,7 @@ export const claimQuest = async (req: GlobalRequest, res: GlobalResponse) => {
 		questUser.xp += questFound.reward;
 
 		const category = questFound.category;
-		if (category != "one-time") {
+		if (category === "one-time") {
 			await questCompleted.create({
 				done: true,
 				quest: id,
@@ -477,8 +479,8 @@ export const claimQuest = async (req: GlobalRequest, res: GlobalResponse) => {
 				category,
 				expires: new Date(new Date().getTime() + 14 * 24 * 60 * 60 * 1000),
 			});
-		} else {
-			const completedMiniQuests = await miniQuestCompleted.find({ user: req.id, quest: id });
+		} else if (category === "weekly") {
+			const completedMiniQuests = await miniQuestCompleted.find({ user: req.id, quest: id, status: "done" });
 			if (questFound.noOfQuests !== completedMiniQuests.length) {
 				res.status(FORBIDDEN).json({ error: "complete all the tasks to complete the quest" });
 				return;
