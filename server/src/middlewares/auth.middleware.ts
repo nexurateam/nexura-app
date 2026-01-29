@@ -105,11 +105,13 @@ export const authenticateAdmin = async (req: GlobalRequest, res: GlobalResponse,
 			return;
 		}
 
-		const { status } = await JWT.verify(authHeader.split(" ")[1]!) as decodedDataType;
+		const { status, id } = await JWT.verify(authHeader.split(" ")[1]!) as decodedDataType;
 		if (status != "admin") {
 			res.status(UNAUTHORIZED).json({ error: "only admins can use this route" });
 			return;
 		}
+
+		req.id = id;
 
 		next();
 	} catch (error: any) {
