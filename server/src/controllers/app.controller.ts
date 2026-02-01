@@ -3,7 +3,7 @@ import { cvModel } from "@/models/cv.models";
 import { firstMessage } from "@/models/msg.model";
 import { referredUsers } from "@/models/referrer.model";
 import { token } from "@/models/tokens.model";
-import { campaignQuest, miniQuest } from "@/models/quests.model";
+import { campaignQuest, miniQuest, quest } from "@/models/quests.model";
 import { user } from "@/models/user.model";
 import { performIntuitionOnchainAction } from "@/utils/account";
 import { BOT_TOKEN, THIRD_PARTY_API_KEY, X_API_BEARER_TOKEN } from "@/utils/env.utils";
@@ -25,11 +25,13 @@ import { submission } from "@/models/submission.model";
 import {
 	campaignQuestCompleted,
 	miniQuestCompleted,
+  questCompleted
 } from "@/models/questsCompleted.models";
 import { bannedUser } from "@/models/bannedUser.model";
 import { GRAPHQL_API_URL } from "@/utils/constants";
 import { GraphQLClient } from "graphql-request";
 import { checksumAddress } from "viem";
+import { campaign, campaignCompleted } from "@/models/campaign.model";
 
 export const home = async (req: GlobalRequest, res: GlobalResponse) => {
 	res.send("hi!");
@@ -349,6 +351,90 @@ export const validatePortalTask =  async (req: GlobalRequest, res: GlobalRespons
     }
   } catch (error) {
     res.status(INTERNAL_SERVER_ERROR).json({ error: "error validating portal task" });
+  }
+}
+
+export const getAnalytics = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    const userFound = await user.find();
+    const totalReferrals = await referredUsers.countDocuments();
+
+    const totalCampaigns = await campaign.countDocuments();
+    const totalQuests = await quest.countDocuments({ category: "weekly" });
+
+    const start = new Date(Date.UTC(2026, 0, 28, 0, 0, 0)); // Jan = 0
+    const totalQuestsCompleted = await questCompleted.countDocuments({
+      done: true,
+      updatedAt: { $gte: start },
+    });
+
+    const totalCampaignsCompletedFound = await campaignCompleted.find();
+
+    const totalCampaignsCompleted = totalCampaignsCompletedFound.filter(c => c.campaignCompleted === true).length;
+
+    const joinRatio = (totalCampaignsCompleted / totalCampaignsCompletedFound.length) * 100;
+
+    const totalTrustDistributed = totalCampaignsCompleted * 16; // fix this later
+
+    const totalUsers = userFound.length;
+
+    const now = new Date();
+
+    const users24h = userFound.filter((u) => {
+
+      const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      return u.createdAt >= last24Hours;
+    }).length;
+
+    const referralRewardsClaimed = userFound.filter((u: { refRewardClaimed?: boolean | null }) => {
+      return u.refRewardClaimed === true;
+    }).length;
+
+    const nexonsMinted = userFound.filter((u: { badges: number[] }) => {
+      return u.badges.length > 0;
+    }).length;
+
+    const totalQuestClaims = totalQuestsCompleted * 3;
+
+    const totalCampaignClaims = totalCampaignsCompleted * 2;
+
+    const totalOnchainClaims = totalQuestClaims + totalCampaignClaims;
+
+    const totalOnchainInteractions = totalOnchainClaims + referralRewardsClaimed + nexonsMinted;
+
+    const users7d = userFound.filter((u) => {
+
+      const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      return u.createdAt >= last7Days;
+    }).length;
+
+    const users30d = userFound.filter((u) => {
+
+      const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      return u.createdAt >= last30Days;
+    }).length;
+
+    const activeUsersWeekly = userFound.filter((u: { updatedAt: Date, status: string }) => {
+
+      const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      return u.status === "Active" && u.updatedAt >= last7Days;
+    }).length;
+
+    const activeUsersMonthly = userFound.filter((u: { updatedAt: Date, status: string }) => {
+
+      const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      return u.status === "Active" && u.updatedAt >= last30Days;
+    }).length;
+
+    res.status(OK).json({ message: "analytics data fetched", analytics: { totalOnchainInteractions, totalOnchainClaims, totalCampaigns, user: { totalUsers, activeUsersWeekly, activeUsersMonthly, users24h, users7d, users30d }, totalReferrals, totalQuests, totalQuestsCompleted, totalCampaignsCompleted, joinRatio, totalTrustDistributed } });
+  } catch (error) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error fetching analytics data" });
   }
 }
 
