@@ -78,7 +78,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
       setStreak((s) => s + 1);
       const today = serverDate || new Date().toISOString().split("T")[0];
       setCheckInDates((prev) => [...prev, today]);
-      toast({ title: "Check-in complete!", description: "+5 XP earned" });
+      toast({ title: "Check-in complete!", description: "+10 XP earned" });
       onCheckInSuccess();
     } catch (error: any) {
       toast({
@@ -261,8 +261,8 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
               : isLoading
                 ? "Checking in..."
                 : alreadyCheckedIn
-                  ? "Checked in today"
-                  : "Check In  (+5 XP)"}
+                  ? "Checked In"
+                  : "Check In  (+10 XP)"}
           </button>
         </div>
       </DialogContent>
