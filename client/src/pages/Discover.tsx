@@ -111,7 +111,7 @@ export default function Discover() {
     { name: "Intuition Portal", logo: intuitionPortal, category: "Portal" },
     // { name: "Intuition Bets", logo: intuitionBets, category: "Prediction Market" },
     { name: "IntuRank", logo: intuRank, category: "DeFi" },
-    { name: "Sofia", logo: "/Sofia2.jpg", category: "Extension" },
+    { name: "Sofia", logo: "/sofia2.jpg", category: "Extension" },
     { name: "Trust Name Service", logo: tnsLogo, category: "Domain" },
     // { name: "TrustSwap", logo: trustSwapLogo, category: "DeFi" },
   ];

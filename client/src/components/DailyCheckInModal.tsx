@@ -54,13 +54,16 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
   const fetchHistory = async () => {
     setIsFetching(true);
     try {
-      const response = await apiRequest("GET", "/api/user/check-in-history");
+      const response = await apiRequest("GET", "/api/user/profile");
       const data = await response.json();
-      setCheckInDates(data.checkInDates || []);
-      setStreak(data.streak || 0);
-      setLongestStreak(data.longestStreak || 0);
-      setAlreadyCheckedIn(data.alreadyCheckedIn || false);
-      setServerDate(data.serverDate || new Date().toISOString().split("T")[0]);
+      const user = data.user;
+      setStreak(user?.streak || 0);
+      setLongestStreak(user?.longestStreak || 0);
+      // openDailySignIn is true when user has NOT signed in today
+      setAlreadyCheckedIn(!data.openDailySignIn);
+      const todayStr = new Date().toISOString().split("T")[0];
+      setServerDate(todayStr);
+      setCheckInDates(user?.checkInDates || []);
     } catch {
       // silently fail
     } finally {
@@ -127,7 +130,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass border-white/10 rounded-3xl max-w-sm p-0 overflow-hidden">
+      <DialogContent className="bg-purple-950/40 backdrop-blur-2xl border border-purple-500/15 shadow-[0_0_40px_rgba(147,51,234,0.15)] rounded-3xl max-w-sm p-0 overflow-hidden">
         {/* Header */}
         <div className="px-5 pt-5 pb-1">
           <DialogHeader>
@@ -144,7 +147,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
           <div className="flex gap-2 mt-3">
             <div className="flex-1 glass rounded-xl px-2 py-2 text-center">
               <div className="flex items-center justify-center gap-1 mb-0.5">
-                <Flame className="w-3 h-3 text-orange-400" />
+                <Flame className="w-3 h-3 text-purple-400" />
                 <span className="text-[10px] text-white/50 font-medium">Current</span>
               </div>
               <span className="text-lg font-bold text-white">{streak}</span>
@@ -209,18 +212,18 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
                   key={dateStr}
                   className={`aspect-square rounded-lg flex items-center justify-center relative text-[11px] font-medium transition-all duration-200
                     ${isFuture ? "text-white/15" : "text-white/60"}
-                    ${isToday && !isCheckedIn ? "ring-1 ring-orange-400/40" : ""}
+                    ${isToday && !isCheckedIn ? "ring-1 ring-purple-400/40" : ""}
                     ${isCheckedIn && !isToday ? "bg-purple-500/15 text-purple-300" : ""}
-                    ${isCheckedIn && isToday ? "bg-orange-500/15" : ""}
+                    ${isCheckedIn && isToday ? "bg-purple-500/15" : ""}
                   `}
                 >
                   {/* Flame for today */}
                   {isToday && (
                     <div className={`absolute inset-0 flex items-center justify-center ${justClaimed ? "animate-bounce" : ""}`}>
-                      <div className="absolute inset-0 bg-gradient-to-b from-orange-500/20 to-transparent rounded-lg" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-purple-500/20 to-transparent rounded-lg" />
                       <Flame
-                        className={`w-4 h-4 drop-shadow-[0_0_8px_rgba(249,115,22,0.6)] transition-all duration-300 ${
-                          alreadyCheckedIn ? "text-orange-400" : "text-orange-400/50 animate-pulse"
+                        className={`w-4 h-4 drop-shadow-[0_0_8px_rgba(147,51,234,0.6)] transition-all duration-300 ${
+                          alreadyCheckedIn ? "text-purple-400" : "text-purple-400/50 animate-pulse"
                         }`}
                       />
                       {alreadyCheckedIn && (
