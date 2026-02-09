@@ -338,13 +338,15 @@ export default function Profile() {
         </Card>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-6 mt-6">
           {[
             { title: "Total XP", value: xpValue, label: "XP earned" },
             { title: "Current Level", value: `${levelName}`, label: "" },
             { title: "Quests Completed", value: userData?.questsCompleted ?? 0, label: "Completed" },
             { title: "Total Rewards", value: `${userData?.trust ?? 0} TRUST`, label: "Earned" },
             { title: "Nexons", value: totalMinted, label: "Minted" },
+            { title: "Current Streak", value: userData?.streak ?? 0, label: "Days" },
+            { title: "Longest Streak", value: userData?.longestStreak ?? 0, label: "Days" },
           ].map((stat) => (
             <Card key={stat.title} className="glass glass-hover rounded-3xl flex flex-col h-full">
               <CardHeader className="pb-3">
