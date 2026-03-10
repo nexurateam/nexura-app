@@ -1,193 +1,130 @@
-import { useCallback, useEffect, useState } from "react";
-import { setSessionToken, emitSessionChange } from "../lib/session";
-import { buildUrl } from "../lib/queryClient";
-import { apiRequestV2 } from "../lib/queryClient";
-import { useToast } from "../hooks/use-toast";
-
-type WalletState = {
-  isConnected: boolean;
-  isConnecting: boolean;
-  address: string | null;
-  chainId?: number | null;
-};
+import { useCallback, useEffect, useRef } from "react";
+import { useAccount, useDisconnect, useSignMessage } from "wagmi";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { emitSessionChange } from "../lib/session";
+import { buildUrl, apiRequestV2 } from "../lib/queryClient";
+import { useToast } from "./use-toast";
 
 const STORAGE_KEY = "nexura:wallet";
 
+// Module-level flags so they survive component unmount/remount cycles
+// (e.g. ProfileBar unmounts SignUpPopup once wagmi reports isConnected)
+let _pendingAuth = false;
+let _pendingPurpose: string | undefined;
+let _authRunning = false;
+
 export function useWallet() {
-  const [state, setState] = useState<WalletState>({ isConnected: false, isConnecting: false, address: null, chainId: null });
-
+  const { address, isConnected, chain } = useAccount();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { signMessageAsync } = useSignMessage();
+  const { openConnectModal } = useConnectModal();
   const { toast } = useToast();
+
+  // After RainbowKit modal connects, run backend auth if pending.
+  // This effect fires in whichever component instance of useWallet
+  // is still mounted (e.g. ProfileBar) even if SignUpPopup was unmounted.
   useEffect(() => {
+    if (!_pendingAuth || !isConnected || !address || _authRunning) return;
+    _pendingAuth = false;
+    _authRunning = true;
+
+    const purpose = _pendingPurpose;
+
+    // Small delay to let wagmi/RainbowKit finish internal state updates
+    const timer = setTimeout(() => {
+      doBackendAuth(address, purpose).finally(() => {
+        _authRunning = false;
+      });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [isConnected, address]);
+
+  async function doBackendAuth(addr: string, purpose?: string) {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.address) {
-          setState({ isConnected: true, isConnecting: false, address: parsed.address, chainId: parsed.chainId ?? null });
+      const message = `Nexura Wallet Login\nAddress: ${addr}\nNonce: ${Date.now()}`;
+
+      let signature: string;
+      try {
+        signature = await signMessageAsync({ message });
+      } catch (signErr: any) {
+        const msg = signErr?.message ?? String(signErr);
+        if (msg.includes("rejected") || msg.includes("denied")) {
+          wagmiDisconnect();
+          return;
         }
-      }
-    } catch (e) {
-      // ignore
-    }
-  }, []);
-
-  const connectWallet = useCallback(async (opts?: { noReload?: boolean, purpose?: string }): Promise<string | null> => {
-    try {
-      console.log("🔌 Starting wallet connection...");
-
-      const eth = (window as any).ethereum;
-      if (!eth || !eth.request) {
-        console.error("No Ethereum provider found");
-        alert("No injected wallet found. Install MetaMask or another Ethereum wallet.");
-        return null;
+        throw signErr;
       }
 
-      setState((s) => ({ ...s, isConnecting: true }));
-      console.log("📝 Requesting accounts...");
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ address: addr, chainId: chain?.id, signedAt: Date.now(), signedMessage: message, signature })
+      );
 
-      const accounts: string[] = await eth.request({ method: "eth_requestAccounts" });
-      const address = (accounts && accounts[0]) || null;
-      if (!address) throw new Error("No account returned from wallet");
-
-      console.log("✅ Account received:", address.substring(0, 10) + "...");
-
-      const chainHex = await eth.request({ method: "eth_chainId" });
-      const chainId = typeof chainHex === "string" ? parseInt(chainHex, 16) : Number(chainHex || 0);
-      console.log("🔗 Chain ID:", chainId);
-
-      let message: string | null = null;
-
-      if (!message) message = `Nexura Wallet Login\nAddress: ${address}\nNonce: ${Date.now()}`;
-
-      let signature: string | null = null;
-      try {
-        console.log("✍️ Requesting signature...");
-        signature = await eth.request({ method: "personal_sign", params: [message, address] });
-        console.log("✅ Signature received");
-      } catch (e) {
-        console.warn("Signature request cancelled or failed", e);
-        setState((s) => ({ ...s, isConnecting: false }));
-        return null;
-      }
-
-      if (!signature) {
-        console.warn("No signature received");
-        setState((s) => ({ ...s, isConnecting: false }));
-        return null;
-      }
-
-      // persist local state
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ address, chainId, signedAt: Date.now(), signedMessage: message, signature })); } catch (e) { /* ignore */ }
-
-      // Update state immediately for better UX
-      setState({ isConnected: true, isConnecting: false, address, chainId });
-      console.log("✅ Wallet connected successfully!");
-
-      // Try backend auth but don't fail if it's not available
-      let shouldReload = !opts?.noReload;
-      try {
-        console.log("🔐 Attempting backend authentication...");
-        if (opts?.purpose === "org-signin") {
-          const checkedData = await apiRequestV2("POST", "/api/hub/check", { address });
-          // console.log("project-hehe", checkedData);
-          if (checkedData.user) {
-            localStorage.setItem("project_profile", JSON.stringify(checkedData.user));
-            localStorage.setItem("nexura:proj-token", checkedData.accessToken);
-            try { emitSessionChange(); } catch (e) { /* ignore */ }
-            console.log("✅ Backend authentication successful");
-          } else {
-            // Backend auth failed but wallet is still connected locally
-            console.warn("⚠️ Backend auth failed, wallet connected locally only");
-          }
+      if (purpose === "org-signin") {
+        const data = await apiRequestV2("POST", "/api/hub/check", { address: addr });
+        if (data.user) {
+          localStorage.setItem("project_profile", JSON.stringify(data.user));
+          localStorage.setItem("nexura:proj-token", data.accessToken);
+          emitSessionChange();
+        }
+      } else {
+        const referrer = localStorage.getItem("ref");
+        const data = await apiRequestV2("POST", "/api/user/sign-in", { address: addr, referrer });
+        if (data.user) {
+          localStorage.setItem("user_profile", JSON.stringify(data.user));
+          localStorage.setItem("nexura:token", data.accessToken);
+          emitSessionChange();
         } else {
-          const referrer = localStorage.getItem("ref");
-
-          const checkedData = await apiRequestV2("POST", "/api/user/sign-in", { address, referrer });
-          console.log("hehe", checkedData);
-          if (checkedData.user) {
-            localStorage.setItem("user_profile", JSON.stringify(checkedData.user));
-            localStorage.setItem("nexura:token", checkedData.accessToken);
-            try { emitSessionChange(); } catch (e) { /* ignore */ }
-            console.log("✅ Backend authentication successful");
-          } else {
-            // Backend auth failed but wallet is still connected locally
-            toast({ title: "Error", description: "error signing in", variant: "destructive" });
-            console.warn("⚠️ Backend auth failed, wallet connected locally only");
-            return null;
-          }
-        }
-      } catch (e: any) {
-        // Backend not available - this is OK on Netlify frontend-only deployment
-        toast({ title: "Error", description: e.message, variant: "destructive" });
-        console.warn("⚠️ Backend verification not available (frontend-only mode)");
-        return null;
-      }
-
-      // Reload page to update UI with connected wallet state
-      if (shouldReload) {
-        console.log("🔄 Reloading page...");
-        try {
-          window.location.reload();
-        } catch (e) {
-          window.location.href = "/discover";
+          toast({ title: "Error", description: "Error signing in", variant: "destructive" });
+          return;
         }
       }
 
-      // subscribe to provider events
-      try {
-        eth.on?.("accountsChanged", async (accounts: string[]) => {
-          if (!accounts || accounts.length === 0) {
-            try { await fetch(buildUrl('/auth/logout'), { method: "POST" }); } catch (e) { /* ignore */ }
-            try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
-            try { emitSessionChange(); } catch (e) { /* ignore */ }
-            try { window.location.reload(); } catch (e) { window.location.href = "/"; }
-          } else {
-            setState((s) => ({ ...s, address: accounts[0] }));
-          }
-        });
-        eth.on?.("chainChanged", (hex: string) => {
-          const newChain = parseInt(hex, 16);
-          setState((s) => ({ ...s, chainId: newChain }));
-        });
-      } catch (e) {
-        // ignore
-      }
-
-      return address;
+      // Force reload to render the authenticated state
+      window.location.reload();
     } catch (e: any) {
-      console.error("connectWallet error", e);
-      setState((s) => ({ ...s, isConnecting: false }));
+      const msg = e?.message ?? String(e);
+      if (msg.includes("rejected") || msg.includes("denied")) return;
+      toast({ title: "Error", description: msg || "Authentication failed", variant: "destructive" });
+    }
+  }
 
-      // Provide user-friendly error messages
-      const errorMsg = e?.message ?? String(e);
-      if (errorMsg.includes("User rejected") || errorMsg.includes("User denied")) {
-        console.log("User cancelled wallet connection");
+  const connectWallet = useCallback(
+    async (opts?: { noReload?: boolean; purpose?: string }): Promise<string | null> => {
+      _pendingPurpose = opts?.purpose;
+
+      if (!isConnected) {
+        _pendingAuth = true;
+        openConnectModal?.();
         return null;
       }
 
-      alert("Failed to connect wallet: " + errorMsg);
-      return null;
-    }
-  }, []);
+      // Already connected — check if backend auth is needed
+      const hasToken = localStorage.getItem("nexura:token");
+      if (hasToken) return address ?? null;
+
+      await doBackendAuth(address!, opts?.purpose);
+      return address ?? null;
+    },
+    [isConnected, address, openConnectModal]
+  );
 
   const disconnect = useCallback(async () => {
-    try { await fetch(buildUrl('/auth/logout'), { method: "POST" }); } catch (e) { /* ignore */ }
-    try { 
-      localStorage.removeItem(STORAGE_KEY);
-      
-      localStorage.removeItem("nexura:token");
-      localStorage.removeItem("user_profile");
-    } catch (e) { /* ignore */ }
-    try { emitSessionChange(); } catch (e) { /* ignore */ }
-    setState({ isConnected: false, isConnecting: false, address: null, chainId: null });
-    try { window.location.reload(); } catch (e) { window.location.href = "/"; }
-  }, []);
+    try { await fetch(buildUrl("/auth/logout"), { method: "POST" }); } catch {}
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem("nexura:token");
+    localStorage.removeItem("user_profile");
+    emitSessionChange();
+    wagmiDisconnect();
+    window.location.reload();
+  }, [wagmiDisconnect]);
 
   return {
-    isConnected: state.isConnected,
-    isConnecting: state.isConnecting,
-    address: state.address,
-    chainId: state.chainId,
+    isConnected,
+    isConnecting: false,
+    address: (address as string) ?? null,
+    chainId: chain?.id ?? null,
     connectWallet,
     disconnect,
     connectors: [] as any[],

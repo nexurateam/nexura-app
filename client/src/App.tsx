@@ -1,7 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
 import { useState, useEffect, useRef } from "react";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "./components/ui/sidebar";
@@ -88,17 +86,17 @@ function Router() {
       <Route path="/x/callback" component={XCallback} />
       <Route path="/campaigns/tasks" component={CampaignEnvironment} />
       <Route path="/quests/tasks-card" component={QuestEnvironment} />
-      {/*<Route path="/analytics" component={Analytics} />*/}
+      <Route path="/analytics" component={Analytics} />
       <Route path="/portal-claims" component={PortalClaims} />
       <Route path="/portal-claims/:id" component={ClaimDetails} />
-      {/*<Route path="/studio" component={NexuraStudio} />*/}
+      <Route path="/studio" component={NexuraStudio} />
       {/* Profile pages */}
       <Route path="/profile" component={Profile} />
       <Route path="/profile/edit" component={EditProfile} />
       <Route path="/achievements" component={Achievements} />
       <Route path="/leaderboard" component={Leaderboard} />
       {/* Developer pages */}
-      {/*<Route path="/projects/create" component={ProjectCreate} />
+      <Route path="/projects/create" component={ProjectCreate} />
       <Route path="/projects/create/create-hub" component={CreateHub} />
       <Route path="/projects/create/signin-to-hub" component={SignInToHub} />
       <Route path="/projects/create/the-hub" component={TheHub} />
@@ -106,8 +104,8 @@ function Router() {
       <Route path="/project/connected-discord" component={ConnectedDiscord} />
       <Route path="/studio-dashboard">
         <StudioDashboard onLogout={handleLogout} />
-      </Route>*/}
-      {/*<Route path="/studio-dashboard/create-new-campaign">
+      </Route>
+      <Route path="/studio-dashboard/create-new-campaign">
         <StudioLayout title="Create Campaign" onLogout={handleLogout}>
           <CreateNewCampaigns />
         </StudioLayout>
@@ -131,12 +129,10 @@ function Router() {
         <StudioLayout title="Hub Profile" onLogout={handleLogout}>
           <HubProfile />
         </StudioLayout>
-      </Route>*/}
-
-      {/*<Route path="/studio/register" component={AdminSignUp} />*/}
-      {/* <Route path="/studio" component={StudioIndex} /> */}
-      {/*<Route path="/project/:projectId/*" component={ProjectDashboard} />
-      <Route path="/project/:projectId/:rest*" component={ProjectDashboard} />*/}
+      </Route>
+      <Route path="/studio/register" component={AdminSignUp} />
+      <Route path="/project/:projectId/*" component={ProjectDashboard} />
+      <Route path="/project/:projectId/:rest*" component={ProjectDashboard} />
       {/* Referral */}
       <Route path="/ref/:referrerCode" component={UserReferred} />
       {/* Fallback to 404 */}
@@ -160,9 +156,8 @@ function App() {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <WalletProvider>
-        <AuthProvider>
+    <WalletProvider>
+      <AuthProvider>
           <TooltipProvider>
             <SidebarProvider defaultOpen={false} style={sidebarStyle as React.CSSProperties}>
               {(() => {
@@ -204,9 +199,8 @@ function App() {
             </SidebarProvider>
             <Toaster />
           </TooltipProvider>
-        </AuthProvider>
-      </WalletProvider>
-    </QueryClientProvider>
+      </AuthProvider>
+    </WalletProvider>
   );
 }
 
