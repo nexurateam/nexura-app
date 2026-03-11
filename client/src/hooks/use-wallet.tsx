@@ -111,12 +111,12 @@ export function useWallet() {
   );
 
   const disconnect = useCallback(async () => {
-    try { await fetch(buildUrl("/auth/logout"), { method: "POST" }); } catch {}
+    try { await fetch(buildUrl("/api/user/logout"), { method: "POST" }); } catch {}
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem("nexura:token");
     localStorage.removeItem("user_profile");
     emitSessionChange();
-    wagmiDisconnect();
+    try { wagmiDisconnect(); } catch {}
     window.location.reload();
   }, [wagmiDisconnect]);
 

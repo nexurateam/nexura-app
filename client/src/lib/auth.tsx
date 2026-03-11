@@ -60,7 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     fetchProfile();
 
-    const unsub = onSessionChange(async () => {
+    const unsub = onSessionChange(async (token) => {
+      if (!token) {
+        setUser(null);
+        return;
+      }
       try {
         const res = await apiRequest("GET", "/api/user/profile");
         if (res.ok) {
@@ -70,14 +74,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (userData && typeof userData === 'object' && !Array.isArray(userData)) {
             setUser(userData);
           }
-          return;
         }
-      } catch (e) {
-        console.warn("[AuthProvider] Failed to fetch profile after session change:", String(e));
+      } catch {
+        // Transient failure — don't clear user to avoid flicker
       }
-      // Do not clear the existing user on transient session-refresh failures.
-      // Keep the current user state to avoid flicker; the app can re-fetch
-      // explicitly if needed.
     });
 
     return () => unsub();
