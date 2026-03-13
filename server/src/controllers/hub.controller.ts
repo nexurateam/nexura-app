@@ -500,7 +500,23 @@ export const saveCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
     }
 
     const { campaignQuests: _cq, isDraft: _d, existingCoverImage: _e, hubCoverImage: _h, nameOfProject: _n, ...updateFields } = req.body;
-    await campaign.findByIdAndUpdate(id, updateFields, { new: true }).lean();
+    const updatedCampaign = await campaign.findByIdAndUpdate(id, updateFields, { new: true });
+
+    // Recalculate status when dates change on a live/scheduled campaign
+    if (updatedCampaign && (updatedCampaign.status === "Active" || updatedCampaign.status === "Scheduled")) {
+      const now = new Date();
+      const startsAt = updatedCampaign.starts_at ? new Date(updatedCampaign.starts_at) : null;
+      const endsAt = updatedCampaign.ends_at ? new Date(updatedCampaign.ends_at) : null;
+
+      if (endsAt && endsAt <= now) {
+        updatedCampaign.status = "Ended";
+      } else if (startsAt && startsAt > now) {
+        updatedCampaign.status = "Scheduled";
+      } else {
+        updatedCampaign.status = "Active";
+      }
+      await updatedCampaign.save();
+    }
 
     // Update quests without destroying existing IDs/submissions
     if (questsToSave !== null) {

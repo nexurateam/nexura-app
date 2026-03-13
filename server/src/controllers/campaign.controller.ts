@@ -298,7 +298,23 @@ export const updateCampaign = async (
 			return;
 		}
 
-		await campaign.findByIdAndUpdate(id, campaignUpdateData);
+		const updated = await campaign.findByIdAndUpdate(id, campaignUpdateData, { new: true });
+
+		// Recalculate status when dates change on a live/scheduled campaign
+		if (updated && (updated.status === "Active" || updated.status === "Scheduled")) {
+			const now = new Date();
+			const startsAt = updated.starts_at ? new Date(updated.starts_at) : null;
+			const endsAt = updated.ends_at ? new Date(updated.ends_at) : null;
+
+			if (endsAt && endsAt <= now) {
+				updated.status = "Ended";
+			} else if (startsAt && startsAt > now) {
+				updated.status = "Scheduled";
+			} else {
+				updated.status = "Active";
+			}
+			await updated.save();
+		}
 
 		res.status(OK).json({ message: "campaign updated!" });
 	} catch (error) {
