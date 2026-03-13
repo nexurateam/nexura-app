@@ -10,6 +10,7 @@ import { Button } from "../../components/ui/button";
 import { projectApiRequest } from "../../lib/projectApi";
 import { payStudioHubFee } from "../../lib/performOnchainAction";
 import { useToast } from "../../hooks/use-toast";
+import { useAccount } from "wagmi";
 import {
   Calendar,
   ImageIcon,
@@ -82,8 +83,10 @@ const [xpRewards, setXpRewards] = useState("200");
 const [publishedCampaign, setPublishedCampaign] = useState<any | null>(null);
 const [paymentTxHash, setPaymentTxHash] = useState("");
 const [paymentLoading, setPaymentLoading] = useState(false);
+const [recoverLoading, setRecoverLoading] = useState(false);
 const [isEditMode, setIsEditMode] = useState(false);
 const [isPublished, setIsPublished] = useState(false);
+const { address: connectedWallet } = useAccount();
 
 // Pre-fill from existing draft when ?edit=<id> is in the URL
 const parseDateTime = (isoStr: string) => {
@@ -1285,6 +1288,31 @@ const isActive =
                 <>Pay 1000 $TRUST</>
               )}
             </button>
+            {connectedWallet && (
+              <button
+                type="button"
+                disabled={recoverLoading}
+                onClick={async () => {
+                  setRecoverLoading(true);
+                  try {
+                    const res = await projectApiRequest<{ txHash: string }>({
+                      method: "POST",
+                      endpoint: "/hub/recover-payment",
+                      data: { walletAddress: connectedWallet },
+                    });
+                    setPaymentTxHash(res.txHash);
+                    toast({ title: "Payment recovered", description: "Your previous payment was found and restored." });
+                  } catch (err: any) {
+                    toast({ title: "Not found", description: err.message ?? "No payment found for this wallet.", variant: "destructive" });
+                  } finally {
+                    setRecoverLoading(false);
+                  }
+                }}
+                className="w-full mt-2 text-xs text-white/40 hover:text-purple-400 transition text-center disabled:opacity-40"
+              >
+                {recoverLoading ? "Searching on-chain…" : "Already paid? Recover payment →"}
+              </button>
+            )}
           )}
         </div>
 

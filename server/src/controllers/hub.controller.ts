@@ -2,7 +2,7 @@ import { OTP } from '@/models/otp.model';
 import { hub, hubAdmin } from '@/models/hub.model';
 import { addHubAdminEmail } from '@/utils/sendMail';
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, CREATED, OK, NO_CONTENT, NOT_FOUND } from '@/utils/status.utils';
-import { CLIENT_URL } from '@/utils/env.utils';
+import { CLIENT_URL, STUDIO_FEE_CONTRACT } from '@/utils/env.utils';
 import { generateOTP, validateHubData, getMissingFields, validateCampaignData, validateCampaignQuestData, validateSaveCampaignData } from '@/utils/utils';
 import logger from '@/config/logger';
 import { submission } from '@/models/submission.model';
@@ -10,6 +10,8 @@ import { miniQuestCompleted, campaignQuestCompleted } from '@/models/questsCompl
 import { campaign } from '@/models/campaign.model';
 import { campaignQuest } from '@/models/quests.model';
 import { uploadImg } from "@/utils/img.utils";
+import { ethers } from "ethers";
+import chain from "@/utils/chain.utils";
 
 export const createHub = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
@@ -92,6 +94,73 @@ export const savePaymentHash = async (req: GlobalRequest, res: GlobalResponse) =
   } catch (error) {
     logger.error(error);
     res.status(INTERNAL_SERVER_ERROR).json({ error: "Error saving payment hash" });
+  }
+};
+
+export const recoverPaymentByWallet = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    const { walletAddress } = req.body;
+
+    if (!walletAddress || !ethers.isAddress(walletAddress)) {
+      res.status(BAD_REQUEST).json({ error: "Valid wallet address is required" });
+      return;
+    }
+
+    const feeContract = STUDIO_FEE_CONTRACT?.trim();
+    if (!feeContract) {
+      res.status(INTERNAL_SERVER_ERROR).json({ error: "Studio fee contract not configured" });
+      return;
+    }
+
+    const provider = new ethers.JsonRpcProvider(chain.rpcUrls.default.http[0]);
+    const feeInterface = new ethers.Interface(["event FeePaid(uint256 totalCampaigns)"]);
+
+    // Scan the last 100000 blocks for FeePaid events from this contract
+    const latestBlock = await provider.getBlockNumber();
+    const fromBlock = Math.max(0, latestBlock - 100000);
+
+    const logs = await provider.getLogs({
+      address: feeContract,
+      topics: [ethers.id("FeePaid(uint256)")],
+      fromBlock,
+      toBlock: "latest",
+    });
+
+    // Walk events newest-first to find the most recent payment from this wallet
+    let foundTxHash: string | null = null;
+    for (const log of [...logs].reverse()) {
+      const tx = await provider.getTransaction(log.transactionHash);
+      if (tx && tx.from.toLowerCase() === walletAddress.toLowerCase()) {
+        const receipt = await provider.getTransactionReceipt(log.transactionHash);
+        if (receipt && receipt.status === 1) {
+          // Verify it actually emitted FeePaid
+          const hasEvent = receipt.logs.some(l => {
+            try { return feeInterface.parseLog(l)?.name === "FeePaid"; } catch { return false; }
+          });
+          if (hasEvent) {
+            foundTxHash = log.transactionHash;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!foundTxHash) {
+      res.status(NOT_FOUND).json({ error: "No successful studio fee payment found for this wallet on-chain" });
+      return;
+    }
+
+    // Persist recovered hash
+    if (req.admin.hub) {
+      await hub.findByIdAndUpdate(req.admin.hub, { pendingTxHash: foundTxHash });
+    } else {
+      await hubAdmin.findByIdAndUpdate(req.id, { pendingTxHash: foundTxHash });
+    }
+
+    res.status(OK).json({ txHash: foundTxHash, message: "Payment recovered" });
+  } catch (error: any) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: error?.message || "Error recovering payment" });
   }
 };
 
