@@ -331,11 +331,20 @@ export const checkPayment = async (txHash: string) => {
 	for (const log of receipt.logs) {
 		if (log.address.toLowerCase() !== feeContract.toLowerCase()) continue;
 
-    const parsed = feeInterface.parseLog(log);
+		let parsed;
+		try {
+			parsed = feeInterface.parseLog(log);
+		} catch {
+			continue;
+		}
 
 		if (parsed?.name === "FeePaid") {
 			totalCampaigns = parsed.args.totalCampaigns ?? 0n;
 		}
+	}
+
+	if (totalCampaigns <= 0n) {
+		throw new Error("Studio fee payment could not be verified from the transaction receipt");
 	}
 
 	return Number(totalCampaigns);

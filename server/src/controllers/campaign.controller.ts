@@ -457,6 +457,10 @@ export const fetchHubCampaigns = async (req: GlobalRequest, res: GlobalResponse)
 export const publishCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 	try {
 		const { id } = req.query as { id: string };
+		if (!id) {
+			res.status(BAD_REQUEST).json({ error: "campaign id is required" });
+			return;
+		}
 
     const createdHub = await hub.findById(req.admin.hub);
     if (!createdHub) {
@@ -471,12 +475,12 @@ export const publishCampaign = async (req: GlobalRequest, res: GlobalResponse) =
 		}
 		const campaignNo = await checkPayment(txHash);
 		if (!campaignNo) {
-			res.status(FORBIDDEN).json({ error: "kindly pay the require amount (1000 TRUST) to proceed" });
+			res.status(FORBIDDEN).json({ error: "campaign launch fee payment could not be verified" });
 			return;
     }
 
 		if (createdHub.campaignsCreated >= Number(campaignNo)) {
-			res.status(FORBIDDEN).json({ error: "kindly pay the required amount (1000 TRUST) to proceed" });
+			res.status(FORBIDDEN).json({ error: "this payment hash has already been used to publish a campaign" });
 			return;
 		}
 
@@ -498,9 +502,9 @@ export const publishCampaign = async (req: GlobalRequest, res: GlobalResponse) =
 		await createdHub.save();
 
 		res.status(OK).json({ message: "campaign published" });
-	} catch (error) {
+	} catch (error: any) {
 		logger.error(error);
-		res.status(INTERNAL_SERVER_ERROR).json({ error: "error publishing campaign" });
+		res.status(INTERNAL_SERVER_ERROR).json({ error: error?.message || "error publishing campaign" });
 	}
 };
 
