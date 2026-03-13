@@ -1,5 +1,6 @@
 
-export const network = (import.meta as any).env?.VITE_NETWORK;
+const normalizedNetwork = ((import.meta as any).env?.VITE_NETWORK as string | undefined)?.trim().toLowerCase();
+export const network: "testnet" | "mainnet" = normalizedNetwork === "mainnet" ? "mainnet" : "testnet";
 
 export const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL;
 

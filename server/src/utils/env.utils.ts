@@ -6,10 +6,9 @@ dotenv.config({ quiet: true });
 export const port = process.env.PORT || "5600";
 export const DB_URI = process.env.DB_URI as string;
 export const environment = process.env.ENVIRONMENT as "development" | "production";
-export const network = process.env.NETWORK as "testnet" | "mainnet" | undefined;
-export const STUDIO_FEE_CONTRACT = network === "mainnet"
-  ? undefined
-  : "0x742ed23dD10686C22A5cD459Af96BC1F83e58C7a";
+const normalizedNetwork = process.env.NETWORK?.trim().toLowerCase();
+export const network: "testnet" | "mainnet" = normalizedNetwork === "mainnet" ? "mainnet" : "testnet";
+export const STUDIO_FEE_CONTRACT = "0x742ed23dD10686C22A5cD459Af96BC1F83e58C7a";
 export const JWT_SECRET = process.env.JWT_SECRET as string;
 export const REFRESH_SECRET = process.env.REFRESH_SECRET as string;
 
