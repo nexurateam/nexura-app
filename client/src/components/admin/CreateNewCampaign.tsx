@@ -164,6 +164,24 @@ useEffect(() => {
     } catch { /* ignore – user will fill in manually */ }
   })();
 }, []);
+
+useEffect(() => {
+  (async () => {
+    try {
+      const res = await projectApiRequest<{ hub?: { pendingTxHash?: string | null } }>({
+        method: "GET",
+        endpoint: "/hub/me",
+      });
+
+      const pendingTxHash = res.hub?.pendingTxHash?.trim();
+      if (pendingTxHash) {
+        setPaymentTxHash(pendingTxHash);
+      }
+    } catch {
+      // Ignore hydration failures here; publish flow can still continue in-session.
+    }
+  })();
+}, []);
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "";
   const date = new Date(dateStr);
@@ -1246,6 +1264,11 @@ const isActive =
                 setPaymentLoading(true);
                 try {
                   const hash = await payStudioHubFee();
+                  await projectApiRequest({
+                    method: "PATCH",
+                    endpoint: "/hub/save-payment-hash",
+                    data: { txHash: hash },
+                  });
                   setPaymentTxHash(hash);
                   toast({ title: "Payment successful", description: "1000 $TRUST sent. You can now publish your campaign." });
                 } catch (err: any) {
@@ -1293,7 +1316,14 @@ const isActive =
         data: { txHash: paymentTxHash },
       });
 
+      await projectApiRequest({
+        method: "PATCH",
+        endpoint: "/hub/save-payment-hash",
+        data: { txHash: null },
+      });
+
       toast({ title: "Campaign published!", description: "Your campaign is now live." });
+      setPaymentTxHash("");
       setPublishedCampaign({ title: campaignName, description: campaignTitle, name: campaignName, rewardPool, coverImage: coverImagePreview ?? undefined });
       setShowPublishModal(false);
       setShowSuccessModal(true);
