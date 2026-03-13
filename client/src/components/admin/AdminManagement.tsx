@@ -81,7 +81,7 @@ export default function AdminManagement() {
       await projectApiRequest({
         method: "POST",
         endpoint: "/hub/resend-invite",
-        body: { inviteId, clientUrl: window.location.origin },
+        data: { inviteId, clientUrl: window.location.origin },
       });
       toast({ title: "Invite resent", description: "A new OTP has been sent to the invitee." });
       fetchAdmins();

@@ -103,6 +103,12 @@ export default function Campaigns() {
 
   const { toast } = useToast();
 
+  const now = Date.now() + serverOffset;
+
+  const isCompletedCampaign = (campaign: Campaign) => !!campaign.ends_at && new Date(campaign.ends_at).getTime() <= now;
+  const isScheduledCampaign = (campaign: Campaign) => !isCompletedCampaign(campaign) && !!campaign.starts_at && new Date(campaign.starts_at).getTime() > now;
+  const isActiveCampaign = (campaign: Campaign) => !isScheduledCampaign(campaign) && !isCompletedCampaign(campaign);
+
   // Fetch server time offset once
   useEffect(() => {
     const fetchServerTime = async () => {
@@ -137,16 +143,16 @@ export default function Campaigns() {
 
   // Countdown ticker for scheduled campaigns
   useEffect(() => {
-    const scheduled = campaigns.filter((c) => c.status === "Scheduled" && c.starts_at);
+    const scheduled = campaigns.filter((c) => isScheduledCampaign(c) && c.starts_at);
     if (scheduled.length === 0) return;
 
     const tick = () => {
-      const now = Date.now() + serverOffset;
+      const nowMs = Date.now() + serverOffset;
       const newCountdowns: Record<string, string> = {};
       let anyExpired = false;
 
       for (const c of scheduled) {
-        const diff = new Date(c.starts_at!).getTime() - now;
+        const diff = new Date(c.starts_at!).getTime() - nowMs;
         if (diff <= 0) {
           anyExpired = true;
           newCountdowns[c._id] = "Starting...";
@@ -200,9 +206,9 @@ export default function Campaigns() {
 
   const allCampaigns = [...campaigns];
 
-  const activeCampaigns = allCampaigns.filter((c) => c.status === "Active");
+  const activeCampaigns = allCampaigns.filter((c) => isActiveCampaign(c));
 
-  const upcomingCampaigns = allCampaigns.filter((c) => c.status === "Scheduled");
+  const upcomingCampaigns = allCampaigns.filter((c) => isScheduledCampaign(c));
 
   const renderCampaignCard = (campaign: Campaign, isActive: boolean) => {
     let metadata: any = {};

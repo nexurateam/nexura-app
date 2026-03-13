@@ -122,14 +122,62 @@ export const addHubAdmin = async (req: GlobalRequest, res: GlobalResponse) => {
     }
 
     const validRole = role === "superadmin" ? "superadmin" : "admin";
+    const normalizedEmail = String(email).trim().toLowerCase();
 
-    const code = generateOTP();
+    const existingAdmin = await hubAdmin.findOne({ email: normalizedEmail }).lean();
+    if (existingAdmin) {
+      res.status(BAD_REQUEST).json({ error: "email is already in use" });
+      return;
+    }
 
-    await OTP.create({ email, code, hubId: req.admin.hub, role: validRole });
+    let code = "";
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = generateOTP();
+      const codeExists = await OTP.exists({ code: candidate });
+      if (!codeExists) {
+        code = candidate;
+        break;
+      }
+    }
+
+    if (!code) {
+      res.status(INTERNAL_SERVER_ERROR).json({ error: "Failed to generate invite code" });
+      return;
+    }
+
+    const existingInvite = await OTP.findOne({ email: normalizedEmail, hubId: String(req.admin.hub) }).lean();
+
+    await OTP.findOneAndUpdate(
+      { email: normalizedEmail, hubId: String(req.admin.hub) },
+      {
+        email: normalizedEmail,
+        code,
+        hubId: String(req.admin.hub),
+        role: validRole,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
     // Use the client's origin for the invite link so it works in dev/prod
     const origin = clientUrl || CLIENT_URL;
-    await addHubAdminEmail(email, code, origin);
+    try {
+      await addHubAdminEmail(normalizedEmail, code, origin);
+    } catch (error) {
+      if (existingInvite) {
+        await OTP.findOneAndUpdate(
+          { email: normalizedEmail, hubId: String(req.admin.hub) },
+          {
+            code: existingInvite.code,
+            role: existingInvite.role,
+            expiresAt: existingInvite.expiresAt,
+          }
+        );
+      } else {
+        await OTP.deleteOne({ email: normalizedEmail, hubId: String(req.admin.hub) });
+      }
+      throw error;
+    }
 
     res.status(OK).json({ message: "otp sent" });
   } catch (error: any) {
@@ -222,7 +270,11 @@ export const getHubAdmins = async (req: GlobalRequest, res: GlobalResponse) => {
     const admins = await hubAdmin.find({ hub: req.admin.hub }).select("_id name email role createdAt").lean();
 
     // Also fetch pending invites for this hub
-    const pendingInvites = await OTP.find({ hubId: String(req.admin.hub) }).select("_id email role createdAt expiresAt").lean();
+    const now = new Date();
+    await OTP.deleteMany({ hubId: String(req.admin.hub), expiresAt: { $lte: now } });
+    const pendingInvites = await OTP.find({ hubId: String(req.admin.hub), expiresAt: { $gt: now } })
+      .select("_id email role createdAt expiresAt")
+      .lean();
 
     res.status(OK).json({ admins, pendingInvites });
   } catch (error) {
@@ -246,13 +298,36 @@ export const resendInvite = async (req: GlobalRequest, res: GlobalResponse) => {
     }
 
     // Generate a fresh code and reset expiry
-    const newCode = generateOTP();
+    let newCode = "";
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = generateOTP();
+      const codeExists = await OTP.exists({ code: candidate, _id: { $ne: existingOtp._id } });
+      if (!codeExists) {
+        newCode = candidate;
+        break;
+      }
+    }
+
+    if (!newCode) {
+      res.status(INTERNAL_SERVER_ERROR).json({ error: "Failed to generate invite code" });
+      return;
+    }
+
+    const previousCode = existingOtp.code;
+    const previousExpiresAt = existingOtp.expiresAt;
     existingOtp.code = newCode;
     existingOtp.expiresAt = new Date(Date.now() + 5 * 60 * 1000);
     await existingOtp.save();
 
     const origin = clientUrl || CLIENT_URL;
-    await addHubAdminEmail(existingOtp.email, newCode, origin);
+    try {
+      await addHubAdminEmail(existingOtp.email, newCode, origin);
+    } catch (error) {
+      existingOtp.code = previousCode;
+      existingOtp.expiresAt = previousExpiresAt;
+      await existingOtp.save();
+      throw error;
+    }
 
     res.status(OK).json({ message: "invite resent" });
   } catch (error) {
