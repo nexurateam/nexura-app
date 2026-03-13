@@ -19,8 +19,6 @@ import {
   updateIds,
   createHub,
   savePaymentHash,
-  recoverPaymentByWallet,
-  restoreByTxHash,
   updateHubAdminRole,
   resendInvite,
   deleteInvite
@@ -40,8 +38,6 @@ router
   .post("/create-hub", upload.single("logo"), createHub)
   .patch("/update-hub", upload.single("logo"), updateHub)
   .patch("/save-payment-hash", savePaymentHash)
-  .post("/recover-payment", recoverPaymentByWallet)
-  .post("/restore-by-txhash", restoreByTxHash)
   .post("/add-admin", addHubAdmin)
   .post("/resend-invite", resendInvite)
   .delete("/delete-invite", deleteInvite)

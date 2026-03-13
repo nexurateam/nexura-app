@@ -2,7 +2,7 @@ import { OTP } from '@/models/otp.model';
 import { hub, hubAdmin } from '@/models/hub.model';
 import { addHubAdminEmail } from '@/utils/sendMail';
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, CREATED, OK, NO_CONTENT, NOT_FOUND } from '@/utils/status.utils';
-import { CLIENT_URL, STUDIO_FEE_CONTRACT } from '@/utils/env.utils';
+import { CLIENT_URL } from '@/utils/env.utils';
 import { generateOTP, validateHubData, getMissingFields, validateCampaignData, validateCampaignQuestData, validateSaveCampaignData } from '@/utils/utils';
 import logger from '@/config/logger';
 import { submission } from '@/models/submission.model';
@@ -10,8 +10,6 @@ import { miniQuestCompleted, campaignQuestCompleted } from '@/models/questsCompl
 import { campaign } from '@/models/campaign.model';
 import { campaignQuest } from '@/models/quests.model';
 import { uploadImg } from "@/utils/img.utils";
-import { ethers } from "ethers";
-import chain from "@/utils/chain.utils";
 
 export const createHub = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
@@ -94,126 +92,6 @@ export const savePaymentHash = async (req: GlobalRequest, res: GlobalResponse) =
   } catch (error) {
     logger.error(error);
     res.status(INTERNAL_SERVER_ERROR).json({ error: "Error saving payment hash" });
-  }
-};
-
-export const recoverPaymentByWallet = async (req: GlobalRequest, res: GlobalResponse) => {
-  try {
-    const { walletAddress } = req.body;
-
-    if (!walletAddress || !ethers.isAddress(walletAddress)) {
-      res.status(BAD_REQUEST).json({ error: "Valid wallet address is required" });
-      return;
-    }
-
-    const feeContract = STUDIO_FEE_CONTRACT?.trim();
-    if (!feeContract) {
-      res.status(INTERNAL_SERVER_ERROR).json({ error: "Studio fee contract not configured" });
-      return;
-    }
-
-    const provider = new ethers.JsonRpcProvider(chain.rpcUrls.default.http[0]);
-    const feeInterface = new ethers.Interface(["event FeePaid(uint256 totalCampaigns)"]);
-
-    // Scan in chunks of 5000 blocks to stay within typical RPC getLogs limits
-    const latestBlock = await provider.getBlockNumber();
-    const CHUNK = 5000;
-    const HISTORY = 50000;
-    const fromBlock = Math.max(0, latestBlock - HISTORY);
-
-    let allLogs: ethers.Log[] = [];
-    for (let start = latestBlock; start > fromBlock; start -= CHUNK) {
-      const end = start;
-      const chunkStart = Math.max(fromBlock, start - CHUNK + 1);
-      try {
-        const chunk = await provider.getLogs({
-          address: feeContract,
-          topics: [ethers.id("FeePaid(uint256)")],
-          fromBlock: chunkStart,
-          toBlock: end,
-        });
-        allLogs = [...chunk, ...allLogs];
-      } catch {
-        // RPC may reject chunk — skip and continue
-      }
-    }
-
-    // Reverse so newest logs are first, deduplicate by txHash
-    const seen = new Set<string>();
-    const uniqueLogs = [...allLogs].reverse().filter(l => {
-      if (seen.has(l.transactionHash)) return false;
-      seen.add(l.transactionHash);
-      return true;
-    });
-
-    // Batch-fetch transactions in parallel (groups of 5) to avoid sequential timeout
-    let foundTxHash: string | null = null;
-    const BATCH = 5;
-    for (let i = 0; i < uniqueLogs.length && !foundTxHash; i += BATCH) {
-      const batch = uniqueLogs.slice(i, i + BATCH);
-      const txs = await Promise.all(batch.map(l => provider.getTransaction(l.transactionHash).catch(() => null)));
-      for (let j = 0; j < txs.length; j++) {
-        const tx = txs[j];
-        if (tx && tx.from.toLowerCase() === walletAddress.toLowerCase()) {
-          const receipt = await provider.getTransactionReceipt(tx.hash).catch(() => null);
-          if (receipt && receipt.status === 1) {
-            const hasEvent = receipt.logs.some(l => {
-              try { return feeInterface.parseLog(l)?.name === "FeePaid"; } catch { return false; }
-            });
-            if (hasEvent) {
-              foundTxHash = tx.hash;
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    if (!foundTxHash) {
-      res.status(NOT_FOUND).json({ error: "No successful studio fee payment found for this wallet on-chain. If you have your transaction hash, use the manual restore option instead." });
-      return;
-    }
-
-    // Persist recovered hash
-    if (req.admin.hub) {
-      await hub.findByIdAndUpdate(req.admin.hub, { pendingTxHash: foundTxHash });
-    } else {
-      await hubAdmin.findByIdAndUpdate(req.id, { pendingTxHash: foundTxHash });
-    }
-
-    res.status(OK).json({ txHash: foundTxHash, message: "Payment recovered" });
-  } catch (error: any) {
-    logger.error(error);
-    res.status(INTERNAL_SERVER_ERROR).json({ error: error?.message || "Error recovering payment" });
-  }
-};
-
-export const restoreByTxHash = async (req: GlobalRequest, res: GlobalResponse) => {
-  try {
-    const { txHash } = req.body;
-
-    if (!txHash || typeof txHash !== "string" || !txHash.trim().startsWith("0x")) {
-      res.status(BAD_REQUEST).json({ error: "A valid transaction hash (starting with 0x) is required" });
-      return;
-    }
-
-    const hash = txHash.trim();
-
-    // Verify the tx on-chain — checkPayment throws if not valid
-    const { checkPayment } = await import("@/utils/utils");
-    await checkPayment(hash);
-
-    // Save
-    if (req.admin.hub) {
-      await hub.findByIdAndUpdate(req.admin.hub, { pendingTxHash: hash });
-    } else {
-      await hubAdmin.findByIdAndUpdate(req.id, { pendingTxHash: hash });
-    }
-
-    res.status(OK).json({ txHash: hash, message: "Payment restored" });
-  } catch (error: any) {
-    logger.error(error);
-    res.status(INTERNAL_SERVER_ERROR).json({ error: error?.message || "Error restoring payment" });
   }
 };
 
