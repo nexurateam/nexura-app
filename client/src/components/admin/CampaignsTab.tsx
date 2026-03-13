@@ -202,7 +202,12 @@ export default function CampaignsTab() {
         )}
 
         <div className="p-3 flex flex-1 flex-col gap-1.5">
-          <h3 className="font-bold text-sm">{campaign.description || campaign.title}</h3>
+          <h3
+          className="font-bold text-sm truncate"
+          title={campaign.description || campaign.title}
+          >
+          {campaign.description || campaign.title}
+          </h3>
           <p className="text-white/70 text-xs">
             {formatDate(campaign.starts_at)} – {formatDate(campaign.ends_at)}
           </p>

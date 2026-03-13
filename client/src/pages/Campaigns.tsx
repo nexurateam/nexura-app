@@ -273,11 +273,16 @@ export default function Campaigns() {
 
         {/* Campaign Details */}
         <div className="p-3 sm:p-4 flex flex-1 flex-col space-y-1.5">
-          <h2 className="text-sm font-semibold text-white">{campaign.description || campaign.title}</h2>
+          <h2
+          className="text-sm font-semibold text-white truncate"
+          title={campaign.description || campaign.title}
+          >
+          {campaign.description || campaign.title}
+          </h2>
 
           <div className="flex flex-row justify-between text-xs gap-1">
             <span className="text-gray-500">Project:</span>
-            <span className="text-white">{campaign.project_name}</span>
+          <span className="text-white truncate max-w-[55%] text-right" title={campaign.project_name}>{campaign.project_name}</span>
           </div>
 
           <div className="flex flex-row justify-between text-xs gap-1 items-center">
