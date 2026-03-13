@@ -79,22 +79,24 @@ export const createCampaign = async (
 
 		const hubUserId = req.admin.hub;
 
-		const txHash = req.body.txHash;
-		if (!txHash) {
-			res.status(BAD_REQUEST).json({ error: "transaction hash is required" });
-			return;
-		}
-		const campaignNo = await checkPayment(txHash);
-		if (!campaignNo) {
-			res.status(FORBIDDEN).json({ error: "kindly pay the require amount (1000 TRUST) to proceed" });
-			return;
-		}
-
 		const createdHub = await hub.findById(hubUserId);
 		if (!createdHub) {
 			res
 				.status(NOT_FOUND)
 				.json({ error: "id associated with createdHub is invalid" });
+			return;
+		}
+
+		// Accept txHash from body OR fall back to DB-stored pendingTxHash
+		const bodyHash = req.body.txHash as string | undefined;
+		const txHash = bodyHash || (createdHub as any).pendingTxHash as string | null;
+		if (!txHash) {
+			res.status(BAD_REQUEST).json({ error: "No confirmed payment found. Please complete the launch fee payment first." });
+			return;
+		}
+		const campaignNo = await checkPayment(txHash);
+		if (!campaignNo) {
+			res.status(FORBIDDEN).json({ error: "kindly pay the require amount (1000 TRUST) to proceed" });
 			return;
 		}
 
