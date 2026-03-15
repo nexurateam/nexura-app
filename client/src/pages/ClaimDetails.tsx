@@ -12,6 +12,7 @@ import { useToast } from "../hooks/use-toast";
 import { Term, Position } from "../types/types";
 import { getPublicClient, getWalletClient } from "../lib/viem";
 import chain from "../lib/chain";
+import { PROXY_FEE_CONTRACT } from "../lib/constants";
 import { multiVaultPreviewDeposit, multiVaultPreviewRedeem, getMultiVaultAddressFromChainId } from "@0xintuition/sdk";
 import Chart from "react-apexcharts";
 import html2canvas from "html2canvas";
@@ -129,21 +130,21 @@ export default function ClaimDetails() {
 
       await walletClient.switchChain({ id: chain.id });
 
-      const address = getMultiVaultAddressFromChainId(walletClient.chain?.id!);
-
       let sharesAmount = 0n;
+
+      const termId = mainTab === "support" ? id : claim.counter_term_id;
 
       if (isBuy && buyAmount) {
         const [shares] = await multiVaultPreviewDeposit(
-          { address, walletClient, publicClient },
-          { args: [id as "0x", curveId, parseEther(buyAmount)] }
+          { address: PROXY_FEE_CONTRACT, walletClient, publicClient },
+          { args: [termId as "0x", curveId, parseEther(buyAmount)] }
         );
         sharesAmount = shares;
 
       } else if (!isBuy && sellAmount) {
         const [shares] = await multiVaultPreviewRedeem(
-          { address, walletClient, publicClient },
-          { args: [id as "0x", curveId, parseEther(sellAmount)] }
+          { address: PROXY_FEE_CONTRACT, walletClient, publicClient },
+          { args: [termId as "0x", curveId, parseEther(sellAmount)] }
         );
         sharesAmount = shares;
       }
@@ -347,8 +348,6 @@ export default function ClaimDetails() {
     const publicClient = getPublicClient();
     await walletClient.switchChain({ id: chain.id });
 
-    const address = getMultiVaultAddressFromChainId(walletClient.chain?.id!);
-
     const linearCurve = 1n;
     const exponentialCurve = 2n;
 
@@ -357,11 +356,11 @@ export default function ClaimDetails() {
     // sum across all vaults for both term and counterTerm
     for (const curveId of [linearCurve, exponentialCurve]) {
       const [userSupportShares] = await multiVaultPreviewRedeem(
-        { walletClient, publicClient, address },
+        { walletClient, publicClient, address: PROXY_FEE_CONTRACT },
         { args: [term.id as Address, curveId, 0n] }
       );
       const [userOpposeShares] = await multiVaultPreviewRedeem(
-        { walletClient, publicClient, address },
+        { walletClient, publicClient, address: PROXY_FEE_CONTRACT },
         { args: [counterTerm.id as Address, curveId, 0n] }
       );
       totalShares += userSupportShares + userOpposeShares;
@@ -377,7 +376,6 @@ export default function ClaimDetails() {
     setBalance(updatedBalance);
 
     await fetchClaim();
-
   };
 
   const handleClaimAction = async () => {
@@ -399,7 +397,7 @@ export default function ClaimDetails() {
     }
 
     const curveId = growthType === "linear" ? 1n : 2n;
-    const address = mainTab === "support" ? id : claim.counter_term_id;
+    const termId = mainTab === "support" ? id : claim.counter_term_id;
 
     try {
       if (isBuy) setBuying(true);
@@ -409,9 +407,9 @@ export default function ClaimDetails() {
 
       // -------------------- Execute transaction --------------------
       if (isBuy) {
-        transactionHash = await buyShares(buyAmount, address as Address, curveId);
+        transactionHash = await buyShares(buyAmount, termId as Address, curveId);
       } else {
-        await sellShares(sellAmount, address as Address, curveId);
+        await sellShares(sellAmount, termId as Address, curveId);
       }
 
       // -------------------- Refresh user data --------------------
