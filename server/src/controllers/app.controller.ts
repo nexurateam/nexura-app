@@ -7,7 +7,7 @@ import { campaignQuest, miniQuest, quest } from "@/models/quests.model";
 import { user } from "@/models/user.model";
 import { hub } from "@/models/hub.model";
 import { performIntuitionOnchainAction } from "@/utils/account";
-import { BOT_TOKEN, THIRD_PARTY_API_KEY } from "@/utils/env.utils";
+import { BOT_TOKEN, network, STUDIO_FEE_CONTRACT, THIRD_PARTY_API_KEY } from "@/utils/env.utils";
 import {
   INTERNAL_SERVER_ERROR,
   OK,
@@ -39,6 +39,41 @@ const client = new GraphQLClient(GRAPHQL_API_URL);
 export const home = async (req: GlobalRequest, res: GlobalResponse) => {
 	res.send("hi!");
 };
+
+export const getStudioPaymentConfig = async (_req: GlobalRequest, res: GlobalResponse) => {
+  res.status(OK).json({
+    network: "testnet",
+    contractAddress: STUDIO_FEE_CONTRACT,
+    chainId: "0x350b",
+    amount: "2",
+  });
+};
+
+export const allowNexonsMint = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    const { id } = req;
+
+    const level = req.body.level;
+
+    const minter = await user.findById(id).lean();
+    if (!minter) {
+      res.status(NOT_FOUND).json({ error: "user not found" });
+      return;
+    }
+
+    if (minter.badges.includes(level)) {
+      res.status(OK).json({ message: "already minted" });
+      return;
+    }
+
+    await performIntuitionOnchainAction({ action: "allow-mint", level: level.toString(), userId: id! });
+
+    res.status(OK).json({ message: "allow user to mint successfully" });
+  } catch (error) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "internal server error" });
+  }
+}
 
 export const updateUser = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
@@ -120,7 +155,7 @@ export const claimDepositXp = async (req: GlobalRequest, res: GlobalResponse) =>
     }
 
     trustUser.dailyTrustXpDate = exactDate as string;
-    trustUser.xp += 20;
+    trustUser.xp += 50;
 
     await trustUser.save();
 

@@ -6,7 +6,9 @@ dotenv.config({ quiet: true });
 export const port = process.env.PORT || "5600";
 export const DB_URI = process.env.DB_URI as string;
 export const environment = process.env.ENVIRONMENT as "development" | "production";
-export const network = process.env.NETWORK as "testnet" | "mainnet" | undefined;
+const normalizedNetwork = process.env.NETWORK?.trim().toLowerCase();
+export const network: "testnet" | "mainnet" = normalizedNetwork === "mainnet" ? "mainnet" : "testnet";
+export const STUDIO_FEE_CONTRACT = "0x742ed23dD10686C22A5cD459Af96BC1F83e58C7a";
 export const JWT_SECRET = process.env.JWT_SECRET as string;
 export const REFRESH_SECRET = process.env.REFRESH_SECRET as string;
 
@@ -48,6 +50,9 @@ export const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET as string;
 
 export const EMAIL_USER = process.env.EMAIL_USER as string;
 export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD as string;
+export const SMTP_HOST = process.env.SMTP_HOST as string | undefined;
+export const SMTP_PORT = process.env.SMTP_PORT as string | undefined;
+export const SMTP_SECURE = process.env.SMTP_SECURE as string | undefined;
 
 export const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID as string;
 

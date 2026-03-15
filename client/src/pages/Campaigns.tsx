@@ -103,6 +103,12 @@ export default function Campaigns() {
 
   const { toast } = useToast();
 
+  const now = Date.now() + serverOffset;
+
+  const isCompletedCampaign = (campaign: Campaign) => !!campaign.ends_at && new Date(campaign.ends_at).getTime() <= now;
+  const isScheduledCampaign = (campaign: Campaign) => !isCompletedCampaign(campaign) && !!campaign.starts_at && new Date(campaign.starts_at).getTime() > now;
+  const isActiveCampaign = (campaign: Campaign) => !isScheduledCampaign(campaign) && !isCompletedCampaign(campaign);
+
   // Fetch server time offset once
   useEffect(() => {
     const fetchServerTime = async () => {
@@ -137,16 +143,16 @@ export default function Campaigns() {
 
   // Countdown ticker for scheduled campaigns
   useEffect(() => {
-    const scheduled = campaigns.filter((c) => c.status === "Scheduled" && c.starts_at);
+    const scheduled = campaigns.filter((c) => isScheduledCampaign(c) && c.starts_at);
     if (scheduled.length === 0) return;
 
     const tick = () => {
-      const now = Date.now() + serverOffset;
+      const nowMs = Date.now() + serverOffset;
       const newCountdowns: Record<string, string> = {};
       let anyExpired = false;
 
       for (const c of scheduled) {
-        const diff = new Date(c.starts_at!).getTime() - now;
+        const diff = new Date(c.starts_at!).getTime() - nowMs;
         if (diff <= 0) {
           anyExpired = true;
           newCountdowns[c._id] = "Starting...";
@@ -200,9 +206,9 @@ export default function Campaigns() {
 
   const allCampaigns = [...campaigns];
 
-  const activeCampaigns = allCampaigns.filter((c) => c.status === "Active");
+  const activeCampaigns = allCampaigns.filter((c) => isActiveCampaign(c));
 
-  const upcomingCampaigns = allCampaigns.filter((c) => c.status === "Scheduled");
+  const upcomingCampaigns = allCampaigns.filter((c) => isScheduledCampaign(c));
 
   const renderCampaignCard = (campaign: Campaign, isActive: boolean) => {
     let metadata: any = {};
@@ -273,11 +279,16 @@ export default function Campaigns() {
 
         {/* Campaign Details */}
         <div className="p-3 sm:p-4 flex flex-1 flex-col space-y-1.5">
-          <h2 className="text-sm font-semibold text-white">{campaign.description || campaign.title}</h2>
+          <h2
+          className="text-sm font-semibold text-white truncate"
+          title={campaign.description || campaign.title}
+          >
+          {campaign.description || campaign.title}
+          </h2>
 
           <div className="flex flex-row justify-between text-xs gap-1">
             <span className="text-gray-500">Project:</span>
-            <span className="text-white">{campaign.project_name}</span>
+          <span className="text-white truncate max-w-[55%] text-right" title={campaign.project_name}>{campaign.project_name}</span>
           </div>
 
           <div className="flex flex-row justify-between text-xs gap-1 items-center">

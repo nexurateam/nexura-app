@@ -112,8 +112,10 @@ export default function CampaignsTab() {
 
   const now = new Date();
 
-  const isDraft = (c: Campaign) => c.status === "Save" || !c.status;
-  const isScheduled = (c: Campaign) => c.status === "Scheduled";
+  const isDraft = (c: Campaign) => c.status === "Save";
+  const isCompleted = (c: Campaign) => !!c.ends_at && new Date(c.ends_at) <= now;
+  const isScheduled = (c: Campaign) => !isDraft(c) && !isCompleted(c) && !!c.starts_at && new Date(c.starts_at) > now;
+  const isActiveCampaign = (c: Campaign) => !isDraft(c) && !isScheduled(c) && !isCompleted(c);
 
   // Countdown ticker for scheduled campaigns
   useEffect(() => {
@@ -150,19 +152,19 @@ export default function CampaignsTab() {
 
   const filteredCampaigns = campaigns.filter((c) => {
     if (activeTab === "all") return true;
-    if (activeTab === "active") return c.status === "Active" && new Date(c.ends_at) > now;
+    if (activeTab === "active") return isActiveCampaign(c);
     if (activeTab === "upcoming") return isScheduled(c);
-    if (activeTab === "completed") return !isDraft(c) && !isScheduled(c) && new Date(c.ends_at) <= now;
+    if (activeTab === "completed") return isCompleted(c);
     if (activeTab === "drafts") return isDraft(c);
     return true;
   });
 
   const tabs = [
     { id: "all", label: "All Campaigns", count: campaigns.length },
-    { id: "active", label: "Active", count: campaigns.filter(c => c.status === "Active" && new Date(c.ends_at) > now).length },
+    { id: "active", label: "Active", count: campaigns.filter((c) => isActiveCampaign(c)).length },
     { id: "upcoming", label: "Upcoming", count: campaigns.filter(c => isScheduled(c)).length },
     { id: "drafts", label: "Drafts", count: campaigns.filter(c => isDraft(c)).length },
-    { id: "completed", label: "Completed", count: campaigns.filter(c => !isDraft(c) && !isScheduled(c) && new Date(c.ends_at) <= now).length },
+    { id: "completed", label: "Completed", count: campaigns.filter((c) => isCompleted(c)).length },
   ];
 
   const CampaignCard = ({ campaign }: { campaign: Campaign }) => {
@@ -177,7 +179,7 @@ export default function CampaignsTab() {
     } else if (scheduled) {
       status = "Upcoming";
       statusColor = "bg-blue-500";
-    } else if (new Date(campaign.ends_at) <= now) {
+    } else if (isCompleted(campaign)) {
       status = "Completed";
       statusColor = "bg-gray-500";
     }
@@ -187,7 +189,7 @@ export default function CampaignsTab() {
       return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
     };
 
-    const isActive = !draft && !scheduled && new Date(campaign.ends_at) > now;
+    const isActive = isActiveCampaign(campaign);
 
     return (
       <Card className="w-full h-full bg-gray-900 text-white rounded-xl overflow-hidden shadow-lg flex flex-col">
@@ -200,7 +202,12 @@ export default function CampaignsTab() {
         )}
 
         <div className="p-3 flex flex-1 flex-col gap-1.5">
-          <h3 className="font-bold text-sm">{campaign.description || campaign.title}</h3>
+          <h3
+          className="font-bold text-sm truncate"
+          title={campaign.description || campaign.title}
+          >
+          {campaign.description || campaign.title}
+          </h3>
           <p className="text-white/70 text-xs">
             {formatDate(campaign.starts_at)} – {formatDate(campaign.ends_at)}
           </p>
@@ -211,7 +218,7 @@ export default function CampaignsTab() {
           <div className="mt-auto flex flex-col gap-2 pt-3">
             <div className="flex gap-1.5 flex-wrap">
               <button
-                className="flex-1 px-2 py-1.5 text-xs bg-purple-600 rounded-lg hover:bg-purple-700 transition"
+                className="flex-1 px-2 py-1.5 text-xs bg-[#8B3EFE] rounded-lg hover:bg-[#7b35e6] transition"
                 onClick={() => setLocation(`/studio-dashboard/create-new-campaign?edit=${campaign._id}`)}
               >
                 {isSuperAdmin ? "View Details" : "View"}
@@ -306,7 +313,7 @@ export default function CampaignsTab() {
                 href="/studio-dashboard/create-new-campaign"
                 className="w-full p-6 flex flex-col items-center justify-center gap-3
                            border-2 border-dashed border-purple-500 rounded-2xl
-                           bg-white/10 backdrop-blur-md hover:bg-white/15 hover:border-purple-400
+                           bg-black hover:bg-black/80 hover:border-[#8B3EFE]
                            transition cursor-pointer no-underline"
               >
                 <div className="w-12 h-12 flex items-center justify-center rounded-full bg-purple-500/20 text-purple-400 text-2xl font-bold">+</div>

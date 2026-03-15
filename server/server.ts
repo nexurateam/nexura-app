@@ -51,6 +51,10 @@ client.on(Events.MessageCreate, async (message) => {
 
 server.listen(port, async () => {
 	await DB();
-	await client.login(BOT_TOKEN);
+	if (BOT_TOKEN) {
+		await client.login(BOT_TOKEN);
+	} else {
+		logger.warn("BOT_TOKEN not set – Discord bot disabled");
+	}
 	logger.info(`Server is running on port ${port}`);
 });

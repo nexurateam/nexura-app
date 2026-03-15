@@ -36,6 +36,22 @@ interface ICreateCampaign {
 	description: string;
 }
 
+const getTemporalCampaignStatus = (campaignDoc: {
+	status?: string;
+	starts_at?: string | Date;
+	ends_at?: string | Date;
+}) => {
+	if (campaignDoc.status === "Save") return "Save";
+
+	const now = new Date();
+	const startsAt = campaignDoc.starts_at ? new Date(campaignDoc.starts_at) : null;
+	const endsAt = campaignDoc.ends_at ? new Date(campaignDoc.ends_at) : null;
+
+	if (endsAt && endsAt <= now) return "Ended";
+	if (startsAt && startsAt > now) return "Scheduled";
+	return "Active";
+};
+
 export const fetchCampaigns = async (
 	req: GlobalRequest,
 	res: GlobalResponse
@@ -45,12 +61,31 @@ export const fetchCampaigns = async (
 		// (Active, Scheduled, Ended, or legacy campaigns with no status field)
 		// remain visible so non-studio campaigns are unaffected.
 		const campaigns = await campaign.find({ status: { $ne: "Save" } }).lean();
+		const statusUpdates: Array<{ _id: unknown; status: string }> = [];
+		const normalizedCampaigns = campaigns.map((c) => {
+			const normalizedStatus = getTemporalCampaignStatus(c);
+			if (normalizedStatus !== c.status) {
+				statusUpdates.push({ _id: c._id, status: normalizedStatus });
+			}
+			return { ...c, status: normalizedStatus };
+		});
+
+		if (statusUpdates.length > 0) {
+			await campaign.bulkWrite(
+				statusUpdates.map(({ _id, status }) => ({
+					updateOne: {
+						filter: { _id },
+						update: { $set: { status } },
+					},
+				}))
+			);
+		}
 
 		const joinedCampaigns = await campaignCompleted.find({ user: req.id }).lean();
 
 		const mergedCampaigns: any[] = [];
 
-		for (const c of campaigns) {
+		for (const c of normalizedCampaigns) {
 			const joined = joinedCampaigns.find((j) => j.campaign?.toString() === c._id.toString());
 
 			const mergedJoinedCampaign: Record<any, unknown> = c;
@@ -79,27 +114,11 @@ export const createCampaign = async (
 
 		const hubUserId = req.admin.hub;
 
-		const txHash = req.body.txHash;
-		if (!txHash) {
-			res.status(BAD_REQUEST).json({ error: "transaction hash is required" });
-			return;
-		}
-		const campaignNo = await checkPayment(txHash);
-		if (!campaignNo) {
-			res.status(FORBIDDEN).json({ error: "kindly pay the require amount (1000 TRUST) to proceed" });
-			return;
-		}
-
 		const createdHub = await hub.findById(hubUserId);
 		if (!createdHub) {
 			res
 				.status(NOT_FOUND)
 				.json({ error: "id associated with createdHub is invalid" });
-			return;
-		}
-
-		if (createdHub.campaignsCreated >= campaignNo) {
-			res.status(FORBIDDEN).json({ error: "kindly pay the required amount (1000 TRUST) to proceed" });
 			return;
 		}
 
@@ -314,7 +333,23 @@ export const updateCampaign = async (
 			return;
 		}
 
-		await campaign.findByIdAndUpdate(id, campaignUpdateData);
+		const updated = await campaign.findByIdAndUpdate(id, campaignUpdateData, { new: true });
+
+		// Recalculate status when dates change on a live/scheduled campaign
+		if (updated && (updated.status === "Active" || updated.status === "Scheduled")) {
+			const now = new Date();
+			const startsAt = updated.starts_at ? new Date(updated.starts_at) : null;
+			const endsAt = updated.ends_at ? new Date(updated.ends_at) : null;
+
+			if (endsAt && endsAt <= now) {
+				updated.status = "Ended";
+			} else if (startsAt && startsAt > now) {
+				updated.status = "Scheduled";
+			} else {
+				updated.status = "Active";
+			}
+			await updated.save();
+		}
 
 		res.status(OK).json({ message: "campaign updated!" });
 	} catch (error) {
@@ -445,9 +480,28 @@ export const claimCampaignRewards = async (
 
 export const fetchHubCampaigns = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const hubCampaigns = await campaign.find({ hub: req.admin.hub }).lean();
+		const hubCampaigns = await campaign.find({ hub: req.admin.hub }).lean();
+		const statusUpdates: Array<{ _id: unknown; status: string }> = [];
+		const normalizedCampaigns = hubCampaigns.map((c) => {
+			const normalizedStatus = getTemporalCampaignStatus(c);
+			if (normalizedStatus !== c.status) {
+				statusUpdates.push({ _id: c._id, status: normalizedStatus });
+			}
+			return { ...c, status: normalizedStatus };
+		});
 
-    res.status(OK).json({ hubCampaigns });
+		if (statusUpdates.length > 0) {
+			await campaign.bulkWrite(
+				statusUpdates.map(({ _id, status }) => ({
+					updateOne: {
+						filter: { _id },
+						update: { $set: { status } },
+					},
+				}))
+			);
+		}
+
+		res.status(OK).json({ hubCampaigns: normalizedCampaigns });
   } catch (error) {
     logger.error(error);
     res.status(INTERNAL_SERVER_ERROR).json({ error: "error fetching hub campaigns" });
@@ -457,6 +511,10 @@ export const fetchHubCampaigns = async (req: GlobalRequest, res: GlobalResponse)
 export const publishCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 	try {
 		const { id } = req.query as { id: string };
+		if (!id) {
+			res.status(BAD_REQUEST).json({ error: "campaign id is required" });
+			return;
+		}
 
     const createdHub = await hub.findById(req.admin.hub);
     if (!createdHub) {
@@ -464,24 +522,22 @@ export const publishCampaign = async (req: GlobalRequest, res: GlobalResponse) =
       return;
     }
 
-		const { txHash } = req.body;
-		if (!txHash) {
-			res.status(BAD_REQUEST).json({ error: "transaction hash is required" });
+		// Trust the DB-stored pendingTxHash as proof of payment.
+		// It was saved only after tx.wait() confirmed the transaction on the client,
+		// so there is no need to re-verify the receipt on-chain here.
+		// Also accept txHash from request body as fallback (e.g. if DB write was missed).
+		const bodyHash = (req.body as any)?.txHash as string | undefined;
+		const storedHash = ((createdHub as any).pendingTxHash as string | null | undefined) || bodyHash;
+		if (!storedHash) {
+			res.status(FORBIDDEN).json({ error: "No confirmed payment found. Please complete the launch fee payment first." });
 			return;
 		}
-		const campaignNo = await checkPayment(txHash);
-		if (!campaignNo) {
-			res.status(FORBIDDEN).json({ error: "kindly pay the require amount (1000 TRUST) to proceed" });
-			return;
-    }
-
-		if (createdHub.campaignsCreated >= Number(campaignNo)) {
-			res.status(FORBIDDEN).json({ error: "kindly pay the required amount (1000 TRUST) to proceed" });
-			return;
+		// Persist body hash to DB if not already stored (catch-up for missed saves)
+		if (!(createdHub as any).pendingTxHash && bodyHash) {
+			(createdHub as any).pendingTxHash = bodyHash;
 		}
 
 		const campaignExists = await campaign.findById(id);
-
 		if (!campaignExists) {
 			return res.status(NOT_FOUND).json({ error: "campaign not found" });
 		}
@@ -493,14 +549,15 @@ export const publishCampaign = async (req: GlobalRequest, res: GlobalResponse) =
 		const startsAt = campaignExists.starts_at ? new Date(campaignExists.starts_at) : null;
 		campaignExists.status = startsAt && startsAt > new Date() ? "Scheduled" : "Active";
 		createdHub.campaignsCreated += 1;
+		(createdHub as any).pendingTxHash = null;
 
 		await campaignExists.save();
 		await createdHub.save();
 
 		res.status(OK).json({ message: "campaign published" });
-	} catch (error) {
+	} catch (error: any) {
 		logger.error(error);
-		res.status(INTERNAL_SERVER_ERROR).json({ error: "error publishing campaign" });
+		res.status(INTERNAL_SERVER_ERROR).json({ error: error?.message || "error publishing campaign" });
 	}
 };
 

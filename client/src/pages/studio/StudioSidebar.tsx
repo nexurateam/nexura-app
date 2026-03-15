@@ -8,8 +8,8 @@ import { getStoredProjectInfo, clearProjectSession, projectApiRequest, getStored
 type TabType = "campaignSubmissions" | "adminManagement" | "campaignsTab";
 
 interface StudioSidebarProps {
-  activeTab: TabType;
-  setActiveTab: (tab: TabType) => void;
+  activeTab: TabType | null;
+  setActiveTab: (tab: TabType | null) => void;
 }
 
 export default function StudioSidebar({
@@ -65,9 +65,15 @@ export default function StudioSidebar({
         .catch(() => { /* ignore — offline or no hub yet */ });
   }, []);
 
+  const routeByTab: Record<TabType, string> = {
+    campaignSubmissions: "/studio-dashboard",
+    campaignsTab: "/studio-dashboard/campaigns-tab",
+    adminManagement: "/studio-dashboard/admin-management",
+  };
+
   const navigate = (id: TabType) => {
     setActiveTab(id);
-    setLocation("/studio-dashboard");
+    setLocation(routeByTab[id]);
   };
 
   return (
@@ -83,7 +89,10 @@ export default function StudioSidebar({
 
           {/* Project pill — clickable, navigates to hub profile */}
           <button
-            onClick={() => setLocation("/studio-dashboard/hub-profile")}
+            onClick={() => {
+              setActiveTab(null);
+              setLocation("/studio-dashboard/hub-profile");
+            }}
             className="flex items-center gap-3 border-2 border-purple-500 rounded-2xl px-3 py-2 relative z-10 w-full min-w-0 hover:bg-white/5 transition-colors cursor-pointer text-left"
           >
             <div className="w-10 h-10 rounded-2xl overflow-hidden flex-shrink-0">
@@ -111,7 +120,7 @@ export default function StudioSidebar({
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group",
                 activeTab === item.id
-                  ? "text-[#8a3ffc] bg-white/5"
+                  ? "text-[#9a58ff] bg-white/5"
                   : "text-white hover:bg-purple-600/20 hover:text-purple-300"
               )}
             >
@@ -119,7 +128,7 @@ export default function StudioSidebar({
                 className={cn(
                   "w-5 h-5 transition-colors",
                   activeTab === item.id
-                    ? "text-[#8a3ffc]"
+                    ? "text-[#9a58ff]"
                     : "text-white group-hover:text-purple-300"
                 )}
               />
@@ -146,7 +155,10 @@ export default function StudioSidebar({
       <div className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-xl border-b border-white/10">
         <img src="/nexura-logo.png" alt="Nexura" className="h-7 w-auto" />
         <button
-          onClick={() => setLocation("/studio-dashboard/hub-profile")}
+          onClick={() => {
+            setActiveTab(null);
+            setLocation("/studio-dashboard/hub-profile");
+          }}
           className="flex items-center gap-2 border border-purple-500 rounded-xl px-2 py-1 max-w-[55%] min-w-0 hover:bg-white/10 transition-colors cursor-pointer"
         >
           <div className="w-6 h-6 rounded-lg overflow-hidden flex-shrink-0">
@@ -164,7 +176,7 @@ export default function StudioSidebar({
             onClick={() => navigate(item.id)}
             className={cn(
               "flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[10px] font-medium transition-colors",
-              activeTab === item.id ? "text-[#8a3ffc]" : "text-white hover:text-purple-300"
+              activeTab === item.id ? "text-[#9a58ff]" : "text-white hover:text-purple-300"
             )}
           >
             <item.icon className="w-5 h-5" />

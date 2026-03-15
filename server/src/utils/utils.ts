@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { JWT_SECRET, network, REFRESH_SECRET } from "./env.utils";
+import { JWT_SECRET, network, REFRESH_SECRET, STUDIO_FEE_CONTRACT } from "./env.utils";
 import { performIntuitionOnchainAction } from "./account";
 import { NexonsAddress } from "./constants";
 import { ethers } from "ethers";
@@ -81,10 +81,6 @@ async function updateLevel (xp: number, badges: number[], userId: string) {
 			if (!badges.includes(parseInt(level))) {
 				address = NexonsAddress[level]
 			}
-		}
-
-		if (address) {
-			await performIntuitionOnchainAction({ action: "allow-mint", level, userId });
 		}
 
 		return level;
@@ -308,27 +304,53 @@ export const getRefreshToken = (id: any) => {
 
 export const checkPayment = async (txHash: string) => {
 	const provider = new ethers.JsonRpcProvider(chain.rpcUrls.default.http[0]);
+	const feeContract = STUDIO_FEE_CONTRACT?.trim();
+
+	if (!feeContract) {
+		throw new Error(`Studio fee contract is not configured for ${network ?? "the current"} network`);
+	}
+
+	if (!ethers.isAddress(feeContract)) {
+		throw new Error(`Studio fee contract is invalid: ${feeContract}`);
+	}
 
 	const feeInterface = new ethers.Interface(["event FeePaid(uint256 totalCampaigns)"]);
 
-	const receipt = await provider.getTransactionReceipt(txHash);
-	if (!receipt || receipt.status !== 1) {
-		throw new Error("Transaction failed");
+	// Retry receipt lookup up to 5 times — testnet RPC can return null transiently
+	let receipt: ethers.TransactionReceipt | null = null;
+	for (let attempt = 0; attempt < 5; attempt++) {
+		receipt = await provider.getTransactionReceipt(txHash);
+		if (receipt) break;
+		await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
 	}
 
-	const FEE_CONTRACT = network === "testnet" ? "0x742ed23dD10686C22A5cD459Af96BC1F83e58C7a" : "";
+	if (!receipt) {
+		throw new Error("Transaction receipt not found. The transaction may still be pending or the hash is incorrect.");
+	}
+	if (receipt.status !== 1) {
+		throw new Error("Transaction failed on-chain");
+	}
 
 	let totalCampaigns: bigint = 0n;
 
 	// Check logs
 	for (const log of receipt.logs) {
-		if (log.address.toLowerCase() !== FEE_CONTRACT.toLowerCase()) continue;
+		if (log.address.toLowerCase() !== feeContract.toLowerCase()) continue;
 
-    const parsed = feeInterface.parseLog(log);
+		let parsed;
+		try {
+			parsed = feeInterface.parseLog(log);
+		} catch {
+			continue;
+		}
 
 		if (parsed?.name === "FeePaid") {
 			totalCampaigns = parsed.args.totalCampaigns ?? 0n;
 		}
+	}
+
+	if (totalCampaigns <= 0n) {
+		throw new Error("Studio fee payment could not be verified from the transaction receipt");
 	}
 
 	return Number(totalCampaigns);

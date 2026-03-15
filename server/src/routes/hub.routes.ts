@@ -11,7 +11,7 @@ import {
   fetchServers
 } from "@/controllers/hub.auth.controller";
 import { authenticateHubAdmin, authenticateHubAdmin2 } from "@/middlewares/auth.middleware";
-import { fetchHubCampaigns } from "@/controllers/campaign.controller";
+import { fetchHubCampaigns, publishCampaign } from "@/controllers/campaign.controller";
 import { validateCampaignSubmissions, getCampaignSubmissions, getHub, getHubAdmins } from "@/controllers/hub.controller";
 import hubAppRoutes from "./hub.app.routes";
 
@@ -24,6 +24,7 @@ router
   .post("/validate-campaign-submissions", authenticateHubAdmin2, validateCampaignSubmissions)
   .get("/me", authenticateHubAdmin2, getHub)
   .get("/hub-admins", authenticateHubAdmin2, getHubAdmins)
+  .patch("/publish-campaign", authenticateHubAdmin2, publishCampaign)
   // --- Public routes ---
   .post("/sign-in", signIn)
   .post("/logout", authenticateHubAdmin2, logout)

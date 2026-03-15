@@ -1,7 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
 import { useState, useEffect, useRef } from "react";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "./components/ui/sidebar";
@@ -88,7 +86,7 @@ function Router() {
       <Route path="/x/callback" component={XCallback} />
       <Route path="/campaigns/tasks" component={CampaignEnvironment} />
       <Route path="/quests/tasks-card" component={QuestEnvironment} />
-      {/*<Route path="/analytics" component={Analytics} />*/}
+      <Route path="/analytics" component={Analytics} />
       <Route path="/portal-claims" component={PortalClaims} />
       <Route path="/portal-claims/:id" component={ClaimDetails} />
       {/*<Route path="/studio" component={NexuraStudio} />*/}
@@ -131,11 +129,9 @@ function Router() {
         <StudioLayout title="Hub Profile" onLogout={handleLogout}>
           <HubProfile />
         </StudioLayout>
-      </Route>*/}
-
-      {/*<Route path="/studio/register" component={AdminSignUp} />*/}
-      {/* <Route path="/studio" component={StudioIndex} /> */}
-      {/*<Route path="/project/:projectId/*" component={ProjectDashboard} />
+      </Route>
+      <Route path="/studio/register" component={AdminSignUp} />
+      <Route path="/project/:projectId/*" component={ProjectDashboard} />
       <Route path="/project/:projectId/:rest*" component={ProjectDashboard} />*/}
       {/* Referral */}
       <Route path="/ref/:referrerCode" component={UserReferred} />
@@ -153,6 +149,22 @@ function App() {
     mainRef.current?.scrollTo({ top: 0 });
   }, [location]);
 
+  useEffect(() => {
+    const isStudioRoute =
+      location === "/studio" ||
+      location.startsWith("/studio-dashboard") ||
+      location.startsWith("/projects/create") ||
+      location.startsWith("/connect-discord") ||
+      location.startsWith("/project/connected-discord") ||
+      location.startsWith("/studio/register");
+
+    document.body.classList.toggle("studio-theme", isStudioRoute);
+
+    return () => {
+      document.body.classList.remove("studio-theme");
+    };
+  }, [location]);
+
   // NEXURA-style sidebar configuration
   const sidebarStyle = {
     "--sidebar-width": "12rem",
@@ -160,9 +172,8 @@ function App() {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <WalletProvider>
-        <AuthProvider>
+    <WalletProvider>
+      <AuthProvider>
           <TooltipProvider>
             <SidebarProvider defaultOpen={false} style={sidebarStyle as React.CSSProperties}>
               {(() => {
@@ -204,9 +215,8 @@ function App() {
             </SidebarProvider>
             <Toaster />
           </TooltipProvider>
-        </AuthProvider>
-      </WalletProvider>
-    </QueryClientProvider>
+      </AuthProvider>
+    </WalletProvider>
   );
 }
 

@@ -23,7 +23,7 @@ export default defineConfig({
           vendor: ['react', 'react-dom', 'wouter'],
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
           query: ['@tanstack/react-query'],
-          wallet: ['@reown/appkit', '@reown/appkit-adapter-wagmi', '@wagmi/core'],
+          wallet: ['@rainbow-me/rainbowkit', 'wagmi', '@wagmi/core'],
           charts: ['recharts'],
         }
       }
@@ -31,6 +31,9 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000, // Increase limit to reduce warnings
   },
   appType: "spa",
+  optimizeDeps: {
+    exclude: ["@safe-global/safe-gateway-typescript-sdk"],
+  },
   server: {
     port: 5173,
     fs: {

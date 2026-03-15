@@ -1,0 +1,11 @@
+import { getDefaultConfig } from "@rainbow-me/rainbowkit";
+import chain from "./chain";
+
+const walletConnectProjectId =
+  (import.meta as any).env?.VITE_REOWN_PROJECT_ID || "PLACEHOLDER";
+
+export const wagmiConfig = getDefaultConfig({
+  appName: "Nexura",
+  projectId: walletConnectProjectId,
+  chains: [chain],
+});

@@ -81,7 +81,7 @@ export default function AdminManagement() {
       await projectApiRequest({
         method: "POST",
         endpoint: "/hub/resend-invite",
-        body: { inviteId, clientUrl: window.location.origin },
+        data: { inviteId, clientUrl: window.location.origin },
       });
       toast({ title: "Invite resent", description: "A new OTP has been sent to the invitee." });
       fetchAdmins();
@@ -126,7 +126,7 @@ export default function AdminManagement() {
           <AddAdminModal onSuccess={fetchAdmins}>
             <Button
               variant="outline"
-              className="border-[#8a3ffc] text-[#8a3ffc] hover:bg-[#8a3ffc] hover:text-white gap-2"
+              className="border-[#8B3EFE] text-[#8B3EFE] hover:bg-[#8B3EFE] hover:text-white gap-2"
             >
               Add Admin
             </Button>

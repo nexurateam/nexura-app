@@ -41,8 +41,19 @@ type BannedUser = {
 type TabType = "campaignSubmissions" | "adminManagement" | "campaignsTab";
 
 export default function StudioDashboard({ onLogout }: StudioDashboardProps) {
-  const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<TabType>("campaignsTab");
+  const [location, setLocation] = useLocation();
+  const deriveTab = (): TabType => {
+    if (location.includes("admin-management")) return "adminManagement";
+    if (location.includes("campaigns-tab") || location.includes("create-new-campaign") || location.includes("my-campaign")) {
+      return "campaignsTab";
+    }
+    return "campaignSubmissions";
+  };
+  const [activeTab, setActiveTab] = useState<TabType>(deriveTab);
+
+  useEffect(() => {
+    setActiveTab(deriveTab());
+  }, [location]);
 
   // Auth guard — redirect to /studio if no valid session
   useEffect(() => {
@@ -267,7 +278,7 @@ const fetchBannedUsers = async () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl font-bold">
               <div className="p-2 rounded-full bg-[#8a3ffc]/20">
-                <Eye className="w-5 h-5 text-[#8a3ffc]" />
+                <Eye className="w-5 h-5 text-[#8B3EFE]" />
               </div>
               View {selectedTask?.taskType} Submission
             </DialogTitle>
@@ -311,7 +322,7 @@ const fetchBannedUsers = async () => {
                         if (targetUrl) window.open(targetUrl, "_blank");
                       }}
                       disabled={!selectedTask.submissionLink}
-                      className="bg-[#8a3ffc] hover:bg-[#7b2fec] text-white px-4"
+                      className="bg-[#8B3EFE] hover:bg-[#7b35e6] text-white px-4"
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
@@ -328,7 +339,7 @@ const fetchBannedUsers = async () => {
                     />
                     <Button
                       onClick={() => window.open(selectedTask.submissionLink, "_blank")}
-                      className="bg-[#8a3ffc] hover:bg-[#7b2fec] text-white px-4"
+                      className="bg-[#8B3EFE] hover:bg-[#7b35e6] text-white px-4"
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
