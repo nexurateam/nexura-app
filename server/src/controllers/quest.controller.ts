@@ -174,6 +174,15 @@ export const fetchCampaignQuests = async (
 		}
 
 		const currentHub = await hub.findById(currentCampaign.hub).lean();
+		const hubInfo = {
+			id: currentHub?._id?.toString?.() ?? "",
+			name: currentHub?.name ?? currentCampaign.project_name ?? "",
+			description: currentHub?.description ?? "",
+			logo: currentHub?.logo ?? currentCampaign.project_image ?? "",
+			website: currentHub?.website ?? "",
+			xAccount: currentHub?.xAccount ?? "",
+			discordServer: currentHub?.discordServer ?? "",
+		};
 
 		const quests = await campaignQuest.find({ campaign: id }).lean();
 
@@ -207,17 +216,17 @@ export const fetchCampaignQuests = async (
 
 		const campaignQuestsMarkedAsDone = campaignQuestsCompleted.filter((c_q: { done: boolean }) => c_q.done === true);
 
-		if (currentCampaign.noOfQuests === campaignQuestsMarkedAsDone.length && !completedCampaign?.questsCompleted) {
-			if (currentCampaign.trustClaimed < currentCampaign.totalTrustAvailable) {
+		if (currentCampaign.noOfQuests === campaignQuestsMarkedAsDone.length && completedCampaign && !completedCampaign.questsCompleted) {
+			if (currentCampaign.trustClaimed < currentCampaign.totalTrustAvailable && currentCampaign.contractAddress) {
 				await performIntuitionOnchainAction({
 					action: "allow-claim",
 					userId,
-					contractAddress: currentCampaign.contractAddress!,
+					contractAddress: currentCampaign.contractAddress,
 				});
 			}
 
-			completedCampaign!.questsCompleted = true;
-			await completedCampaign!.save();
+			completedCampaign.questsCompleted = true;
+			await completedCampaign.save();
 		}
 
 		const campaignNumber = padNumber(currentCampaign.campaignNumber);
@@ -237,6 +246,7 @@ export const fetchCampaignQuests = async (
 			project_name: currentCampaign.project_name,
 			project_image: currentCampaign.project_image,
 			hubDescription: currentHub?.description ?? "",
+			hubInfo,
 			sub_title: currentCampaign.sub_title,
 			projectCoverImage: currentCampaign.projectCoverImage,
 			joined,

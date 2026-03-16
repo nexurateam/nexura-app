@@ -13,6 +13,9 @@ import { useToast } from "../../hooks/use-toast";
 export default function TheHub() {
   const [hubName, setHubName] = useState("");
   const [description, setDescription] = useState("");
+  const [website, setWebsite] = useState("");
+  const [xAccount, setXAccount] = useState("");
+  const [discordServer, setDiscordServer] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +23,7 @@ export default function TheHub() {
   const { toast } = useToast();
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target?.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
@@ -53,6 +56,9 @@ export default function TheHub() {
       const fd = new FormData();
       fd.append("name", hubName.trim());
       fd.append("description", description ?? "");
+      fd.append("website", website.trim());
+      fd.append("xAccount", xAccount.trim());
+      fd.append("discordServer", discordServer.trim());
 
       if (imagePreview) {
         const blob = base64ToBlob(imagePreview);
@@ -187,6 +193,29 @@ export default function TheHub() {
                 Minimum 150 characters — {150 - description.length} more needed
               </p>
             )}
+          </div>
+
+          {/* Optional Social Info */}
+          <div className="space-y-3">
+            <CardTitle className="text-lg">Project Links (Optional)</CardTitle>
+            <Input
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="Project website (e.g. https://example.com)"
+              className="bg-gray-800 border-purple-500 text-white"
+            />
+            <Input
+              value={xAccount}
+              onChange={(e) => setXAccount(e.target.value)}
+              placeholder="X account (e.g. @myproject or https://x.com/myproject)"
+              className="bg-gray-800 border-purple-500 text-white"
+            />
+            <Input
+              value={discordServer}
+              onChange={(e) => setDiscordServer(e.target.value)}
+              placeholder="Discord server invite (e.g. https://discord.gg/abc123)"
+              className="bg-gray-800 border-purple-500 text-white"
+            />
           </div>
 
           {/* Logo Upload */}

@@ -29,6 +29,21 @@ const hubSchema = new Schema({
     required: false,
     default: ""
   },
+  website: {
+    type: String,
+    required: false,
+    default: ""
+  },
+  xAccount: {
+    type: String,
+    required: false,
+    default: ""
+  },
+  discordServer: {
+    type: String,
+    required: false,
+    default: ""
+  },
   campaignsCreated: {
     type: Number,
     default: 0

@@ -6,9 +6,10 @@ import React from "react"
 import { Card, CardTitle, CardDescription, CardFooter } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
+import { Switch } from "../../components/ui/switch";
 
 import { projectApiRequest } from "../../lib/projectApi";
-import { payStudioHubFee } from "../../lib/performOnchainAction";
+import { createRewardsContract, payStudioHubFee } from "../../lib/performOnchainAction";
 import { useToast } from "../../hooks/use-toast";
 import {
   Calendar,
@@ -33,6 +34,13 @@ interface Campaign {
   isDraft: boolean;
   createdAt: string;
 }
+
+type RewardsDeploymentState = {
+  txHash: string;
+  fundedAmount: string;
+  rewardPerParticipant: string;
+  maxClaimableParticipants: number;
+};
 
 
 export default function CreateNewCampaigns() {
@@ -79,11 +87,15 @@ const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
 const [rewardPool, setRewardPool] = useState("");
 const [participants, setParticipants] = useState("");
 const [xpRewards, setXpRewards] = useState("200");
+const [hasRewards, setHasRewards] = useState(false);
 const [publishedCampaign, setPublishedCampaign] = useState<any | null>(null);
 const [paymentTxHash, setPaymentTxHash] = useState("");
 const [paymentLoading, setPaymentLoading] = useState(false);
 const [isEditMode, setIsEditMode] = useState(false);
 const [isPublished, setIsPublished] = useState(false);
+const [deployLoading, setDeployLoading] = useState(false);
+const [rewardContractAddress, setRewardContractAddress] = useState("");
+const [rewardsDeployment, setRewardsDeployment] = useState<RewardsDeploymentState | null>(null);
 
 // Pre-fill from existing draft when ?edit=<id> is in the URL
 const parseDateTime = (isoStr: string) => {
@@ -115,12 +127,30 @@ useEffect(() => {
       setStartTime(s.time);
       setEndDate(e.date);
       setEndTime(e.time);
-      setRewardPool(String(found.reward?.pool ?? ""));
-      setParticipants(found.maxParticipants !== undefined && found.maxParticipants !== null
+      const existingRewardPool = Number(found.reward?.pool ?? 0);
+      const existingParticipants = found.maxParticipants !== undefined && found.maxParticipants !== null
         ? String(found.maxParticipants)
         : found.participants !== undefined && found.participants !== null
           ? String(found.participants)
-          : "");
+          : "";
+      setHasRewards(existingRewardPool > 0);
+      setRewardPool(String(found.reward?.pool ?? ""));
+      setParticipants(existingParticipants);
+      setRewardContractAddress(found.contractAddress ?? "");
+      if (found.contractAddress) {
+        const participantCount = Number(existingParticipants || 0);
+        const trustPerParticipant = participantCount > 0
+          ? Number((existingRewardPool / participantCount).toFixed(8))
+          : Number(found.reward?.trustTokens ?? 0);
+        setRewardsDeployment({
+          txHash: found.rewardsDeployment?.txHash ?? "",
+          fundedAmount: String(found.rewardsDeployment?.fundedAmount ?? existingRewardPool),
+          rewardPerParticipant: String(found.rewardsDeployment?.rewardPerParticipant ?? trustPerParticipant),
+          maxClaimableParticipants: Number(found.rewardsDeployment?.maxClaimableParticipants ?? participantCount),
+        });
+      } else {
+        setRewardsDeployment(null);
+      }
       setXpRewards("200");
       if (found.projectCoverImage) setCoverImagePreview(found.projectCoverImage);
       // Pre-fill tasks from saved quests
@@ -205,7 +235,8 @@ const platformToCategory = (platform: string) => {
 
 const buildCampaignFormData = (isDraft: boolean): FormData => {
   const fd = new FormData();
-  const perParticipantTrust = rewardPool && participants && Number(participants) > 0
+  const normalizedRewardPool = hasRewards ? (Number(rewardPool) || 0) : 0;
+  const perParticipantTrust = hasRewards && rewardPool && participants && Number(participants) > 0
     ? Number((Number(rewardPool) / Number(participants)).toFixed(2))
     : 0;
   fd.append("title", campaignTitle);
@@ -216,7 +247,7 @@ const buildCampaignFormData = (isDraft: boolean): FormData => {
   fd.append("maxParticipants", participants);
   fd.append("reward", JSON.stringify({
     xp: Number(xpRewards) || 0,
-    pool: Number(rewardPool) || 0,
+    pool: normalizedRewardPool,
     trust: perParticipantTrust,
   }));
   if (coverImage instanceof File) fd.append("coverImage", coverImage);
@@ -328,6 +359,179 @@ const handleCoverImage = (e: React.ChangeEvent<HTMLInputElement>) => {
 const handleSubmit = (e: React.FormEvent) => {
   e.preventDefault();
   handleSaveDraft("tasks");
+};
+
+const clearRewardsDeployment = (reason: string) => {
+  if (isPublished || !rewardContractAddress.trim()) return;
+
+  setRewardContractAddress("");
+  setRewardsDeployment(null);
+  toast({
+    title: "Redeploy required",
+    description: `${reason} Redeploy the rewards contract to keep on-chain funding in sync.`,
+  });
+};
+
+const handleCampaignNameChange = (value: string) => {
+  if (value !== campaignName) {
+    clearRewardsDeployment("Campaign name changed.");
+  }
+  setCampaignName(value);
+};
+
+const handleStartDateTimeChange = (value: string) => {
+  const [d, t] = value.split("T");
+  const nextDate = d ?? "";
+  const nextTime = t ? t.slice(0, 5) : "";
+
+  if (nextDate !== startDate || nextTime !== startTime) {
+    clearRewardsDeployment("Campaign start date/time changed.");
+  }
+
+  setStartDate(nextDate);
+  setStartTime(nextTime);
+};
+
+const handleRewardPoolChange = (value: string) => {
+  if (value !== rewardPool) {
+    clearRewardsDeployment("Reward pool changed.");
+  }
+  setRewardPool(value);
+};
+
+const handleParticipantsChange = (value: string) => {
+  if (value !== participants) {
+    clearRewardsDeployment("Participant limit changed.");
+  }
+  setParticipants(value);
+};
+
+const getCampaignStartTimestamp = () => {
+  const startIso = startDate && startTime ? `${startDate}T${startTime}` : startDate ? `${startDate}T00:00` : "";
+  if (!startIso) {
+    throw new Error("Set a campaign start date and time before deploying rewards.");
+  }
+
+  const startTimestampMs = new Date(startIso).getTime();
+  if (Number.isNaN(startTimestampMs)) {
+    throw new Error("Campaign start date is invalid.");
+  }
+
+  return Math.floor(startTimestampMs / 1000);
+};
+
+const getRewardDeploymentConfig = () => {
+  const totalPool = Number(rewardPool);
+  const participantCount = Number(participants);
+
+  if (!Number.isFinite(totalPool) || totalPool <= 0) {
+    throw new Error("Reward pool must be greater than zero.");
+  }
+  if (!Number.isInteger(totalPool)) {
+    throw new Error("Reward pool must be a whole number.");
+  }
+
+  if (!Number.isInteger(participantCount) || participantCount <= 0) {
+    throw new Error("Participant count must be a whole number greater than zero.");
+  }
+  if (totalPool % participantCount !== 0) {
+    throw new Error("Reward pool must divide evenly by participants so every participant can claim.");
+  }
+
+  const rewardPerParticipant = totalPool / participantCount;
+  if (!Number.isFinite(rewardPerParticipant) || rewardPerParticipant <= 0) {
+    throw new Error("Reward per participant must be greater than zero.");
+  }
+
+  return {
+    totalPool,
+    participantCount,
+    rewardPerParticipant,
+  };
+};
+
+const handleDeployRewardsContract = async () => {
+  if (!hasRewards) {
+    toast({ title: "Rewards are disabled", description: "Turn on campaign rewards before deploying a rewards contract.", variant: "destructive" });
+    return;
+  }
+  if (!campaignTitle || !campaignName) {
+    toast({ title: "Incomplete details", description: "Please fill in campaign name and description.", variant: "destructive" });
+    return;
+  }
+  if (tasks.length === 0) {
+    toast({ title: "No tasks", description: "Please add at least one task.", variant: "destructive" });
+    return;
+  }
+
+  let startTimestamp = 0;
+  let totalPool = 0;
+  let participantCount = 0;
+  let rewardPerParticipant = 0;
+  try {
+    startTimestamp = getCampaignStartTimestamp();
+    ({ totalPool, participantCount, rewardPerParticipant } = getRewardDeploymentConfig());
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Invalid campaign reward configuration.";
+    toast({ title: "Cannot deploy contract", description: message, variant: "destructive" });
+    return;
+  }
+
+  setDeployLoading(true);
+  try {
+    const savedCampaignId = campaignId ?? await handleSaveDraft();
+    if (!savedCampaignId) return;
+
+    const deployment = await createRewardsContract({
+      nameOfCampaign: campaignName.trim(),
+      totalRewards: totalPool.toString(),
+      rewardToken: rewardPerParticipant.toString(),
+      startDate: startTimestamp,
+    });
+    const deployedParticipantCap = Number(deployment.maxClaimableParticipants ?? 0);
+    if (!Number.isInteger(deployedParticipantCap) || deployedParticipantCap <= 0) {
+      throw new Error("Unable to verify participant withdrawal limit from the deployed contract.");
+    }
+    if (deployedParticipantCap !== participantCount) {
+      throw new Error(
+        `Deployment mismatch. Contract allows ${deployedParticipantCap} participants, expected ${participantCount}.`
+      );
+    }
+
+    await projectApiRequest({
+      method: "PATCH",
+      endpoint: "/hub/add-campaign-address",
+      data: {
+        id: savedCampaignId,
+        contractAddress: deployment.contractAddress,
+        deploymentTxHash: deployment.txHash,
+        fundedAmount: Number(deployment.fundedAmount),
+        rewardPerParticipant: Number(deployment.rewardPerParticipant),
+        maxClaimableParticipants: deployedParticipantCap,
+      },
+    });
+
+    setCampaignId(savedCampaignId);
+    setRewardContractAddress(deployment.contractAddress);
+    setRewardPool(deployment.fundedAmount);
+    setParticipants(String(deployedParticipantCap));
+    setRewardsDeployment({
+      txHash: deployment.txHash,
+      fundedAmount: deployment.fundedAmount,
+      rewardPerParticipant: deployment.rewardPerParticipant,
+      maxClaimableParticipants: deployedParticipantCap,
+    });
+
+    toast({
+      title: "Rewards contract deployed",
+      description: `Deducted ${deployment.fundedAmount} TRUST and funded the contract. ${deployedParticipantCap} participants can claim ${deployment.rewardPerParticipant} TRUST each. Tx: ${deployment.txHash}`,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to deploy rewards contract.";
+    toast({ title: "Deployment failed", description: message, variant: "destructive" });
+  } finally {
+    setDeployLoading(false);
+  }
 };
 
 const handleUpdateCampaign = async () => {
@@ -451,12 +655,12 @@ const isActive =
                       <label className="block mb-2 text-sm font-medium">
                         Campaign Name
                       </label>
-                      <Input
+<Input
   placeholder="Enter campaign name..."
   className="bg-white/5 border-white/10"
   required
   value={campaignName}
-  onChange={(e) => setCampaignName(e.target.value)}
+  onChange={(e) => handleCampaignNameChange(e.target.value)}
 />
                     </div>
 
@@ -488,11 +692,7 @@ const isActive =
                           type="datetime-local"
                           className="w-full rounded-md bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 [color-scheme:dark]"
                           value={startDate && startTime ? `${startDate}T${startTime}` : startDate ? `${startDate}T00:00` : ""}
-                          onChange={(e) => {
-                            const [d, t] = e.target.value.split("T");
-                            setStartDate(d ?? "");
-                            setStartTime(t ? t.slice(0, 5) : "");
-                          }}
+                          onChange={(e) => handleStartDateTimeChange(e.target.value)}
                         />
                       </div>
 
@@ -552,6 +752,28 @@ const isActive =
                     </div>
 
                     {/* Rewards */}
+<div className="space-y-4">
+  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+    <div>
+      <p className="text-sm font-medium text-white">Enable TRUST Rewards</p>
+      <p className="text-xs text-white/50">Turn this on to fund a reward pool and deploy a rewards contract.</p>
+    </div>
+    <Switch
+      checked={hasRewards}
+      disabled={isPublished}
+      onCheckedChange={(checked) => {
+        setHasRewards(checked);
+        if (!checked) {
+          setRewardPool("");
+          setRewardContractAddress("");
+          setRewardsDeployment(null);
+        }
+      }}
+      className="data-[state=checked]:bg-[#8B3EFE]"
+      aria-label="Enable campaign rewards"
+    />
+  </div>
+
 <div className="grid grid-cols-3 gap-6">
 <div>
   <label className="block mb-2 text-sm font-medium">
@@ -564,15 +786,26 @@ const isActive =
       $TRUST
     </span>
 
-    <Input
+<Input
   type="number"
-  className={`bg-white/5 border-white/10 pl-20 ${isPublished ? "cursor-not-allowed opacity-60" : ""}`}
+  className={`bg-white/5 border-white/10 pl-20 ${isPublished || !hasRewards ? "cursor-not-allowed opacity-60" : ""}`}
   placeholder="0"
   value={rewardPool}
-  onChange={(e) => setRewardPool(e.target.value)}
-  readOnly={isPublished}
+  onChange={(e) => handleRewardPoolChange(e.target.value)}
+  readOnly={isPublished || !hasRewards}
 />
   </div>
+  <p className="text-[11px] text-white/50 mt-2">
+    When you deploy the rewards contract, this exact TRUST amount is auto-deducted from your wallet and locked as the reward pool.
+  </p>
+  {hasRewards && rewardContractAddress && rewardsDeployment && (
+    <div className="mt-3 rounded-md border border-green-500/30 bg-green-900/20 px-3 py-2 text-[11px] text-green-200 space-y-1">
+      <p>On-chain funding confirmed: {rewardsDeployment.fundedAmount} TRUST deducted.</p>
+      <p>Participant withdrawals enabled: {rewardsDeployment.maxClaimableParticipants}.</p>
+      <p>Per participant reward: {rewardsDeployment.rewardPerParticipant} TRUST.</p>
+      {rewardsDeployment.txHash && <p className="truncate">Tx: {rewardsDeployment.txHash}</p>}
+    </div>
+  )}
 </div>
 
                       <div className="relative">
@@ -588,12 +821,12 @@ const isActive =
       className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
     />
 
-    <Input
+<Input
   type="number"
   placeholder="Enter number of participants"
   className={`bg-white/5 border-white/10 pl-10 ${isPublished ? "cursor-not-allowed opacity-60" : ""}`}
   value={participants}
-  onChange={(e) => setParticipants(e.target.value)}
+  onChange={(e) => handleParticipantsChange(e.target.value)}
   readOnly={isPublished}
 />
   </div>
@@ -607,7 +840,7 @@ const isActive =
     <Input
       type="number"
       placeholder="200 XP per participant"
-      className="bg-white/5 border-white/10 pr-16 cursor-not-allowed opacity-60"
+      className={`bg-white/5 border-white/10 pr-16 cursor-not-allowed opacity-60 ${!hasRewards ? "opacity-40" : ""}`}
       value={xpRewards}
       readOnly
     />
@@ -615,6 +848,7 @@ const isActive =
   </div>
 </div>
                     </div>
+</div>
 
                     {/* Disclaimer */}
                     
@@ -629,7 +863,9 @@ const isActive =
                       <CardDescription className="text-white/60 text-sm">
                         {isPublished
                           ? "The reward pool and number of participants cannot be changed after the campaign has been published."
-                          : "The reward pool and number of participants cannot be changed once the campaign is published. Please make sure these values are correct before publishing."}
+                          : hasRewards
+                            ? "The reward pool and number of participants cannot be changed once the campaign is published. Please make sure these values are correct before publishing."
+                            : "This campaign is set to no TRUST rewards. You can still publish it without deploying a rewards contract."}
                       </CardDescription>
                     </div>
 
@@ -1056,7 +1292,7 @@ const isActive =
             <img src="/reward-pool.png" alt="" className="w-4 h-4 opacity-60" />
             Reward Pool
           </div>
-          <span className="text-white text-lg font-semibold">{rewardPool ? `${rewardPool} $TRUST` : "—"}</span>
+          <span className="text-white text-lg font-semibold">{Number(rewardPool) > 0 ? `${rewardPool} $TRUST` : "—"}</span>
         </div>
 
         {/* Target Users */}
@@ -1084,7 +1320,7 @@ const isActive =
             Per Participant
           </div>
           <span className="text-white text-lg font-semibold">
-            {rewardPool && participants && Number(participants) > 0
+            {Number(rewardPool) > 0 && participants && Number(participants) > 0
               ? `${(Number(rewardPool) / Number(participants)).toFixed(2)} $TRUST`
               : "—"}
           </span>
@@ -1172,13 +1408,20 @@ const isActive =
 
   {/* Right buttons */}
   <div className="flex items-center gap-2 mt-4">
+{hasRewards && (
 <button
   type="button"
+  onClick={handleDeployRewardsContract}
   className="px-4 py-2 bg-[#8B3EFE] text-white rounded-lg text-sm hover:bg-[#7b35e6] transition disabled:opacity-50 disabled:cursor-not-allowed"
-  disabled={loading || saveLoading}
+  disabled={loading || saveLoading || deployLoading}
 >
-  Deploy Rewards Contract
+  {deployLoading
+    ? "Deploying..."
+    : rewardContractAddress
+      ? "Redeploy Rewards Contract"
+      : "Deploy Rewards Contract"}
 </button>
+)}
 {isEditMode && isPublished ? (
   <button
     onClick={() => handleUpdateCampaign()}
@@ -1198,6 +1441,18 @@ const isActive =
 )}
   </div>
 </div>
+{hasRewards && rewardContractAddress && (
+  <div className="mt-2 space-y-1">
+    <p className="text-xs text-white/60 break-all">
+      Rewards Contract: {rewardContractAddress}
+    </p>
+    {rewardsDeployment && (
+      <p className="text-xs text-green-300">
+        Funded {rewardsDeployment.fundedAmount} TRUST for {rewardsDeployment.maxClaimableParticipants} participants.
+      </p>
+    )}
+  </div>
+)}
   </Card>
   
     )}
@@ -1304,6 +1559,32 @@ const isActive =
       toast({ title: "Payment required", description: "Please complete the 1000 $TRUST payment before publishing.", variant: "destructive" });
       return;
     }
+    if (hasRewards && (!rewardPool || Number(rewardPool) <= 0)) {
+      toast({ title: "Reward pool required", description: "Set a reward pool before publishing a rewards-enabled campaign.", variant: "destructive" });
+      return;
+    }
+    if (hasRewards && !rewardContractAddress.trim()) {
+      toast({ title: "Rewards contract required", description: "Deploy the rewards contract before publishing this campaign.", variant: "destructive" });
+      return;
+    }
+    if (hasRewards) {
+      try {
+        const cfg = getRewardDeploymentConfig();
+        if (rewardsDeployment) {
+          const fundedAmount = Number(rewardsDeployment.fundedAmount);
+          if (Math.abs(fundedAmount - cfg.totalPool) > 1e-9) {
+            throw new Error("Reward pool differs from the funded on-chain amount. Redeploy the rewards contract.");
+          }
+          if (rewardsDeployment.maxClaimableParticipants !== cfg.participantCount) {
+            throw new Error("Participant count differs from the deployed withdrawal cap. Redeploy the rewards contract.");
+          }
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Invalid rewards configuration.";
+        toast({ title: "Cannot publish", description: message, variant: "destructive" });
+        return;
+      }
+    }
 
     setLoading(true);
     try {
@@ -1319,7 +1600,13 @@ const isActive =
 
       toast({ title: "Campaign published!", description: "Your campaign is now live." });
       setPaymentTxHash("");
-      setPublishedCampaign({ title: campaignName, description: campaignTitle, name: campaignName, rewardPool, coverImage: coverImagePreview ?? undefined });
+      setPublishedCampaign({
+        title: campaignName,
+        description: campaignTitle,
+        name: campaignName,
+        rewardPool: hasRewards && Number(rewardPool) > 0 ? rewardPool : "",
+        coverImage: coverImagePreview ?? undefined
+      });
       setShowPublishModal(false);
       setShowSuccessModal(true);
     } catch (err: unknown) {
@@ -1329,7 +1616,7 @@ const isActive =
       setLoading(false);
     }
   }}
-  disabled={loading || !paymentTxHash}
+  disabled={loading || !paymentTxHash || (hasRewards && !rewardContractAddress.trim())}
 >
   {loading ? <span className="flex items-center gap-2"><span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Publishing...</span> : "Publish"}
 </button>
@@ -1425,7 +1712,7 @@ const isActive =
         Total Reward Pool
       </span>
       <span className="text-white mt-1 text-sm font-semibold">
-        {publishedCampaign?.rewardPool} $TRUST
+        {publishedCampaign?.rewardPool ? `${publishedCampaign.rewardPool} $TRUST` : "—"}
       </span>
     </div>
 

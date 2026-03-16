@@ -65,6 +65,20 @@ const campaignSchema = new Schema({
 	contractAddress: {
 		type: String,
 	},
+	rewardsDeployment: {
+		txHash: {
+			type: String,
+		},
+		fundedAmount: {
+			type: Number,
+		},
+		rewardPerParticipant: {
+			type: Number,
+		},
+		maxClaimableParticipants: {
+			type: Number,
+		},
+	},
 	reward: {
 		xp: {
 			type: Number,

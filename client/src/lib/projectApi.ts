@@ -1,4 +1,5 @@
 import { BACKEND_URL } from "./constants";
+import { toUserFriendlyErrorMessage } from "./errorMessages";
 
 const PROJECT_API_URL = (BACKEND_URL ?? "") as string;
 
@@ -59,7 +60,7 @@ async function throwIfNotOk(res: Response): Promise<void> {
       (json as Record<string, unknown>)?.error ??
       (json as Record<string, unknown>)?.message ??
       res.statusText;
-    throw new Error(String(msg));
+    throw new Error(toUserFriendlyErrorMessage(String(msg)));
   }
 }
 

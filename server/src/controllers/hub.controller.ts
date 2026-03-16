@@ -38,10 +38,16 @@ export const createHub = async (req: GlobalRequest, res: GlobalResponse) => {
     }
 
     const hubLogo = await uploadImg({ file: hubLogoAsFile, filename: req.file?.originalname, folder: "hub-logos" });
+    const website = String(req.body.website ?? "").trim();
+    const xAccount = String(req.body.xAccount ?? "").trim();
+    const discordServer = String(req.body.discordServer ?? "").trim();
 
     const createdHub = await hub.create({
       name,
       description: req.body.description ?? "",
+      website,
+      xAccount,
+      discordServer,
       logo: hubLogo,
       superAdmin: req.id,
       xpAllocated: 200,
@@ -211,6 +217,9 @@ export const updateHub = async (req: GlobalRequest, res: GlobalResponse) => {
     }
 
     const { xpAllocated: _xp, ...safeBody } = req.body;
+    if (safeBody.website !== undefined) safeBody.website = String(safeBody.website ?? "").trim();
+    if (safeBody.xAccount !== undefined) safeBody.xAccount = String(safeBody.xAccount ?? "").trim();
+    if (safeBody.discordServer !== undefined) safeBody.discordServer = String(safeBody.discordServer ?? "").trim();
     const updatedHub = await hub.findByIdAndUpdate(req.admin.hub, safeBody, { new: true });
     res.status(OK).json(updatedHub);
   } catch (error) {
@@ -576,6 +585,23 @@ export const saveCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
     }
 
     const { campaignQuests: _cq, isDraft: _d, existingCoverImage: _e, hubCoverImage: _h, nameOfProject: _n, ...updateFields } = req.body;
+
+    if (updateFields.reward && typeof updateFields.reward === "object") {
+      const rewardUpdate = updateFields.reward as Record<string, unknown>;
+      const pool = Number(rewardUpdate.pool ?? 0);
+      const trustTokens = Number(rewardUpdate.trust ?? rewardUpdate.trustTokens ?? 0);
+      updateFields.reward = {
+        xp: Number(rewardUpdate.xp ?? 0),
+        pool,
+        trustTokens,
+      };
+      updateFields.totalTrustAvailable = pool;
+    }
+
+    if (updateFields.maxParticipants !== undefined) {
+      updateFields.maxParticipants = Number(updateFields.maxParticipants ?? 0);
+    }
+
     const updatedCampaign = await campaign.findByIdAndUpdate(id, updateFields, { new: true });
 
     // Recalculate status when dates change on a live/scheduled campaign

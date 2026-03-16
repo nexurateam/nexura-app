@@ -211,8 +211,8 @@ export default function CampaignsTab() {
           <p className="text-white/70 text-xs">
             {formatDate(campaign.starts_at)} – {formatDate(campaign.ends_at)}
           </p>
-          {campaign.reward?.pool !== undefined && (
-            <p className="text-purple-400 text-xs font-medium">Reward Pool: {campaign.reward.pool} TRUST</p>
+          {Number(campaign.reward?.pool ?? 0) > 0 && (
+            <p className="text-purple-400 text-xs font-medium">Reward Pool: {campaign.reward?.pool} TRUST</p>
           )}
 
           <div className="mt-auto flex flex-col gap-2 pt-3">

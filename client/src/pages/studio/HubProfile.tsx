@@ -22,6 +22,9 @@ export default function HubProfile() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [website, setWebsite] = useState("");
+  const [xAccount, setXAccount] = useState("");
+  const [discordServer, setDiscordServer] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -38,6 +41,9 @@ export default function HubProfile() {
         if (hub) {
           setName(hub.name ?? "");
           setDescription(hub.description ?? "");
+          setWebsite(hub.website ?? "");
+          setXAccount(hub.xAccount ?? "");
+          setDiscordServer(hub.discordServer ?? "");
           setLogoUrl(hub.logo ?? "");
         }
       })
@@ -75,6 +81,9 @@ export default function HubProfile() {
       const fd = new FormData();
       fd.append("name", name.trim());
       fd.append("description", description ?? "");
+      fd.append("website", website.trim());
+      fd.append("xAccount", xAccount.trim());
+      fd.append("discordServer", discordServer.trim());
 
       if (imagePreview) {
         const blob = base64ToBlob(imagePreview);
@@ -198,6 +207,51 @@ export default function HubProfile() {
               </>
             ) : (
               <p className="text-white/80 leading-relaxed">{description || "No description set."}</p>
+            )}
+          </div>
+
+          {/* Website */}
+          <div className="space-y-2">
+            <label className="text-sm text-white/60 font-medium block">Project Website (Optional)</label>
+            {isSuperAdmin ? (
+              <Input
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://example.com"
+                className="bg-white/[0.06] border-white/15 text-white placeholder:text-white/30 focus:border-purple-500/60 transition-colors"
+              />
+            ) : (
+              <p className="text-white/80">{website || "Not set"}</p>
+            )}
+          </div>
+
+          {/* X Account */}
+          <div className="space-y-2">
+            <label className="text-sm text-white/60 font-medium block">X Account (Optional)</label>
+            {isSuperAdmin ? (
+              <Input
+                value={xAccount}
+                onChange={(e) => setXAccount(e.target.value)}
+                placeholder="@project_handle"
+                className="bg-white/[0.06] border-white/15 text-white placeholder:text-white/30 focus:border-purple-500/60 transition-colors"
+              />
+            ) : (
+              <p className="text-white/80">{xAccount || "Not set"}</p>
+            )}
+          </div>
+
+          {/* Discord Server */}
+          <div className="space-y-2">
+            <label className="text-sm text-white/60 font-medium block">Discord Server (Optional)</label>
+            {isSuperAdmin ? (
+              <Input
+                value={discordServer}
+                onChange={(e) => setDiscordServer(e.target.value)}
+                placeholder="https://discord.gg/..."
+                className="bg-white/[0.06] border-white/15 text-white placeholder:text-white/30 focus:border-purple-500/60 transition-colors"
+              />
+            ) : (
+              <p className="text-white/80">{discordServer || "Not set"}</p>
             )}
           </div>
         </div>

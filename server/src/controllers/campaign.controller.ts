@@ -17,6 +17,7 @@ import {
 } from "@/utils/status.utils";
 import { validateCampaignData, updateLevel, checkPayment } from "@/utils/utils";
 import { campaignQuest } from "@/models/quests.model";
+import { ethers } from "ethers";
 
 interface IReward {
 	xp: number;
@@ -60,14 +61,40 @@ export const fetchCampaigns = async (
 		// Hide only studio drafts (status: "Save"). All other campaigns
 		// (Active, Scheduled, Ended, or legacy campaigns with no status field)
 		// remain visible so non-studio campaigns are unaffected.
-		const campaigns = await campaign.find({ status: { $ne: "Save" } }).lean();
+		const campaigns = await campaign
+			.find({ status: { $ne: "Save" } })
+			.populate({
+				path: "hub",
+				select: "name description logo website xAccount discordServer",
+			})
+			.lean();
 		const statusUpdates: Array<{ _id: unknown; status: string }> = [];
 		const normalizedCampaigns = campaigns.map((c) => {
 			const normalizedStatus = getTemporalCampaignStatus(c);
 			if (normalizedStatus !== c.status) {
 				statusUpdates.push({ _id: c._id, status: normalizedStatus });
 			}
-			return { ...c, status: normalizedStatus };
+			const hubInfo = (c as any).hub && typeof (c as any).hub === "object"
+				? {
+					id: (c as any).hub._id?.toString?.() ?? "",
+					name: (c as any).hub.name ?? c.project_name ?? "",
+					description: (c as any).hub.description ?? "",
+					logo: (c as any).hub.logo ?? c.project_image ?? "",
+					website: (c as any).hub.website ?? "",
+					xAccount: (c as any).hub.xAccount ?? "",
+					discordServer: (c as any).hub.discordServer ?? "",
+				}
+				: {
+					id: "",
+					name: c.project_name ?? "",
+					description: "",
+					logo: c.project_image ?? "",
+					website: "",
+					xAccount: "",
+					discordServer: "",
+				};
+
+			return { ...c, status: normalizedStatus, hubInfo };
 		});
 
 		if (statusUpdates.length > 0) {
@@ -206,10 +233,28 @@ export const addCampaignAddress = async (
 	res: GlobalResponse
 ) => {
 	try {
-		const { id, contractAddress }: { id: string; contractAddress: string } = req.body;
+		const {
+			id,
+			contractAddress,
+			deploymentTxHash,
+			fundedAmount,
+			rewardPerParticipant,
+			maxClaimableParticipants,
+		}: {
+			id: string;
+			contractAddress: string;
+			deploymentTxHash?: string;
+			fundedAmount?: number;
+			rewardPerParticipant?: number;
+			maxClaimableParticipants?: number;
+		} = req.body;
 
 		if (!id) {
 			res.status(BAD_REQUEST).json({ error: "send campaign ID" });
+			return;
+		}
+		if (!contractAddress || !ethers.isAddress(contractAddress)) {
+			res.status(BAD_REQUEST).json({ error: "send a valid campaign contract address" });
 			return;
 		}
 
@@ -220,8 +265,33 @@ export const addCampaignAddress = async (
 				.json({ error: "id associated with campaign is invalid" });
 			return;
 		}
+		if (foundCampaign.hub?.toString() !== req.admin.hub?.toString()) {
+			res.status(FORBIDDEN).json({ error: "you are not allowed to update this campaign" });
+			return;
+		}
 
 		foundCampaign.contractAddress = contractAddress;
+		if (deploymentTxHash) {
+			(foundCampaign as any).rewardsDeployment = {
+				txHash: deploymentTxHash,
+				fundedAmount: Number(fundedAmount ?? foundCampaign.reward?.pool ?? 0),
+				rewardPerParticipant: Number(rewardPerParticipant ?? foundCampaign.reward?.trustTokens ?? 0),
+				maxClaimableParticipants: Number(maxClaimableParticipants ?? (foundCampaign as any).maxParticipants ?? 0),
+			};
+		}
+		if (Number.isFinite(Number(fundedAmount)) && Number(fundedAmount) >= 0) {
+			const normalizedFundedAmount = Number(fundedAmount);
+			foundCampaign.totalTrustAvailable = normalizedFundedAmount;
+			foundCampaign.reward = {
+				...(foundCampaign.reward ?? {}),
+				xp: Number(foundCampaign.reward?.xp ?? 0),
+				pool: normalizedFundedAmount,
+				trustTokens: Number(rewardPerParticipant ?? foundCampaign.reward?.trustTokens ?? 0),
+			} as any;
+		}
+		if (Number.isFinite(Number(maxClaimableParticipants)) && Number(maxClaimableParticipants) > 0) {
+			(foundCampaign as any).maxParticipants = Number(maxClaimableParticipants);
+		}
 
 		await foundCampaign.save();
 
@@ -256,6 +326,28 @@ export const joinCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 				.json({ error: "id associated with campaign is invalid" });
 			return;
 		}
+		if (campaignToJoin.status === "Save") {
+			res.status(FORBIDDEN).json({ error: "campaign has not been published yet" });
+			return;
+		}
+
+		const now = new Date();
+		const startsAt = campaignToJoin.starts_at ? new Date(campaignToJoin.starts_at) : null;
+		const endsAt = campaignToJoin.ends_at ? new Date(campaignToJoin.ends_at) : null;
+		if (startsAt && startsAt > now) {
+			res.status(FORBIDDEN).json({ error: "campaign has not started yet" });
+			return;
+		}
+		if (campaignToJoin.status === "Ended" || (endsAt && endsAt <= now)) {
+			res.status(FORBIDDEN).json({ error: "campaign has ended" });
+			return;
+		}
+
+		const maxParticipants = Number((campaignToJoin as any).maxParticipants ?? 0);
+		if (maxParticipants > 0 && campaignToJoin.participants >= maxParticipants) {
+			res.status(FORBIDDEN).json({ error: "campaign participant limit reached" });
+			return;
+		}
 
 		const completedCampaign = await campaignCompleted.findOne({
 			user: userId,
@@ -266,11 +358,14 @@ export const joinCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 
 			campaignToJoin.participants += 1;
 
-			if (campaignToJoin.trustClaimed < campaignToJoin.totalTrustAvailable) {
+			if (
+				campaignToJoin.trustClaimed < campaignToJoin.totalTrustAvailable &&
+				campaignToJoin.contractAddress
+			) {
 				await performIntuitionOnchainAction({
 					action: "join",
 					userId,
-					contractAddress: campaignToJoin.contractAddress!,
+					contractAddress: campaignToJoin.contractAddress,
 				});
 			}
 
@@ -544,6 +639,18 @@ export const publishCampaign = async (req: GlobalRequest, res: GlobalResponse) =
 
 		if (campaignExists.status !== "Save") {
 			return res.status(BAD_REQUEST).json({ error: "campaign is not in save status" });
+		}
+		const rewardPool = Number(campaignExists.reward?.pool ?? 0);
+		const maxParticipants = Number((campaignExists as any).maxParticipants ?? 0);
+		if (rewardPool > 0 && maxParticipants <= 0) {
+			return res.status(BAD_REQUEST).json({
+				error: "set a participant limit before publishing a reward campaign",
+			});
+		}
+		if (rewardPool > 0 && maxParticipants > 0 && !campaignExists.contractAddress) {
+			return res.status(FORBIDDEN).json({
+				error: "deploy and attach a rewards contract before publishing this campaign",
+			});
 		}
 
 		const startsAt = campaignExists.starts_at ? new Date(campaignExists.starts_at) : null;

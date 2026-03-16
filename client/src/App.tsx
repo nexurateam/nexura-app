@@ -89,7 +89,7 @@ function Router() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/portal-claims" component={PortalClaims} />
       <Route path="/portal-claims/:id" component={ClaimDetails} />
-      {/*<Route path="/studio" component={NexuraStudio} />*/}
+      <Route path="/studio" component={NexuraStudio} />
       {/* Profile pages */}
       <Route path="/profile" component={Profile} />
       <Route path="/profile/edit" component={EditProfile} />
@@ -180,7 +180,10 @@ function App() {
                 
 
                 const isHome = location === "/" || location === "/home";
-                const isStudio = location.startsWith("/studio-dashboard");
+                const isStudio =
+                  location === "/studio" ||
+                  location.startsWith("/studio-dashboard") ||
+                  location.startsWith("/studio/register");
                 const isProject = location.startsWith("/project/");
                 const isProjectCreate = location.startsWith("/projects/create");
                 return (

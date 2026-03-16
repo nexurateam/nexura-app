@@ -233,7 +233,7 @@ const fetchBannedUsers = async () => {
       size="sm"
       onClick={() => {
         onLogout();
-        setLocation("/studio");
+        setLocation("/discover");
       }}
       className="text-white/70 hover:text-white hover:text-red-400"
     >

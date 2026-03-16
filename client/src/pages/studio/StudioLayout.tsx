@@ -51,7 +51,7 @@ export default function StudioLayout({ children, title = "Nexura Studio", onLogo
     }
     clearProjectSession();
     onLogout?.();
-    setLocation("/studio");
+    setLocation("/discover");
   };
 
   return (
