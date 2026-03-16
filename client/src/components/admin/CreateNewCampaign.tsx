@@ -764,9 +764,7 @@ const isActive =
     <div>
       <p className="text-sm font-medium text-white">Enable TRUST Rewards</p>
       <p className="text-xs text-white/50">
-        {hasRewards
-          ? "Turn this on to fund a reward pool and deploy a rewards contract."
-          : "You have chosen to run this campaign without TRUST rewards, so it can be published without deploying a contract."}
+        Turn this on to fund a reward pool and deploy a rewards contract.
       </p>
     </div>
     <Switch
@@ -807,9 +805,7 @@ const isActive =
 />
   </div>
   <p className="text-[11px] text-white/50 mt-2">
-    {hasRewards
-      ? "When you deploy the rewards contract, this exact TRUST amount is auto-deducted from your wallet and locked as the reward pool."
-      : "You have chosen to run this campaign without TRUST rewards, so it can be published without deploying a contract."}
+    When you deploy the rewards contract, this exact TRUST amount is auto-deducted from your wallet and locked as the reward pool.
   </p>
   {hasRewards && rewardContractAddress && rewardsDeployment && (
     <div className="mt-3 rounded-md border border-green-500/30 bg-green-900/20 px-3 py-2 text-[11px] text-green-200 space-y-1">
@@ -874,11 +870,11 @@ const isActive =
                       </div>
                       {/* Text */}
                       <CardDescription className="text-white/60 text-sm">
-                        {isPublished
-                          ? "The reward pool and number of participants cannot be changed after the campaign has been published."
-                          : hasRewards
-                            ? "The reward pool and number of participants cannot be changed once the campaign is published. Please make sure these values are correct before publishing."
-                            : "You have chosen to run this campaign without TRUST rewards, so it can be published without deploying a contract."}
+                        {!hasRewards
+                          ? "You have chosen to run this campaign without TRUST rewards, so it can be published without deploying a contract."
+                          : isPublished
+                            ? "The reward pool and number of participants cannot be changed after the campaign has been published."
+                            : "The reward pool and number of participants cannot be changed once the campaign is published. Please make sure these values are correct before publishing."}
                       </CardDescription>
                     </div>
 
