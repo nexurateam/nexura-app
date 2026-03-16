@@ -1,15 +1,10 @@
 import chain from "./chain";
-import { getWalletClient } from "./viem";
-import { network, NEXONS, NEXONS_ABI, CAMPAIGN_ABI } from "./constants";
+import { getWalletClient, getPublicClient} from "./viem";
+import { network, NEXONS, NEXONS_ABI, REWARD_ABI, REWARD_BYTECODE, AUTHORIZED_ADDRESS } from "./constants";
 import { ethers } from "ethers";
 import { parseAbi, type Address, parseEther } from "viem";
 import { getIntuitionNetworkParams } from "./utils";
 import { buildUrl } from "./queryClient";
-
-const ERC20_TRANSFER_ABI = [
-  "function transfer(address to, uint256 amount) returns (bool)",
-  "function decimals() view returns (uint8)",
-];
 
 const STUDIO_FEE_ABI = [
   "function payFee() external payable",
@@ -106,10 +101,105 @@ export const payStudioHubFee = async (): Promise<string> => {
   }
 };
 
-export const createCampaignOnchain = async () => {
-  try {
+interface IrewardContract {
+  nameOfCampaign: string;
+  totalRewards: number;
+  rewardToken: number;
+  startDate: number;
+}
 
+export const createRewardsContract = async ({ nameOfCampaign, totalRewards, rewardToken, startDate }: IrewardContract) => {
+  try {
+    const walletClient = await getWalletClient();
+    if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
+
+    await ensureSwitch(chainId);
+
+    const [account] = await walletClient.getAddresses();
+
+    await walletClient.deployContract({
+      abi: REWARD_ABI,
+      bytecode: REWARD_BYTECODE,
+      args: [nameOfCampaign, totalRewards, rewardToken, AUTHORIZED_ADDRESS, startDate],
+      account,
+      chain,
+      value: parseEther(totalRewards.toString())
+    });
   } catch (error: any) {
+    if (error.data) {
+      const iface = new ethers.Interface(REWARD_ABI);
+      const decoded = iface.parseError(error.data);
+
+      throw new Error(decoded?.name);
+    }
+
+    console.error(error);
+    throw new Error(error.message);
+  }
+}
+
+export const updateRewardStartTime = async (contractAddress: string, newDate: number) => {
+  try {
+    const walletClient = await getWalletClient();
+    const publicClient = getPublicClient();
+    if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
+
+    await ensureSwitch(chainId);
+
+    const [account] = await walletClient.getAddresses();
+
+    const { request } = await publicClient.simulateContract({
+      abi: REWARD_ABI,
+      address: contractAddress as "0x",
+      functionName: "updateDate",
+      args: [newDate],
+      chain,
+      account
+    });
+
+    await walletClient.writeContract(request);
+  } catch (error: any) {
+    if (error.data) {
+      const iface = new ethers.Interface(REWARD_ABI);
+      const decoded = iface.parseError(error.data);
+
+      throw new Error(decoded?.name); // e.g. AlreadyClaimed, CompleteCampaignToClaimRewards
+    }
+
+    console.error(error);
+    throw new Error(error.message);
+  }
+}
+
+export const addReward = async (contractAddress: string, rewardsToAdd: number) => {
+  try {
+    const walletClient = await getWalletClient();
+    const publicClient = getPublicClient();
+    if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
+
+    await ensureSwitch(chainId);
+
+    const [account] = await walletClient.getAddresses();
+
+    const { request } = await publicClient.simulateContract({
+      abi: REWARD_ABI,
+      address: contractAddress as "0x",
+      functionName: "addReward",
+      args: [rewardsToAdd],
+      chain,
+      account,
+      value: parseEther(rewardsToAdd.toString())
+    });
+
+    await walletClient.writeContract(request);
+  } catch (error: any) {
+    if (error.data) {
+      const iface = new ethers.Interface(REWARD_ABI);
+      const decoded = iface.parseError(error.data);
+
+      throw new Error(decoded?.name);
+    }
+
     console.error(error);
     throw new Error(error.message);
   }
@@ -117,7 +207,7 @@ export const createCampaignOnchain = async () => {
 
 export const claimCampaignOnchainReward = async ({ campaignAddress, userId }: { campaignAddress: string, userId: string }) => {
   try {
-    const walletClient = getWalletClient();
+    const walletClient = await getWalletClient();
     if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
     const validatedCampaignAddress = requireContractAddress(campaignAddress, "Campaign contract");
 
@@ -132,7 +222,7 @@ export const claimCampaignOnchainReward = async ({ campaignAddress, userId }: { 
 
     const contract = new ethers.Contract(
       validatedCampaignAddress,
-      CAMPAIGN_ABI,
+      REWARD_ABI,
       signer
     );
 
@@ -147,7 +237,7 @@ export const claimCampaignOnchainReward = async ({ campaignAddress, userId }: { 
     }
 
     if (error.data) {
-      const iface = new ethers.Interface(CAMPAIGN_ABI);
+      const iface = new ethers.Interface(REWARD_ABI);
       const decoded = iface.parseError(error.data);
 
       throw new Error(decoded?.name); // e.g. AlreadyClaimed, CompleteCampaignToClaimRewards
@@ -160,7 +250,7 @@ export const claimCampaignOnchainReward = async ({ campaignAddress, userId }: { 
 
 export const claimReferralReward = async (userId: string) => {
   try {
-    const walletClient = getWalletClient();
+    const walletClient = await getWalletClient();
     if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
 
     const mainnet = network === "mainnet";
@@ -185,7 +275,7 @@ export const claimReferralReward = async (userId: string) => {
 
 export const mintNexon = async (level: number, userId: string) => {
   try {
-    const walletClient = getWalletClient();
+    const walletClient = await getWalletClient();
     if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
 
     const mainnet = network === "mainnet";
