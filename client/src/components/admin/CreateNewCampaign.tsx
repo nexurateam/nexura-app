@@ -107,7 +107,14 @@ const parseDateTime = (isoStr: string) => {
 
 useEffect(() => {
   const editId = new URLSearchParams(window.location.search).get("edit");
-  if (!editId) return;
+  if (!editId) {
+    // Default new campaigns to rewards OFF unless the user enables it.
+    setHasRewards(false);
+    setRewardPool("");
+    setRewardContractAddress("");
+    setRewardsDeployment(null);
+    return;
+  }
   (async () => {
     try {
       const res = await projectApiRequest<{ hubCampaigns?: any[] }>({
@@ -756,7 +763,11 @@ const isActive =
   <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
     <div>
       <p className="text-sm font-medium text-white">Enable TRUST Rewards</p>
-      <p className="text-xs text-white/50">Turn this on to fund a reward pool and deploy a rewards contract.</p>
+      <p className="text-xs text-white/50">
+        {hasRewards
+          ? "Turn this on to fund a reward pool and deploy a rewards contract."
+          : "You have chosen to run this campaign without TRUST rewards, so it can be published without deploying a contract."}
+      </p>
     </div>
     <Switch
       checked={hasRewards}
@@ -865,7 +876,7 @@ const isActive =
                           ? "The reward pool and number of participants cannot be changed after the campaign has been published."
                           : hasRewards
                             ? "The reward pool and number of participants cannot be changed once the campaign is published. Please make sure these values are correct before publishing."
-                            : "This campaign is set to no TRUST rewards. You can still publish it without deploying a rewards contract."}
+                            : "You have chosen to run this campaign without TRUST rewards, so it can be published without deploying a contract."}
                       </CardDescription>
                     </div>
 
