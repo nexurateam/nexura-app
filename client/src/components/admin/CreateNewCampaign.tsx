@@ -746,10 +746,6 @@ const handleEndDateTimeChange = (value: string) => {
   const nextDate = d ?? "";
   const nextTime = t ? t.slice(0, 5) : "";
 
-  if (nextDate !== endDate || nextTime !== endTime) {
-    clearRewardsDeployment("Campaign end date/time changed.");
-  }
-
   setEndDate(nextDate);
   setEndTime(nextTime);
 };
