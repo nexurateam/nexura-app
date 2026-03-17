@@ -446,6 +446,33 @@ const normalizedBaselineParticipants = String(Number(editBaseline?.participants 
 const currentRewardPoolWei = hasRewards ? toWeiString(rewardPool || "0") : "0";
 const currentTaskSignature = useMemo(() => buildTaskSignature(tasks), [tasks]);
 
+const captureCurrentEditBaseline = (): EditBaseline => ({
+  campaignTitle,
+  campaignName,
+  startDate,
+  startTime,
+  endDate,
+  endTime,
+  hasRewards,
+  rewardPoolWei: currentRewardPoolWei || "0",
+  participants: normalizedParticipants,
+  coverImagePreview: coverImagePreview ?? "",
+  tasksSignature: currentTaskSignature,
+});
+
+const draftRewardFieldsChanged = useMemo(() => {
+  if (!editBaseline || isPublished || !hasRewards || !rewardContractAddress.trim()) return false;
+  return currentRewardPoolWei !== editBaseline.rewardPoolWei || normalizedParticipants !== normalizedBaselineParticipants;
+}, [
+  editBaseline,
+  isPublished,
+  hasRewards,
+  rewardContractAddress,
+  currentRewardPoolWei,
+  normalizedParticipants,
+  normalizedBaselineParticipants,
+]);
+
 const rewardFieldsChanged = useMemo(() => {
   if (!editBaseline || !isEditMode || !isPublished || !hasRewards || !rewardContractAddress.trim()) return false;
   return currentRewardPoolWei !== editBaseline.rewardPoolWei || normalizedParticipants !== normalizedBaselineParticipants;
@@ -490,6 +517,33 @@ const otherDetailsChanged = useMemo(() => {
 
 const updateCampaignButtonLabel =
   rewardFieldsChanged && !otherDetailsChanged ? "Update Rewards Contract" : "Update Campaign Details";
+
+const getDraftRewardsPublishError = () => {
+  if (!hasRewards) return null;
+
+  if (draftRewardFieldsChanged) {
+    return "Save the updated reward pool and participant limit before publishing.";
+  }
+
+  if (!rewardContractAddress.trim() || !rewardsDeployment) {
+    return null;
+  }
+
+  try {
+    const cfg = getRewardDeploymentConfig();
+    const fundedAmount = Number(rewardsDeployment.fundedAmount);
+    if (Math.abs(fundedAmount - cfg.totalPool) > 1e-9) {
+      return "Saved reward pool differs from the funded on-chain amount. Redeploy the rewards contract.";
+    }
+    if (rewardsDeployment.maxClaimableParticipants !== cfg.participantCount) {
+      return "Saved participant count differs from the deployed withdrawal cap. Redeploy the rewards contract.";
+    }
+  } catch (err: unknown) {
+    return err instanceof Error ? err.message : "Invalid rewards configuration.";
+  }
+
+  return null;
+};
 
 const buildCampaignFormData = (isDraft: boolean): FormData => {
   const fd = new FormData();
@@ -565,6 +619,7 @@ const handleSaveDraft = async (thenNavigate?: string): Promise<string | null> =>
     });
     const savedCampaignId = res.campaignId ?? campaignId;
     if (res.campaignId) setCampaignId(res.campaignId);
+    setEditBaseline(captureCurrentEditBaseline());
     toast({ title: "Campaign saved!", description: "Draft saved successfully." });
     if (thenNavigate) setActiveTab(thenNavigate);
     return savedCampaignId ?? null;
@@ -682,25 +737,28 @@ const handleStartDateTimeChange = (value: string) => {
   const nextDate = d ?? "";
   const nextTime = t ? t.slice(0, 5) : "";
 
-  if (nextDate !== startDate || nextTime !== startTime) {
-    clearRewardsDeployment("Campaign start date/time changed.");
-  }
-
   setStartDate(nextDate);
   setStartTime(nextTime);
 };
 
-const handleRewardPoolChange = (value: string) => {
-  if (value !== rewardPool) {
-    clearRewardsDeployment("Reward pool changed.");
+const handleEndDateTimeChange = (value: string) => {
+  const [d, t] = value.split("T");
+  const nextDate = d ?? "";
+  const nextTime = t ? t.slice(0, 5) : "";
+
+  if (nextDate !== endDate || nextTime !== endTime) {
+    clearRewardsDeployment("Campaign end date/time changed.");
   }
+
+  setEndDate(nextDate);
+  setEndTime(nextTime);
+};
+
+const handleRewardPoolChange = (value: string) => {
   setRewardPool(value);
 };
 
 const handleParticipantsChange = (value: string) => {
-  if (value !== participants) {
-    clearRewardsDeployment("Participant limit changed.");
-  }
   setParticipants(value);
 };
 
@@ -971,6 +1029,19 @@ const handleDeployRewardsContract = async () => {
       rewardPerParticipant: deployment.rewardPerParticipant,
       maxClaimableParticipants: deployedParticipantCap,
     });
+    setEditBaseline({
+      campaignTitle,
+      campaignName,
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+      hasRewards: true,
+      rewardPoolWei: toWeiString(deployment.fundedAmount) || "0",
+      participants: String(deployedParticipantCap),
+      coverImagePreview: coverImagePreview ?? "",
+      tasksSignature: currentTaskSignature,
+    });
 
     toast({
       title: "Rewards contract deployed",
@@ -1033,6 +1104,16 @@ const handlePublishButtonClick = () => {
     toast({
       title: "Rewards contract required",
       description: "Deploy the rewards contract before publishing this campaign.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  const rewardPublishError = getDraftRewardsPublishError();
+  if (rewardPublishError) {
+    toast({
+      title: "Cannot publish",
+      description: rewardPublishError,
       variant: "destructive",
     });
     return;
@@ -1186,11 +1267,7 @@ const isActive =
                           type="datetime-local"
                           className="w-full rounded-md bg-white/5 border border-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 [color-scheme:dark]"
                           value={endDate && endTime ? `${endDate}T${endTime}` : endDate ? `${endDate}T00:00` : ""}
-                          onChange={(e) => {
-                            const [d, t] = e.target.value.split("T");
-                            setEndDate(d ?? "");
-                            setEndTime(t ? t.slice(0, 5) : "");
-                          }}
+                          onChange={(e) => handleEndDateTimeChange(e.target.value)}
                         />
                       </div>
                       <p className="text-xs text-white/50 -mt-2 col-span-full">
@@ -1289,6 +1366,11 @@ const isActive =
       <p>Per participant reward: {rewardsDeployment.rewardPerParticipant} TRUST.</p>
       {rewardsDeployment.txHash && <p className="truncate">Tx: {rewardsDeployment.txHash}</p>}
     </div>
+  )}
+  {draftRewardFieldsChanged && (
+    <p className="text-[11px] text-amber-300 mt-2">
+      You changed the reward pool or participant limit after deployment. Save the campaign before publishing.
+    </p>
   )}
 </div>
 
@@ -2158,23 +2240,10 @@ const isActive =
       toast({ title: "Rewards contract required", description: "Deploy the rewards contract before publishing this campaign.", variant: "destructive" });
       return;
     }
-    if (hasRewards) {
-      try {
-        const cfg = getRewardDeploymentConfig();
-        if (rewardsDeployment) {
-          const fundedAmount = Number(rewardsDeployment.fundedAmount);
-          if (Math.abs(fundedAmount - cfg.totalPool) > 1e-9) {
-            throw new Error("Reward pool differs from the funded on-chain amount. Redeploy the rewards contract.");
-          }
-          if (rewardsDeployment.maxClaimableParticipants !== cfg.participantCount) {
-            throw new Error("Participant count differs from the deployed withdrawal cap. Redeploy the rewards contract.");
-          }
-        }
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Invalid rewards configuration.";
-        toast({ title: "Cannot publish", description: message, variant: "destructive" });
-        return;
-      }
+    const rewardPublishError = getDraftRewardsPublishError();
+    if (rewardPublishError) {
+      toast({ title: "Cannot publish", description: rewardPublishError, variant: "destructive" });
+      return;
     }
 
     setLoading(true);
