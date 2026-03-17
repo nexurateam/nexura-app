@@ -2003,12 +2003,12 @@ const isActive =
   type="button"
   onClick={handleDeployRewardsContract}
   className="px-4 py-2 bg-[#8B3EFE] text-white rounded-lg text-sm hover:bg-[#7b35e6] transition disabled:opacity-50 disabled:cursor-not-allowed"
-  disabled={loading || saveLoading || deployLoading}
+  disabled={loading || saveLoading || deployLoading || !!rewardContractAddress.trim()}
 >
   {deployLoading
     ? "Deploying..."
     : rewardContractAddress
-      ? "Redeploy Rewards Contract"
+      ? "Rewards Contract Deployed"
       : "Deploy Rewards Contract"}
 </button>
 )}
