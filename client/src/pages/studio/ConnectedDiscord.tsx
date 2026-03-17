@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
 import AnimatedBackground from "../../components/AnimatedBackground";
 import { useToast } from "../../hooks/use-toast";
-import { projectApiRequest } from "../../lib/projectApi";
+import { projectApiRequest, getStoredProjectInfo } from "../../lib/projectApi";
 
 type DiscordServer = {
   id: string;
@@ -107,8 +107,17 @@ export default function ConnectedDiscord() {
           verifiedId: selectedRole,
           guildId: selectedServer.id,
           discordServer: selectedServer.name,
+          discordSessionId: id,
         },
       });
+
+      if (id) {
+        const existingInfo = getStoredProjectInfo() ?? {};
+        localStorage.setItem(
+          "nexura-project:info",
+          JSON.stringify({ ...existingInfo, discordSessionId: id })
+        );
+      }
 
       toast({ title: "Success", description: "Discord connected successfully.", variant: "default" });
 

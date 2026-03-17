@@ -166,6 +166,10 @@ export const hubDiscordCallback = async (req: GlobalRequest, res: GlobalResponse
 export const fetchServers = async (req: GlobalRequest, res: GlobalResponse) => {
 	try {
 		const { id } = req.query as { id: string };
+		if (!id) {
+			res.status(BAD_REQUEST).json({ error: "discord session id is required" });
+			return;
+		}
 
 		const discordServers = await server.findById(id);
 		if (!discordServers) {
@@ -183,6 +187,10 @@ export const fetchServers = async (req: GlobalRequest, res: GlobalResponse) => {
 export const fetchRoles = async (req: GlobalRequest, res: GlobalResponse) => {
 	try {
 		const { id, serverId } = req.query as { id: string; serverId: string };
+		if (!id || !serverId) {
+			res.status(BAD_REQUEST).json({ error: "discord session id and server id are required" });
+			return;
+		}
 
 		const discordServers = await server.findById(id);
 		if (!discordServers) {
@@ -209,6 +217,10 @@ export const fetchRoles = async (req: GlobalRequest, res: GlobalResponse) => {
 export const fetchChannels = async (req: GlobalRequest, res: GlobalResponse) => {
 	try {
 		const { id, serverId } = req.query as { id: string; serverId: string };
+		if (!id || !serverId) {
+			res.status(BAD_REQUEST).json({ error: "discord session id and server id are required" });
+			return;
+		}
 
 		const discordServers = await server.findById(id);
 		if (!discordServers) {

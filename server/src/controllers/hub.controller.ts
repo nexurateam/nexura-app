@@ -116,14 +116,16 @@ export const savePaymentHash = async (req: GlobalRequest, res: GlobalResponse) =
 
 export const updateIds = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const { verifiedId, guildId, discordServer } = req.body;
+    const { verifiedId, guildId, discordServer, discordSessionId } = req.body;
     const normalizedDiscordServer = String(discordServer ?? "").trim();
+    const normalizedDiscordSessionId = String(discordSessionId ?? "").trim();
 
     await hub.findByIdAndUpdate(req.admin.hub, {
       verifiedId,
       guildId,
       discordConnected: true,
       ...(normalizedDiscordServer ? { discordServer: normalizedDiscordServer } : {}),
+      ...(normalizedDiscordSessionId ? { discordSessionId: normalizedDiscordSessionId } : {}),
     });
 
     res.status(OK).json({ message: "ids updated successfully" });

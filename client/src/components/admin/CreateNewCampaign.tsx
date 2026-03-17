@@ -95,12 +95,11 @@ const isDiscordFixedTaskType = (type: string) =>
 export default function CreateNewCampaigns() {
   const [, setLocation] = useLocation();
   const projectSessionInfo = getStoredProjectInfo();
-  const discordSessionId =
-    String(
-      (projectSessionInfo?.discordSessionId as string | undefined) ??
-      (projectSessionInfo?.sessionId as string | undefined) ??
-      ""
-    ).trim();
+  const initialDiscordSessionId = String(
+    (projectSessionInfo?.discordSessionId as string | undefined) ??
+    (projectSessionInfo?.sessionId as string | undefined) ??
+    ""
+  ).trim();
 
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -157,6 +156,7 @@ const [rewardsDeployment, setRewardsDeployment] = useState<RewardsDeploymentStat
 const [editBaseline, setEditBaseline] = useState<EditBaseline | null>(null);
 const [hubGuildId, setHubGuildId] = useState("");
 const [hubDiscordConnected, setHubDiscordConnected] = useState(false);
+const [discordSessionId, setDiscordSessionId] = useState(initialDiscordSessionId);
 const [discordRoles, setDiscordRoles] = useState<DiscordRoleOption[]>([]);
 const [discordChannels, setDiscordChannels] = useState<DiscordChannelOption[]>([]);
 const [discordRolesError, setDiscordRolesError] = useState("");
@@ -318,7 +318,7 @@ useEffect(() => {
 useEffect(() => {
   (async () => {
     try {
-      const res = await projectApiRequest<{ hub?: { pendingTxHash?: string | null; guildId?: string; discordConnected?: boolean } }>({
+      const res = await projectApiRequest<{ hub?: { pendingTxHash?: string | null; guildId?: string; discordConnected?: boolean; discordSessionId?: string } }>({
         method: "GET",
         endpoint: "/hub/me",
       });
@@ -329,6 +329,10 @@ useEffect(() => {
       }
       setHubGuildId(String(res.hub?.guildId ?? "").trim());
       setHubDiscordConnected(Boolean(res.hub?.discordConnected));
+      const sessionIdFromHub = String(res.hub?.discordSessionId ?? "").trim();
+      if (sessionIdFromHub) {
+        setDiscordSessionId(sessionIdFromHub);
+      }
     } catch {
       // Ignore hydration failures here; publish flow can still continue in-session.
     }
@@ -341,6 +345,13 @@ const fetchDiscordOptions = async (guildId: string) => {
     setDiscordChannels([]);
     setDiscordRolesError("No Discord server selected. Connect your Discord server first.");
     setDiscordChannelsError("No Discord server selected. Connect your Discord server first.");
+    return;
+  }
+  if (!discordSessionId) {
+    setDiscordRoles([]);
+    setDiscordChannels([]);
+    setDiscordRolesError("Reconnect Discord in Studio to load server roles.");
+    setDiscordChannelsError("Reconnect Discord in Studio to load server channels.");
     return;
   }
 
@@ -405,7 +416,7 @@ useEffect(() => {
   }
 
   void fetchDiscordOptions(hubGuildId);
-}, [showModal, newTask.type, hubDiscordConnected, hubGuildId]);
+}, [showModal, newTask.type, hubDiscordConnected, hubGuildId, discordSessionId]);
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "";
