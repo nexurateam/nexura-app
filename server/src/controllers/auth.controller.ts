@@ -202,15 +202,14 @@ export const signIn = async (req: GlobalRequest, res: GlobalResponse) => {
 	const { address, referrer }: { address: string; referrer?: string } =
 		req.body;
 
-	// const ipAddress = req.ip?.replace("::ffff:", "");
-	const lowerCaseAddress = address.toLowerCase();
-
 	if (!address) {
 		res
 			.status(BAD_REQUEST)
 			.json({ error: "address cannot be empty" });
 		return;
-	}
+  }
+
+	const lowerCaseAddress = address.toLowerCase();
 
   const slicedAddress = lowerCaseAddress.slice(0, 4) + "..." + lowerCaseAddress.slice(-4);
 
