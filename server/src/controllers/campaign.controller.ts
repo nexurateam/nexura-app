@@ -66,7 +66,7 @@ export const fetchCampaigns = async (
 			.find({ status: { $ne: "Save" } })
 			.populate({
 				path: "hub",
-				select: "name description logo website xAccount discordServer",
+				select: "name description logo website xAccount discordServer guildId",
 			})
 			.lean();
 		const statusUpdates: Array<{ _id: unknown; status: string }> = [];
@@ -84,6 +84,7 @@ export const fetchCampaigns = async (
 					website: (c as any).hub.website ?? "",
 					xAccount: (c as any).hub.xAccount ?? "",
 					discordServer: (c as any).hub.discordServer ?? "",
+					guildId: (c as any).hub.guildId ?? "",
 				}
 				: {
 					id: "",
@@ -93,6 +94,7 @@ export const fetchCampaigns = async (
 					website: "",
 					xAccount: "",
 					discordServer: "",
+					guildId: "",
 				};
 
 			return { ...c, status: normalizedStatus, hubInfo };

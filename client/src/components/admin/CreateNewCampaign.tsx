@@ -8,7 +8,7 @@ import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";
 
-import { projectApiRequest } from "../../lib/projectApi";
+import { projectApiRequest, getStoredProjectInfo } from "../../lib/projectApi";
 import { addReward, createRewardsContract, payStudioHubFee } from "../../lib/performOnchainAction";
 import { useToast } from "../../hooks/use-toast";
 import { formatEther, parseEther } from "viem";
@@ -57,9 +57,50 @@ type EditBaseline = {
   tasksSignature: string;
 };
 
+type Task = {
+  _id: string | undefined;
+  type: string;
+  platform: string;
+  handleOrUrl: string;
+  description: string;
+  evidence: string;
+  validation: string;
+  verificationMode: string;
+  roleId: string;
+  channelId: string;
+  guildId: string;
+};
+
+type DiscordRoleOption = {
+  id: string;
+  name: string;
+};
+
+type DiscordChannelOption = {
+  id: string;
+  name: string;
+  type?: number | string;
+};
+
+const DISCORD_JOIN_TASK_TYPE = "Join Us On Discord";
+const DISCORD_ROLE_TASK_TYPE = "Acquire a Role (Discord)";
+const DISCORD_MESSAGE_TASK_TYPE = "Send Message in Channel (Discord)";
+
+const isDiscordRoleTaskType = (type: string) => type === DISCORD_ROLE_TASK_TYPE;
+const isDiscordMessageTaskType = (type: string) => type === DISCORD_MESSAGE_TASK_TYPE;
+const isDiscordFixedTaskType = (type: string) =>
+  type === DISCORD_JOIN_TASK_TYPE || isDiscordRoleTaskType(type) || isDiscordMessageTaskType(type);
+
 
 export default function CreateNewCampaigns() {
   const [, setLocation] = useLocation();
+  const projectSessionInfo = getStoredProjectInfo();
+  const discordSessionId =
+    String(
+      (projectSessionInfo?.discordSessionId as string | undefined) ??
+      (projectSessionInfo?.sessionId as string | undefined) ??
+      ""
+    ).trim();
 
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -69,7 +110,6 @@ export default function CreateNewCampaigns() {
   const [showModal, setShowModal] = useState(false);
   const [validationType, setValidationType] = useState("manual");
   const { toast } = useToast();
-  type Task = { _id: string | undefined; type: string; platform: string; handleOrUrl: string; description: string; evidence: string; validation: string; verificationMode: string; };
 
 const [tasks, setTasks] = useState<Task[]>([]); 
   const [newTask, setNewTask] = useState({
@@ -81,6 +121,9 @@ const [tasks, setTasks] = useState<Task[]>([]);
   evidence: "",
   validation: "Manual Validation",
   verificationMode: "",
+  roleId: "",
+  channelId: "",
+  guildId: "",
 });
 const [editingIndex, setEditingIndex] = useState<number | null>(null);
 const [error, setError] = useState("");
@@ -112,6 +155,13 @@ const [deployLoading, setDeployLoading] = useState(false);
 const [rewardContractAddress, setRewardContractAddress] = useState("");
 const [rewardsDeployment, setRewardsDeployment] = useState<RewardsDeploymentState | null>(null);
 const [editBaseline, setEditBaseline] = useState<EditBaseline | null>(null);
+const [hubGuildId, setHubGuildId] = useState("");
+const [hubDiscordConnected, setHubDiscordConnected] = useState(false);
+const [discordRoles, setDiscordRoles] = useState<DiscordRoleOption[]>([]);
+const [discordChannels, setDiscordChannels] = useState<DiscordChannelOption[]>([]);
+const [discordRolesError, setDiscordRolesError] = useState("");
+const [discordChannelsError, setDiscordChannelsError] = useState("");
+const [discordOptionsLoading, setDiscordOptionsLoading] = useState(false);
 
 // Pre-fill from existing draft when ?edit=<id> is in the URL
 const parseDateTime = (isoStr: string) => {
@@ -140,6 +190,9 @@ const buildTaskSignature = (list: Task[]) => JSON.stringify(
     description: t.description ?? "",
     verificationMode: t.verificationMode ?? "",
     validation: t.validation ?? "",
+    roleId: t.roleId ?? "",
+    channelId: t.channelId ?? "",
+    guildId: t.guildId ?? "",
   }))
 );
 
@@ -210,6 +263,8 @@ useEffect(() => {
           if (tag === "comment" || tag === "comment-x") return "Comment on our X post";
           if (tag === "follow" || tag === "follow-x") return "Follow us on X";
           if (tag === "join" || tag === "join-discord") return "Join Us On Discord";
+          if (tag === "acquire-role-discord") return DISCORD_ROLE_TASK_TYPE;
+          if (tag === "send-message-discord" || tag === "message-discord" || tag === "message") return DISCORD_MESSAGE_TASK_TYPE;
           if (tag === "portal") return "Check Out the Portal Claims";
           if (tag === "feedback") return "Give Feedback";
           return "others";
@@ -221,6 +276,7 @@ useEffect(() => {
         };
         const tagToValidation = (tag: string) => {
           if (tag === "join" || tag === "join-discord") return "Discord Auth";
+          if (tag === "acquire-role-discord" || tag === "send-message-discord" || tag === "message-discord" || tag === "message") return "Discord Auth";
           if (tag === "portal") return "Auto Verified";
           return "Manual Validation";
         };
@@ -234,6 +290,9 @@ useEffect(() => {
             evidence: "",
             validation: tagToValidation(q.tag),
             verificationMode: q.verificationMode ?? "",
+            roleId: String(q.roleId ?? q.metadata?.roleId ?? ""),
+            channelId: String(q.channelId ?? q.metadata?.channelId ?? ""),
+            guildId: String(q.guildId ?? q.metadata?.guildId ?? ""),
           }));
           setTasks(loadedTasks);
         }
@@ -259,7 +318,7 @@ useEffect(() => {
 useEffect(() => {
   (async () => {
     try {
-      const res = await projectApiRequest<{ hub?: { pendingTxHash?: string | null } }>({
+      const res = await projectApiRequest<{ hub?: { pendingTxHash?: string | null; guildId?: string; discordConnected?: boolean } }>({
         method: "GET",
         endpoint: "/hub/me",
       });
@@ -268,11 +327,86 @@ useEffect(() => {
       if (pendingTxHash) {
         setPaymentTxHash(pendingTxHash);
       }
+      setHubGuildId(String(res.hub?.guildId ?? "").trim());
+      setHubDiscordConnected(Boolean(res.hub?.discordConnected));
     } catch {
       // Ignore hydration failures here; publish flow can still continue in-session.
     }
   })();
 }, []);
+
+const fetchDiscordOptions = async (guildId: string) => {
+  if (!guildId) {
+    setDiscordRoles([]);
+    setDiscordChannels([]);
+    setDiscordRolesError("No Discord server selected. Connect your Discord server first.");
+    setDiscordChannelsError("No Discord server selected. Connect your Discord server first.");
+    return;
+  }
+
+  setDiscordOptionsLoading(true);
+  setDiscordRolesError("");
+  setDiscordChannelsError("");
+
+  const baseParams: Record<string, string> = { serverId: guildId };
+  if (discordSessionId) baseParams.id = discordSessionId;
+
+  const [rolesResult, channelsResult] = await Promise.allSettled([
+    projectApiRequest<{ roles?: DiscordRoleOption[] }>({
+      method: "GET",
+      endpoint: "/hub/get-roles",
+      params: baseParams,
+    }),
+    projectApiRequest<{ channels?: DiscordChannelOption[]; data?: DiscordChannelOption[] }>({
+      method: "GET",
+      endpoint: "/hub/get-channels",
+      params: baseParams,
+    }),
+  ]);
+
+  if (rolesResult.status === "fulfilled") {
+    setDiscordRoles(rolesResult.value.roles ?? []);
+  } else {
+    setDiscordRoles([]);
+    const msg = rolesResult.reason instanceof Error ? rolesResult.reason.message : "Failed to fetch Discord roles.";
+    setDiscordRolesError(msg);
+  }
+
+  if (channelsResult.status === "fulfilled") {
+    const channels = channelsResult.value.channels ?? channelsResult.value.data ?? [];
+    setDiscordChannels(channels);
+  } else {
+    setDiscordChannels([]);
+    const msg = channelsResult.reason instanceof Error ? channelsResult.reason.message : "Failed to fetch Discord channels.";
+    setDiscordChannelsError(msg);
+  }
+
+  setDiscordOptionsLoading(false);
+};
+
+useEffect(() => {
+  if (!showModal) return;
+  if (!isDiscordRoleTaskType(newTask.type) && !isDiscordMessageTaskType(newTask.type)) return;
+
+  if (!hubDiscordConnected) {
+    setDiscordRoles([]);
+    setDiscordChannels([]);
+    setDiscordRolesError("Discord is not connected for this hub. Connect Discord to use this task type.");
+    setDiscordChannelsError("Discord is not connected for this hub. Connect Discord to use this task type.");
+    return;
+  }
+
+  if (!hubGuildId) {
+    setDiscordRoles([]);
+    setDiscordChannels([]);
+    setDiscordRolesError("No Discord guild is linked to this hub yet.");
+    setDiscordChannelsError("No Discord guild is linked to this hub yet.");
+    return;
+  }
+
+  void fetchDiscordOptions(hubGuildId);
+}, [showModal, newTask.type, hubDiscordConnected, hubGuildId]);
+
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "";
   const date = new Date(dateStr);
@@ -284,6 +418,8 @@ const typeToTag = (type: string) => {
   if (type === "Comment on our X post") return "comment-x";
   if (type === "Follow us on X") return "follow-x";
   if (type === "Join Us On Discord") return "join-discord";
+  if (type === DISCORD_ROLE_TASK_TYPE) return "acquire-role-discord";
+  if (type === DISCORD_MESSAGE_TASK_TYPE) return "send-message-discord";
   if (type === "Check Out the Portal Claims") return "portal";
   if (type === "Give Feedback") return "feedback";
   return "other";
@@ -370,14 +506,32 @@ const buildCampaignFormData = (isDraft: boolean): FormData => {
   if (coverImage instanceof File) fd.append("coverImage", coverImage);
   if (isDraft) fd.append("isDraft", "true");
   fd.append("campaignQuests", JSON.stringify(
-    tasks.map(t => ({
-      _id: t._id,
-      quest: t.description || t.type,
-      link: t.handleOrUrl || "https://nexura.io",
-      tag: typeToTag(t.type),
-      category: platformToCategory(t.platform),
-      verificationMode: t.verificationMode || "",
-    }))
+    tasks.map(t => {
+      const taskTag = typeToTag(t.type);
+      const taskGuildId = t.guildId || hubGuildId || "";
+      const payload: Record<string, unknown> = {
+        _id: t._id,
+        quest: t.description || t.type,
+        link: t.handleOrUrl || "https://nexura.io",
+        tag: taskTag,
+        category: platformToCategory(t.platform),
+        verificationMode: t.verificationMode || "",
+      };
+
+      if (t.roleId || t.channelId || taskGuildId) {
+        payload.metadata = {
+          ...(t.roleId ? { roleId: t.roleId } : {}),
+          ...(t.channelId ? { channelId: t.channelId } : {}),
+          ...(taskGuildId ? { guildId: taskGuildId } : {}),
+        };
+      }
+
+      if (t.roleId) payload.roleId = t.roleId;
+      if (t.channelId) payload.channelId = t.channelId;
+      if (taskGuildId) payload.guildId = taskGuildId;
+
+      return payload;
+    })
   ));
   return fd;
 };
@@ -440,8 +594,17 @@ const convertToBase64 = (file: File): Promise<string> => {
 
 const handleSaveTask = () => {
   const requiresPlatform = newTask.type !== "Check Out the Portal Claims" && newTask.type !== "others" && newTask.type !== "Give Feedback";
+  const requiresRole = isDiscordRoleTaskType(newTask.type);
+  const requiresChannel = isDiscordMessageTaskType(newTask.type);
+
   if (!newTask.type || (requiresPlatform && !newTask.platform) || !newTask.handleOrUrl || !newTask.description) {
     return setError("All fields are required.");
+  }
+  if (requiresRole && !newTask.roleId) {
+    return setError("Please select a Discord role for this task.");
+  }
+  if (requiresChannel && !newTask.channelId) {
+    return setError("Please select a Discord channel for this task.");
   }
 
   if (editingIndex !== null) {
@@ -453,7 +616,7 @@ const handleSaveTask = () => {
     setTasks([...tasks, newTask]);
   }
 
-  setNewTask({ _id: undefined, type: "", platform: "", handleOrUrl: "", description: "", evidence: "", validation: "Manual Validation", verificationMode: "" });
+  setNewTask({ _id: undefined, type: "", platform: "", handleOrUrl: "", description: "", evidence: "", validation: "Manual Validation", verificationMode: "", roleId: "", channelId: "", guildId: "" });
   setShowModal(false);
   setError("");
 };
@@ -1236,7 +1399,12 @@ const isActive =
               <button
                 className="px-3 py-1 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-500 transition"
                 onClick={() => {
-                  setNewTask(task);
+                  setNewTask({
+                    ...task,
+                    roleId: task.roleId ?? "",
+                    channelId: task.channelId ?? "",
+                    guildId: task.guildId || hubGuildId || "",
+                  });
                   setShowModal(true);
                   setEditingIndex(index);
                 }}
@@ -1313,7 +1481,9 @@ const isActive =
             value={newTask.type}
             onChange={(e) => {
               const type = e.target.value;
-              const isDiscord = type === "Join Us On Discord";
+              const isDiscord = isDiscordFixedTaskType(type);
+              const isDiscordRole = isDiscordRoleTaskType(type);
+              const isDiscordMessage = isDiscordMessageTaskType(type);
               const isTwitter = type === "Comment on our X post" || type === "Follow us on X";
               const isPortal = type === "Check Out the Portal Claims";
               const isOther = type === "others";
@@ -1325,6 +1495,9 @@ const isActive =
                 evidence: isDiscord || isPortal ? "" : isTwitter ? "submit_link" : isFeedback ? "" : newTask.evidence,
                 validation: isDiscord ? "Discord Auth" : isPortal ? "Auto Verified" : isFeedback ? "Manual Validation" : (newTask.validation === "Discord Auth" || newTask.validation === "Auto Verified" ? "Manual Validation" : newTask.validation),
                 verificationMode: isFeedback ? "feedback" : "",
+                roleId: isDiscordRole ? newTask.roleId : "",
+                channelId: isDiscordMessage ? newTask.channelId : "",
+                guildId: isDiscord ? (newTask.guildId || hubGuildId || "") : "",
               });
             }}
           >
@@ -1332,6 +1505,8 @@ const isActive =
             <option value="Comment on our X post">Comment on X</option>
             <option value="Follow us on X">Follow on X</option>
             <option value="Join Us On Discord">Join Discord</option>
+            <option value={DISCORD_ROLE_TASK_TYPE}>Acquire a Role (Discord)</option>
+            <option value={DISCORD_MESSAGE_TASK_TYPE}>Send Message in Channel (Discord)</option>
             <option value="Check Out the Portal Claims">Portal Claims</option>
             <option value="Give Feedback">Give Feedback</option>
             <option value="others">Others</option>
@@ -1339,13 +1514,13 @@ const isActive =
         </div>
 
         {/* Platform */}
-        {newTask.type !== "Check Out the Portal Claims" && newTask.type !== "others" && newTask.type !== "Give Feedback" && (
+        {newTask.type !== "Check Out the Portal Claims" && newTask.type !== "others" && newTask.type !== "Give Feedback" && !isDiscordFixedTaskType(newTask.type) && (
         <div>
           <label className="text-sm text-white/70 mb-2 block">Platform</label>
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => setNewTask({ ...newTask, platform: "Twitter", evidence: "submit_link", validation: newTask.validation === "Discord Auth" ? "Manual Validation" : newTask.validation })}
+              onClick={() => setNewTask({ ...newTask, platform: "Twitter", evidence: "submit_link", validation: newTask.validation === "Discord Auth" ? "Manual Validation" : newTask.validation, roleId: "", channelId: "", guildId: "" })}
               className={`flex-1 border py-2 rounded-lg transition ${
                 newTask.platform === "Twitter"
                   ? "bg-[#8B3EFE] text-white border-purple-500"
@@ -1361,6 +1536,7 @@ const isActive =
                 platform: "Discord",
                 evidence: "",
                 validation: "Discord Auth",
+                guildId: newTask.guildId || hubGuildId || "",
               })}
               className={`flex-1 border py-2 rounded-lg transition ${
                 newTask.platform === "Discord"
@@ -1381,11 +1557,31 @@ const isActive =
         {/* Handle or URL */}
         <div className="mb-4">
           <label className="text-sm text-white/70 mb-2 block">
-            {newTask.type === "Give Feedback" ? "Website URL" : newTask.platform === "Discord" ? "Discord Invite Link" : newTask.type === "Comment on our X post" ? "Post URL" : newTask.type === "Follow us on X" || newTask.platform === "Twitter" ? "Profile URL" : "Handle or URL"}
+            {newTask.type === "Give Feedback"
+              ? "Website URL"
+              : isDiscordMessageTaskType(newTask.type)
+                ? "Discord Channel Link"
+                : newTask.platform === "Discord"
+                  ? "Discord Invite Link"
+                  : newTask.type === "Comment on our X post"
+                    ? "Post URL"
+                    : newTask.type === "Follow us on X" || newTask.platform === "Twitter"
+                      ? "Profile URL"
+                      : "Handle or URL"}
           </label>
           <input
             type="text"
-            placeholder={newTask.type === "Give Feedback" ? "https://example.com" : newTask.platform === "Discord" ? "https://discord.gg/..." : newTask.type === "Comment on our X post" ? "https://x.com/username/status/..." : newTask.type === "Follow us on X" || newTask.platform === "Twitter" ? "https://x.com/username" : "..."}
+            placeholder={newTask.type === "Give Feedback"
+              ? "https://example.com"
+              : isDiscordMessageTaskType(newTask.type)
+                ? "https://discord.com/channels/..."
+                : newTask.platform === "Discord"
+                  ? "https://discord.gg/..."
+                  : newTask.type === "Comment on our X post"
+                    ? "https://x.com/username/status/..."
+                    : newTask.type === "Follow us on X" || newTask.platform === "Twitter"
+                      ? "https://x.com/username"
+                      : "..."}
             value={newTask.handleOrUrl}
             onChange={(e) =>
               setNewTask({ ...newTask, handleOrUrl: e.target.value })
@@ -1408,8 +1604,70 @@ const isActive =
           />
         </div>
 
+        {(isDiscordRoleTaskType(newTask.type) || isDiscordMessageTaskType(newTask.type)) && (
+          <div className="mb-4 space-y-2">
+            {(!hubDiscordConnected || !hubGuildId) && (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                {!hubDiscordConnected
+                  ? "Discord is not connected for this hub. Connect Discord first."
+                  : "No Discord guild is linked to this hub. Select a guild first in Discord setup."}
+              </div>
+            )}
+
+            {isDiscordRoleTaskType(newTask.type) && (
+              <div>
+                <label className="text-sm text-white/70 mb-2 block">Discord Role</label>
+                <select
+                  value={newTask.roleId}
+                  disabled={!hubDiscordConnected || !hubGuildId || discordOptionsLoading}
+                  onChange={(e) => setNewTask({ ...newTask, roleId: e.target.value, guildId: hubGuildId || newTask.guildId })}
+                  className="w-full p-2 rounded-lg bg-white/5 text-white border border-white/10 disabled:opacity-60 focus:outline-none focus:border-purple-500 [&>option]:bg-[#0d0d14]"
+                >
+                  <option value="">{discordOptionsLoading ? "Loading roles..." : "Select a role"}</option>
+                  {discordRoles.map((role) => (
+                    <option key={role.id} value={role.id}>{role.name}</option>
+                  ))}
+                  {newTask.roleId && !discordRoles.some((role) => role.id === newTask.roleId) && (
+                    <option value={newTask.roleId}>Selected role ({newTask.roleId})</option>
+                  )}
+                </select>
+                {discordRolesError && <p className="text-xs text-red-300 mt-1">{discordRolesError}</p>}
+                {!discordOptionsLoading && !discordRolesError && hubDiscordConnected && hubGuildId && discordRoles.length === 0 && (
+                  <p className="text-xs text-white/50 mt-1">No roles available for this guild.</p>
+                )}
+              </div>
+            )}
+
+            {isDiscordMessageTaskType(newTask.type) && (
+              <div>
+                <label className="text-sm text-white/70 mb-2 block">Discord Channel</label>
+                <select
+                  value={newTask.channelId}
+                  disabled={!hubDiscordConnected || !hubGuildId || discordOptionsLoading}
+                  onChange={(e) => setNewTask({ ...newTask, channelId: e.target.value, guildId: hubGuildId || newTask.guildId })}
+                  className="w-full p-2 rounded-lg bg-white/5 text-white border border-white/10 disabled:opacity-60 focus:outline-none focus:border-purple-500 [&>option]:bg-[#0d0d14]"
+                >
+                  <option value="">{discordOptionsLoading ? "Loading channels..." : "Select a channel"}</option>
+                  {discordChannels.map((channel) => (
+                    <option key={channel.id} value={channel.id}>
+                      {String(channel.name ?? "").startsWith("#") ? String(channel.name ?? "") : `#${String(channel.name ?? "Unknown channel")}`}
+                    </option>
+                  ))}
+                  {newTask.channelId && !discordChannels.some((channel) => channel.id === newTask.channelId) && (
+                    <option value={newTask.channelId}>Selected channel ({newTask.channelId})</option>
+                  )}
+                </select>
+                {discordChannelsError && <p className="text-xs text-red-300 mt-1">{discordChannelsError}</p>}
+                {!discordOptionsLoading && !discordChannelsError && hubDiscordConnected && hubGuildId && discordChannels.length === 0 && (
+                  <p className="text-xs text-white/50 mt-1">No channels available for this guild.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Evidence + Validation */}
-        {newTask.platform === "Discord" || newTask.type === "Join Us On Discord" ? (
+        {newTask.platform === "Discord" || isDiscordFixedTaskType(newTask.type) ? (
           <div className="flex items-center gap-3 rounded-lg bg-indigo-900/50 border border-indigo-500/50 px-4 py-3">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-indigo-400 flex-shrink-0">
               <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
@@ -1663,7 +1921,12 @@ const isActive =
               <button
                 className="px-3 py-1 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-500 transition"
                 onClick={() => {
-                  setNewTask(task);
+                  setNewTask({
+                    ...task,
+                    roleId: task.roleId ?? "",
+                    channelId: task.channelId ?? "",
+                    guildId: task.guildId || hubGuildId || "",
+                  });
                   setShowModal(true);
                   setEditingIndex(index);
                 }}

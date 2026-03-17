@@ -11,6 +11,19 @@ import { campaign } from '@/models/campaign.model';
 import { campaignQuest } from '@/models/quests.model';
 import { uploadImg } from "@/utils/img.utils";
 
+const DISCORD_CAMPAIGN_TAGS = new Set([
+  "discord",
+  "join",
+  "join-discord",
+  "message",
+  "message-discord",
+  "acquire-role-discord",
+  "send-message-discord",
+]);
+
+const isDiscordCampaignTask = (task: Record<string, any>) =>
+  DISCORD_CAMPAIGN_TAGS.has(String(task?.tag ?? "").trim()) || String(task?.category ?? "").trim() === "discord";
+
 export const createHub = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
     const { error } = validateHubData(req.body);
@@ -103,9 +116,15 @@ export const savePaymentHash = async (req: GlobalRequest, res: GlobalResponse) =
 
 export const updateIds = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const { verifiedId, guildId } = req.body;
+    const { verifiedId, guildId, discordServer } = req.body;
+    const normalizedDiscordServer = String(discordServer ?? "").trim();
 
-    await hub.findByIdAndUpdate(req.admin.hub, { verifiedId, guildId, discordConnected: true });
+    await hub.findByIdAndUpdate(req.admin.hub, {
+      verifiedId,
+      guildId,
+      discordConnected: true,
+      ...(normalizedDiscordServer ? { discordServer: normalizedDiscordServer } : {}),
+    });
 
     res.status(OK).json({ message: "ids updated successfully" });
   } catch (error) {
@@ -567,7 +586,7 @@ export const saveCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
         if (questsToSave.length > 0) {
           await campaignQuest.insertMany(
             questsToSave.map((q: any) => (
-              (q.tag === "discord" || q.tag === "join-discord") ? { ...q, campaign: savedCampaignId, guildId: hubFound.guildId } :
+              isDiscordCampaignTask(q) ? { ...q, campaign: savedCampaignId, guildId: hubFound.guildId } :
               { ...q, campaign: savedCampaignId }))
           );
         }
@@ -675,13 +694,13 @@ export const saveCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
         await campaignQuest.bulkWrite(
           questsToUpdate.map((q: any) => {
             const { _id, ...rest } = q;
-            const updatePayload = (q.tag === "discord" || q.tag === "join-discord")
+            const updatePayload = isDiscordCampaignTask(q)
               ? { ...rest, campaign: id, guildId: hubFound.guildId }
               : { ...rest, campaign: id };
 
             return {
               updateOne: {
-                filter: { _id, campaign: id },
+                filter: { _id, campaign: id as any },
                 update: { $set: updatePayload },
               }
             };
@@ -692,7 +711,7 @@ export const saveCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
       if (questsToInsert.length > 0) {
         await campaignQuest.insertMany(
           questsToInsert.map((q: any) => (
-            (q.tag === "discord" || q.tag === "join-discord")
+            isDiscordCampaignTask(q)
               ? { ...q, campaign: id, guildId: hubFound.guildId }
               : { ...q, campaign: id }
           ))
@@ -774,20 +793,24 @@ export const saveCampaignWithQuests = async (req: GlobalRequest, res: GlobalResp
     const newQuests = [];
 
     for (const qd of req.body.questData) {
+      const questData = isDiscordCampaignTask(qd)
+        ? { ...qd, guildId: hubFound.guildId }
+        : { ...qd };
+
       if (qd.campaign && qd._id) {
         createdQuests.push({
           updateOne: {
             filter: { _id: qd._id },
             update: {
               $set: {
-                ...qd,
+                ...questData,
               }
             }
           }
         });
       } else {
         qd.campaign = campaignId;
-        qd.guildId = qd.tag === "discord" ? hubFound.guildId  : undefined;
+        qd.guildId = isDiscordCampaignTask(qd) ? hubFound.guildId : undefined;
         newQuests.push({ ...qd,  })
       }
     }

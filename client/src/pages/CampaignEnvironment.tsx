@@ -26,6 +26,13 @@ type Quest = {
   link: string;
   status: string;
   guildId?: string;
+  roleId?: string;
+  channelId?: string;
+  metadata?: {
+    guildId?: string;
+    roleId?: string;
+    channelId?: string;
+  };
   hub?: string;
   done: boolean;
 };
@@ -108,6 +115,10 @@ export default function CampaignEnvironment() {
         reward: q.reward ?? 0,
         tag: q.tag ?? "other", // default to "other" if missing
         link: q.link ?? "#",
+        guildId: q.guildId ?? q.metadata?.guildId ?? "",
+        roleId: q.roleId ?? q.metadata?.roleId ?? "",
+        channelId: q.channelId ?? q.metadata?.channelId ?? "",
+        metadata: q.metadata ?? {},
         done: q.done ?? false,
       }));
 
@@ -267,12 +278,23 @@ export default function CampaignEnvironment() {
           //     throw new Error(`Kindly ${quest.tag !== "follow" ? quest.tag + " the post" : "follow the account"}`);
           //   }
           // } else 
-          if (["join", "message", "join-discord", "message-discord"].includes(quest.tag)) {
+          if (["join", "message", "join-discord", "message-discord", "acquire-role-discord", "send-message-discord"].includes(quest.tag)) {
             if (!user?.socialProfiles.discord.connected) {
               throw new Error("discord not connected yet, go to profile to connect");
             }
 
-            const { success } = await apiRequestV2("POST", "/api/check-discord", { campaignId, id: quest._id, channelId: id, tag: quest.tag, guildId: quest.guildId });
+            const isLegacyDiscordTag = ["join", "message", "join-discord", "message-discord"].includes(quest.tag);
+            const resolvedGuildId = quest.guildId || quest.metadata?.guildId;
+            const resolvedChannelId = quest.channelId || quest.metadata?.channelId || (isLegacyDiscordTag ? id : "");
+            const resolvedRoleId = quest.roleId || quest.metadata?.roleId;
+            const { success } = await apiRequestV2("POST", "/api/check-discord", {
+              campaignId,
+              id: quest._id,
+              tag: quest.tag,
+              ...(resolvedGuildId ? { guildId: resolvedGuildId } : {}),
+              ...(resolvedChannelId ? { channelId: resolvedChannelId } : {}),
+              ...(resolvedRoleId ? { roleId: resolvedRoleId } : {}),
+            });
             if (!success) {
               throw new Error(`Kindly ${quest.tag} the discord channel`);
             }

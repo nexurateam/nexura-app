@@ -2,7 +2,8 @@
 const normalizedNetwork = ((import.meta as any).env?.VITE_NETWORK as string | undefined)?.trim().toLowerCase();
 export const network: "testnet" | "mainnet" = normalizedNetwork === "mainnet" ? "mainnet" : "testnet";
 
-export const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL;
+const rawBackendUrl = ((import.meta as any).env?.VITE_BACKEND_URL as string | undefined)?.trim();
+export const BACKEND_URL = (rawBackendUrl && rawBackendUrl.length > 0 ? rawBackendUrl : "http://localhost:5600").replace(/\/+$/g, "");
 
 export const AUTHORIZED_ADDRESS = "0x4167E3Afdc91c8b15A16041F813E2a19EAaEcAE0";
 

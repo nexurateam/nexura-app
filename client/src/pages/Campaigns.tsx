@@ -25,6 +25,7 @@ interface HubInfo {
   website?: string;
   xAccount?: string;
   discordServer?: string;
+  guildId?: string;
 }
 
 interface Campaign {
@@ -121,19 +122,6 @@ export default function Campaigns() {
   const [selectedHub, setSelectedHub] = useState<HubInfo | null>(null);
 
   const { toast } = useToast();
-  const selectedHubWebsiteHref = selectedHub?.website?.trim()
-    ? (selectedHub.website.startsWith("http") ? selectedHub.website : `https://${selectedHub.website}`)
-    : "";
-  const selectedHubXHref = selectedHub?.xAccount?.trim()
-    ? (selectedHub.xAccount.startsWith("http")
-      ? selectedHub.xAccount
-      : `https://x.com/${selectedHub.xAccount.replace(/^@/, "")}`)
-    : "";
-  const selectedHubDiscordHref = selectedHub?.discordServer?.trim()
-    ? (selectedHub.discordServer.startsWith("http")
-      ? selectedHub.discordServer
-      : `https://${selectedHub.discordServer}`)
-    : "";
 
   const now = Date.now() + serverOffset;
 
@@ -254,10 +242,12 @@ export default function Campaigns() {
       : `https://x.com/${selectedHub.xAccount.replace(/^@/, "")}`)
     : "";
   const discordHref = selectedHub?.discordServer?.trim()
-    ? (selectedHub.discordServer.startsWith("http")
-      ? selectedHub.discordServer
-      : `https://${selectedHub.discordServer}`)
-    : "";
+    ? (
+      selectedHub.discordServer.startsWith("http")
+        ? selectedHub.discordServer
+        : (selectedHub.guildId ? `https://discord.com/channels/${selectedHub.guildId}` : "")
+    )
+    : (selectedHub?.guildId ? `https://discord.com/channels/${selectedHub.guildId}` : "");
 
   const activeCampaigns = allCampaigns.filter((c) => isActiveCampaign(c));
 
@@ -301,6 +291,7 @@ export default function Campaigns() {
       website: "",
       xAccount: "",
       discordServer: "",
+      guildId: "",
     };
 
     return (
@@ -614,6 +605,9 @@ export default function Campaigns() {
                       )}
                     </div>
                     <p className="text-[11px] text-white/50">Icons are clickable only when links are set.</p>
+                    <p className="text-[11px] text-white/60">
+                      Discord server: {selectedHub.discordServer?.trim() || (selectedHub.guildId ? "Connected" : "Not connected")}
+                    </p>
                   </div>
                 </div>
               </div>

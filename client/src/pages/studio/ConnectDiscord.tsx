@@ -15,14 +15,7 @@ export default function ConnectDiscord() {
     }
   }, []);
 
-  const handleFakeConnect = () => {
-    const fakeDiscord = {
-      handle: "@realproject_handle",
-      avatar: "/original-discord.png",
-      verified: true,
-    };
-
-    localStorage.setItem("discordData", JSON.stringify(fakeDiscord));
+  const handleConnect = () => {
     window.location.href = discordHubAuthUrl;
   };
 
@@ -50,7 +43,7 @@ export default function ConnectDiscord() {
         </CardDescription>
 
         <Button
-          onClick={handleFakeConnect}
+          onClick={handleConnect}
           className="w-full text-white bg-[#8B3EFE] hover:bg-[#8B3EFE] flex items-center justify-center gap-2"
         >
           <img src="/original-discord.png" alt="Discord logo" className="w-4 h-4" />

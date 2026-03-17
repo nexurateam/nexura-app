@@ -9,7 +9,7 @@ function getApiUrl(path: string) {
 
 export function getStoredProjectToken(): string | null {
   try {
-    return localStorage.getItem("nexura-project:token");
+    return localStorage.getItem("nexura-project:token") ?? localStorage.getItem("nexura:proj-token");
   } catch {
     return null;
   }

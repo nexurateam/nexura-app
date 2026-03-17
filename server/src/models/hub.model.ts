@@ -44,6 +44,11 @@ const hubSchema = new Schema({
     required: false,
     default: ""
   },
+  discordSessionId: {
+    type: String,
+    required: false,
+    default: ""
+  },
   campaignsCreated: {
     type: Number,
     default: 0

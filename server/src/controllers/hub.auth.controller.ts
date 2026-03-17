@@ -206,6 +206,38 @@ export const fetchRoles = async (req: GlobalRequest, res: GlobalResponse) => {
 	}
 }
 
+export const fetchChannels = async (req: GlobalRequest, res: GlobalResponse) => {
+	try {
+		const { id, serverId } = req.query as { id: string; serverId: string };
+
+		const discordServers = await server.findById(id);
+		if (!discordServers) {
+			res.status(INTERNAL_SERVER_ERROR).json({ error: "kindly authenticate your discord" });
+			return;
+		}
+
+		const { data } = await axios.get(`https://discord.com/api/v10/guilds/${serverId}/channels`, {
+			headers: {
+				...headers,
+				Authorization: `Bot ${BOT_TOKEN}`,
+			}
+		});
+
+		const channels = Array.isArray(data)
+			? data
+				.filter((channel: any) => channel && [0, 5].includes(Number(channel.type)))
+				.map((channel: any) => ({ id: channel.id, name: channel.name, type: channel.type }))
+			: [];
+
+		res.json({ message: "channels fetched", channels });
+	} catch (error: any) {
+		console.error(error);
+		console.error("DISCORD HUB CHANNELS ERROR STATUS:", error.response?.status);
+		console.error("DISCORD HUB CHANNELS ERROR DATA:", error.response?.data);
+		res.status(INTERNAL_SERVER_ERROR).json({ error: "Error fetching discord channels" });
+	}
+}
+
 export const hubAdminSignUp = async (req: GlobalRequest, res: GlobalResponse) => {
 	try {
 

@@ -2,28 +2,35 @@ import { useEffect, useState } from "react";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { useLocation, useParams } from "wouter";
+import { useLocation } from "wouter";
 import AnimatedBackground from "../../components/AnimatedBackground";
-import { apiRequestV2 } from "../../lib/queryClient";
 import { useToast } from "../../hooks/use-toast";
 import { projectApiRequest } from "../../lib/projectApi";
+
+type DiscordServer = {
+  id: string;
+  name: string;
+};
+
+type DiscordRole = {
+  id: string;
+  name: string;
+};
 
 export default function ConnectedDiscord() {
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
   const [_, setLocation] = useLocation();
-  const [discordData, setDiscordData] = useState<{
-    id: string,
-    name: string
-  }[]>([]);
+  const [discordData, setDiscordData] = useState<DiscordServer[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [loadingRoles, setLoadingRoles] = useState(false);
 
   // Dropdown states
   const [serverOpen, setServerOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
-  const [roles, setRoles] = useState<{ id: string; name: string }[]>([]);
-  const [selectedServer, setSelectedServer] = useState<{ id: string; name: string }>({ id: "", name: "" });
+  const [roles, setRoles] = useState<DiscordRole[]>([]);
+  const [selectedServer, setSelectedServer] = useState<DiscordServer>({ id: "", name: "" });
   const [selectedRole, setSelectedRole] = useState<string>("");
 
   const { toast } = useToast();
@@ -36,11 +43,23 @@ export default function ConnectedDiscord() {
       localStorage.setItem("nexura:studio-step", "/connected-discord");
     }
 
+    if (!id) {
+      setLoading(false);
+      toast({
+        title: "Missing Discord session",
+        description: "Please reconnect Discord to continue.",
+        variant: "destructive",
+      });
+      setLocation("/connect-discord");
+      return;
+    }
+
     fetchDiscordData();
   }, []);
   
   async function fetchDiscordData() {
     try {
+      setLoading(true);
       const { servers } = await projectApiRequest<{ servers: { id: string; name: string }[] }>({ method: "GET", endpoint: `/hub/get-servers?id=${id}` });
       setDiscordData(servers);
       setLoading(false);
@@ -51,28 +70,52 @@ export default function ConnectedDiscord() {
     }
   }
 
-  async function fetchRoles() {
+  async function fetchRoles(serverId: string) {
+    if (!id || !serverId) return;
     try {
-      console.log({selectedServer})
-      const { roles } = await apiRequestV2("GET", `/api/hub/get-roles?serverId=${selectedServer.id}&id=${id}`)
+      setLoadingRoles(true);
+      const { roles } = await projectApiRequest<{ roles: DiscordRole[] }>({
+        method: "GET",
+        endpoint: `/hub/get-roles?serverId=${serverId}&id=${id}`,
+      });
       setRoles(roles);
+      setLoadingRoles(false);
     } catch (error) {
+      setLoadingRoles(false);
       console.error(error);
       toast({ title: "Error", description: "Failed to fetch roles", variant: "destructive" });
     }
   }
 
   async function createHub() {
+    if (!selectedServer.id) {
+      toast({ title: "Select a server", description: "Please choose your Discord server first.", variant: "destructive" });
+      return;
+    }
+
+    if (!selectedRole) {
+      toast({ title: "Select a role", description: "Please choose a role for verification.", variant: "destructive" });
+      return;
+    }
+
     try {
 
-      await projectApiRequest({ method: "PATCH", endpoint: `/hub/update-ids`, data: { verifiedId: selectedRole, guildId: selectedServer.id } });
+      await projectApiRequest({
+        method: "PATCH",
+        endpoint: `/hub/update-ids`,
+        data: {
+          verifiedId: selectedRole,
+          guildId: selectedServer.id,
+          discordServer: selectedServer.name,
+        },
+      });
 
-      toast({ title: "Success", description: "Project created successfully", variant: "default" });
+      toast({ title: "Success", description: "Discord connected successfully.", variant: "default" });
 
-      setLocation("/");
+      setLocation("/studio-dashboard");
     } catch (error) {
       console.error(error);
-      toast({ title: "Error", description: "Failed to create project", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to connect Discord", variant: "destructive" });
     }
   }
 
@@ -132,8 +175,11 @@ export default function ConnectedDiscord() {
                 <div
                   key={idx}
                   onClick={() => {
-                    setSelectedServer(server)
-                    fetchRoles()
+                    setSelectedServer(server);
+                    setSelectedRole("");
+                    setRoles([]);
+                    setServerOpen(false);
+                    fetchRoles(server.id);
                   }}
                   className="bg-gray-900 px-4 py-2 rounded-2xl border border-purple-500 text-white cursor-pointer hover:bg-gray-800"
                 >
@@ -162,6 +208,16 @@ export default function ConnectedDiscord() {
 
           {rolesOpen && (
             <div className="mt-3 space-y-3">
+              {loadingRoles && (
+                <div className="bg-gray-900 px-4 py-3 rounded-2xl border border-purple-500 text-white/70 text-sm">
+                  Loading roles...
+                </div>
+              )}
+              {!loadingRoles && roles.length === 0 && (
+                <div className="bg-gray-900 px-4 py-3 rounded-2xl border border-purple-500 text-white/70 text-sm">
+                  {selectedServer.id ? "No roles found for this server." : "Select a server first to load roles."}
+                </div>
+              )}
               {roles.map((role, idx) => (
                 <div
                   key={idx}
