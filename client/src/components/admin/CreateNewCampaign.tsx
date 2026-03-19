@@ -170,9 +170,25 @@ const [discordOptionsLoading, setDiscordOptionsLoading] = useState(false);
 // Pre-fill from existing draft when ?edit=<id> is in the URL
 const parseDateTime = (isoStr: string) => {
   if (!isoStr) return { date: "", time: "" };
+  const parsed = new Date(isoStr);
+  if (!Number.isNaN(parsed.getTime())) {
+    const pad = (value: number) => value.toString().padStart(2, "0");
+    return {
+      date: `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`,
+      time: `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`,
+    };
+  }
   const idx = isoStr.indexOf("T");
   if (idx === -1) return { date: isoStr, time: "" };
   return { date: isoStr.slice(0, idx), time: isoStr.slice(idx + 1, idx + 6) };
+};
+
+const toIsoDateTime = (date: string, time: string) => {
+  const normalized = date && time ? `${date}T${time}` : date ? `${date}T00:00` : "";
+  if (!normalized) return "";
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return normalized;
+  return parsed.toISOString();
 };
 
 const toLocalInputDateTime = (unixSeconds: number) => {
@@ -617,8 +633,8 @@ const buildCampaignFormData = (isDraft: boolean): FormData => {
   fd.append("title", campaignTitle);
   fd.append("description", campaignName);
   fd.append("nameOfProject", campaignName);
-  fd.append("starts_at", startDate && startTime ? `${startDate}T${startTime}` : startDate);
-  fd.append("ends_at", endDate && endTime ? `${endDate}T${endTime}` : endDate);
+  fd.append("starts_at", toIsoDateTime(startDate, startTime));
+  fd.append("ends_at", toIsoDateTime(endDate, endTime));
   fd.append("maxParticipants", participants);
   fd.append("reward", JSON.stringify({
     xp: Number(xpRewards) || 0,

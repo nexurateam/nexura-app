@@ -592,10 +592,22 @@ export const getCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 
 export const saveCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
+    const normalizeCampaignDateInput = (value: unknown) => {
+      if (typeof value !== "string") return value;
+      const trimmed = value.trim();
+      if (!trimmed) return trimmed;
+      const parsed = new Date(trimmed);
+      if (Number.isNaN(parsed.getTime())) return trimmed;
+      return parsed.toISOString();
+    };
+
     // FormData sends JSON fields as strings — parse them before validation
     if (typeof req.body.reward === "string") {
       try { req.body.reward = JSON.parse(req.body.reward); } catch { /* leave as-is */ }
     }
+
+    req.body.starts_at = normalizeCampaignDateInput(req.body.starts_at);
+    req.body.ends_at = normalizeCampaignDateInput(req.body.ends_at);
 
     const hubFound = await hub.findById(req.admin.hub).lean();
     if (!hubFound) {
