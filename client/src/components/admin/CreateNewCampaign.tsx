@@ -1161,6 +1161,18 @@ const handleUpdateCampaign = async () => {
 
   let rewardConfig: ReturnType<typeof getRewardDeploymentConfig> | null = null;
   let shouldReplaceScheduledRewardsContract = false;
+  const nextCampaignStartMs = startDate
+    ? new Date(`${startDate}T${startTime || "00:00"}`).getTime()
+    : Number.NaN;
+  const startDateChanged =
+    Boolean(editBaseline) &&
+    (startDate !== editBaseline.startDate || startTime !== editBaseline.startTime);
+  const movesStartEarlier =
+    startDateChanged &&
+    Number.isFinite(publishedCampaignStartMs) &&
+    Number.isFinite(nextCampaignStartMs) &&
+    nextCampaignStartMs < publishedCampaignStartMs;
+
   if (hasRewards) {
     try {
       rewardConfig = getRewardDeploymentConfig();
@@ -1170,7 +1182,7 @@ const handleUpdateCampaign = async () => {
         const reducedPool = rewardConfig.totalPoolWei < deployed.fundedAmountWei;
         const reducedParticipants = rewardConfig.participantCount < deployed.maxClaimableParticipants;
 
-        if (!publishedCampaignHasStarted && (perParticipantTrustChanged || reducedPool || reducedParticipants)) {
+        if (!publishedCampaignHasStarted && (perParticipantTrustChanged || reducedPool || reducedParticipants || movesStartEarlier)) {
           shouldReplaceScheduledRewardsContract = true;
         } else {
           getPublishedRewardIncreaseDelta(rewardConfig);
@@ -1190,10 +1202,6 @@ const handleUpdateCampaign = async () => {
       toast({ title: "Update failed", description: "Campaign id is missing.", variant: "destructive" });
       return;
     }
-
-    const startDateChanged =
-      editBaseline &&
-      (startDate !== editBaseline.startDate || startTime !== editBaseline.startTime);
 
     if (shouldReplaceScheduledRewardsContract && rewardConfig) {
       await replaceScheduledRewardsContract(savedCampaignId, rewardConfig);
