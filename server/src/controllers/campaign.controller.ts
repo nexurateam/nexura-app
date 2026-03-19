@@ -138,10 +138,10 @@ export const fetchCampaigns = async (
 ) => {
 	try {
 		// Hide only studio drafts (status: "Save"). All other campaigns
-		// (Active, Scheduled, Ended, or legacy campaigns with no status field)
+		// (Active, Scheduled, Ended, deleted-for-studio, or legacy campaigns with no status field)
 		// remain visible so non-studio campaigns are unaffected.
 		const campaigns = await campaign
-			.find({ status: { $nin: ["Save", "Deleted"] }, deletedAt: null })
+			.find({ status: { $ne: "Save" } })
 			.populate({
 				path: "hub",
 				select: "name description logo website xAccount discordServer guildId",
@@ -150,7 +150,8 @@ export const fetchCampaigns = async (
 		const statusUpdates: Array<{ _id: unknown; status: string }> = [];
 		const normalizedCampaigns = campaigns.map((c) => {
 			const normalizedStatus = getTemporalCampaignStatus(c);
-			if (normalizedStatus !== c.status) {
+			const publicStatus = normalizedStatus === "Deleted" ? "Ended" : normalizedStatus;
+			if (normalizedStatus !== c.status && normalizedStatus !== "Deleted") {
 				statusUpdates.push({ _id: c._id, status: normalizedStatus });
 			}
 			const hubInfo = (c as any).hub && typeof (c as any).hub === "object"
@@ -175,7 +176,7 @@ export const fetchCampaigns = async (
 					guildId: "",
 				};
 
-			return { ...c, status: normalizedStatus, hubInfo };
+			return { ...c, status: publicStatus, hubInfo };
 		});
 
 		if (statusUpdates.length > 0) {
