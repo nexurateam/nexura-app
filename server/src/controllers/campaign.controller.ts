@@ -75,6 +75,44 @@ const resolveCampaignDiscordLaunchGuildId = async (campaignDoc: any) => {
 	return guildIds[0] ?? "";
 };
 
+const normalizeJoinCampaignError = (error: any) => {
+	const messages = [
+		typeof error?.shortMessage === "string" ? error.shortMessage : "",
+		typeof error?.message === "string" ? error.message : "",
+		typeof error?.cause?.shortMessage === "string" ? error.cause.shortMessage : "",
+		typeof error?.cause?.message === "string" ? error.cause.message : "",
+	]
+		.map((value) => value.trim())
+		.filter(Boolean);
+
+	const combined = messages.join(" ");
+	if (/future on-chain start date|rewards start later on-chain/i.test(combined)) {
+		return "Rewards start later on-chain. An admin must update or redeploy the contract.";
+	}
+	if (/returned no data|address is not a contract|does not have the function/i.test(combined)) {
+		return "Rewards contract is invalid. An admin must redeploy it.";
+	}
+	if (/campaign participant limit reached/i.test(combined)) {
+		return "Campaign participant limit reached.";
+	}
+	if (/campaign has not started yet/i.test(combined)) {
+		return "Campaign has not started yet.";
+	}
+	if (/campaign has ended/i.test(combined)) {
+		return "Campaign has ended.";
+	}
+	if (/already joined campaign|already joined/i.test(combined)) {
+		return "Already joined campaign.";
+	}
+
+	const firstMessage = messages[0] ?? "";
+	if (firstMessage && firstMessage.length <= 120) {
+		return firstMessage;
+	}
+
+	return "error joining campaign!";
+};
+
 const getTemporalCampaignStatus = (campaignDoc: {
 	status?: string;
 	starts_at?: string | Date;
@@ -408,7 +446,7 @@ export const joinCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 				const onchainStartDate = await getCampaignContractStartDate(campaignToJoin.contractAddress);
 				if (Number.isFinite(onchainStartDate) && onchainStartDate * 1000 > now.getTime()) {
 					res.status(FORBIDDEN).json({
-						error: "this rewards contract still has a future on-chain start date. an admin must update or redeploy the contract before users can join",
+						error: "Rewards start later on-chain. An admin must update or redeploy the contract.",
 					});
 					return;
 				}
@@ -430,11 +468,9 @@ export const joinCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 		res.status(BAD_REQUEST).json({ error: "already joined campaign" });
 	} catch (error: any) {
 		logger.error(error);
-		const message = typeof error?.message === "string" && error.message.trim()
-			? error.message.trim()
-			: "error joining campaign!";
+		const message = normalizeJoinCampaignError(error);
 		res
-			.status(INTERNAL_SERVER_ERROR)
+			.status(message === "error joining campaign!" ? INTERNAL_SERVER_ERROR : FORBIDDEN)
 			.json({ error: message });
 	}
 };

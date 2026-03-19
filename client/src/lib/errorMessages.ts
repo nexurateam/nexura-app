@@ -16,6 +16,8 @@ const RULES: Array<{ pattern: RegExp; message: string }> = [
   { pattern: /(cannot be reopened because its remaining funds have already been withdrawn|cannot be extended because its remaining funds have already been withdrawn)/i, message: "This rewards contract has already been settled and cannot be reopened." },
   { pattern: /(failedtorefundreward|failed to refund reward)/i, message: "The contract could not return the remaining rewards." },
   { pattern: /(campaign has not started yet)/i, message: "This campaign has not started yet." },
+  { pattern: /(rewards start later on-chain)/i, message: "Rewards are not joinable yet. An admin must update or redeploy the contract." },
+  { pattern: /(rewards contract is invalid)/i, message: "This rewards contract is broken. An admin must redeploy it." },
   { pattern: /(alreadycreatedsixcampaigns)/i, message: "You have reached the campaign creation limit." },
   { pattern: /(alreadyclaimedcampaignreward|alreadyclaimed)/i, message: "Reward already claimed." },
   { pattern: /(rewardhasbeenexhausted|reward exhausted)/i, message: "Rewards are currently exhausted." },
