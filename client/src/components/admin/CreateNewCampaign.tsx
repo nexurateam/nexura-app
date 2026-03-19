@@ -1098,11 +1098,15 @@ const handleUpdateCampaign = async () => {
     const savedCampaignId = campaignId ?? await handleSaveDraft();
     if (!savedCampaignId) return;
 
-    if (hasRewards && isPublished && !isEnded && rewardConfig) {
+    const endDateChanged =
+      editBaseline &&
+      (endDate !== editBaseline.endDate || endTime !== editBaseline.endTime);
+
+    if (hasRewards && isPublished && !isEnded && campaignHasStarted && rewardConfig) {
       await syncPublishedRewardIncrease(savedCampaignId, rewardConfig);
     }
 
-    if (hasRewards && isPublished && !isEnded) {
+    if (hasRewards && isPublished && !isEnded && endDateChanged && rewardContractAddress.trim()) {
       await syncPublishedRewardClaimStart();
     }
 
