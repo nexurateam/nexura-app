@@ -32,6 +32,18 @@ export const getPublicClient = () => {
 	return publicClient;
 };
 
+export const getCampaignContractStartDate = async (contractAddress: string) => {
+	const client = getPublicClient();
+
+	const startDate = await client.readContract({
+		address: contractAddress as GlobalAddress,
+		abi: parseAbi(["function startDate() view returns (uint256)"]),
+		functionName: "startDate",
+	}) as bigint;
+
+	return Number(startDate);
+};
+
 export const performIntuitionOnchainAction = async ({
 	action,
 	contractAddress,

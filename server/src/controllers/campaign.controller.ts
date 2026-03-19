@@ -3,7 +3,7 @@ import { campaign, campaignCompleted } from "@/models/campaign.model";
 import { hub } from "@/models/hub.model";
 import { referredUsers } from "@/models/referrer.model";
 import { user } from "@/models/user.model";
-import { performIntuitionOnchainAction } from "@/utils/account";
+import { getCampaignContractStartDate, performIntuitionOnchainAction } from "@/utils/account";
 import { uploadImg } from "@/utils/img.utils";
 import {
 	OK,
@@ -405,6 +405,14 @@ export const joinCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 				campaignToJoin.trustClaimed < campaignToJoin.totalTrustAvailable &&
 				campaignToJoin.contractAddress
 			) {
+				const onchainStartDate = await getCampaignContractStartDate(campaignToJoin.contractAddress);
+				if (Number.isFinite(onchainStartDate) && onchainStartDate * 1000 > now.getTime()) {
+					res.status(FORBIDDEN).json({
+						error: "this rewards contract still has a future on-chain start date. an admin must update or redeploy the contract before users can join",
+					});
+					return;
+				}
+
 				await performIntuitionOnchainAction({
 					action: "join",
 					userId,
@@ -420,11 +428,14 @@ export const joinCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 		}
 
 		res.status(BAD_REQUEST).json({ error: "already joined campaign" });
-	} catch (error) {
+	} catch (error: any) {
 		logger.error(error);
+		const message = typeof error?.message === "string" && error.message.trim()
+			? error.message.trim()
+			: "error joining campaign!";
 		res
 			.status(INTERNAL_SERVER_ERROR)
-			.json({ error: "error joining campaign!" });
+			.json({ error: message });
 	}
 };
 
