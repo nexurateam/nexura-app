@@ -8,7 +8,7 @@ import { useToast } from "../../hooks/use-toast";
 import { ArrowDownToLine, RefreshCw, Trash2, XCircle, Loader2, Clock, RotateCcw } from "lucide-react";
 import { Button } from "../ui/button";
 import { apiRequestV2 } from "../../lib/queryClient";
-import { closeRewardCampaign, getRewardContractBalance } from "../../lib/performOnchainAction";
+import { closeRewardCampaign, getRewardContractBalance, syncRewardContractStartDate } from "../../lib/performOnchainAction";
 import { formatEther } from "viem";
 import {
   Dialog,
@@ -61,6 +61,7 @@ export default function CampaignsTab() {
 
   const info = getStoredProjectInfo();
   const isSuperAdmin = (info?.role as string) === "superadmin";
+  const isHubAdmin = isSuperAdmin || (info?.role as string) === "admin";
   const formatTrustAmount = (amountWei: bigint) => {
     const formatted = formatEther(amountWei);
     const numeric = Number(formatted);
@@ -180,10 +181,31 @@ export default function CampaignsTab() {
     }
   };
 
-  const handleReopen = async (id: string) => {
+  const handleReopen = async (campaign: Campaign) => {
+    const id = campaign._id;
+    const rewardsContractSettled = Boolean(campaign.rewardsDeployment?.remainderWithdrawalTxHash);
+
+    if (rewardsContractSettled) {
+      toast({
+        title: "Reopen blocked",
+        description: "This rewards campaign cannot be reopened because its remaining funds have already been withdrawn.",
+        variant: "destructive",
+      });
+      setPendingAction(null);
+      return;
+    }
+
     setReopeningId(id);
     setPendingAction(null);
     try {
+      if (campaign.contractAddress && Number(campaign.reward?.pool ?? 0) > 0) {
+        const claimStartTimestamp = Math.floor(new Date(campaign.ends_at).getTime() / 1000);
+
+        if (Number.isFinite(claimStartTimestamp) && claimStartTimestamp > 0) {
+          await syncRewardContractStartDate(campaign.contractAddress, claimStartTimestamp);
+        }
+      }
+
       await projectApiRequest({ method: "PATCH", endpoint: "/hub/reopen-campaign", params: { id } });
       toast({ title: "Campaign reopened", description: "The campaign has been reopened successfully." });
       fetchCampaigns();
@@ -265,7 +287,13 @@ export default function CampaignsTab() {
       handleClose(pendingAction.id);
       return;
     }
-    handleReopen(pendingAction.id);
+    const campaignToReopen = campaigns.find((campaign) => campaign._id === pendingAction.id);
+    if (!campaignToReopen) {
+      toast({ title: "Error", description: "Campaign not found.", variant: "destructive" });
+      setPendingAction(null);
+      return;
+    }
+    void handleReopen(campaignToReopen);
   };
 
   useEffect(() => {
@@ -321,7 +349,8 @@ export default function CampaignsTab() {
     const draft = isDraft(campaign);
     const scheduled = isScheduled(campaign);
     const completed = isCompleted(campaign);
-    const canReopen = isReopenable(campaign);
+    const rewardsContractSettled = Boolean(campaign.rewardsDeployment?.remainderWithdrawalTxHash);
+    const canReopen = isReopenable(campaign) && !rewardsContractSettled;
     const rewardBalance = rewardBalances[campaign._id];
     const rewardBalanceKnown = rewardBalance !== undefined;
     const hasRewardsContract = !!campaign.contractAddress && Number(campaign.reward?.pool ?? 0) > 0;
@@ -406,7 +435,7 @@ export default function CampaignsTab() {
                 </button>
               )}
 
-              {isSuperAdmin && hasWithdrawableRemainder && (
+              {isHubAdmin && hasWithdrawableRemainder && (
                 <button
                   title="Withdraw contract remainder"
                   className="px-3 py-1.5 text-xs bg-emerald-600/20 text-emerald-300 rounded-lg hover:bg-emerald-600/30 transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"

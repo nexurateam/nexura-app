@@ -9,7 +9,7 @@ import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";
 
 import { projectApiRequest, getStoredProjectInfo } from "../../lib/projectApi";
-import { addReward, createRewardsContract, payStudioHubFee } from "../../lib/performOnchainAction";
+import { addReward, createRewardsContract, payStudioHubFee, syncRewardContractStartDate } from "../../lib/performOnchainAction";
 import { useToast } from "../../hooks/use-toast";
 import { formatEther, parseEther } from "viem";
 import {
@@ -41,6 +41,7 @@ type RewardsDeploymentState = {
   fundedAmount: string;
   rewardPerParticipant: string;
   maxClaimableParticipants: number;
+  remainderWithdrawalTxHash?: string;
 };
 
 type EditBaseline = {
@@ -245,6 +246,7 @@ useEffect(() => {
           fundedAmount: String(found.rewardsDeployment?.fundedAmount ?? existingRewardPool),
           rewardPerParticipant: String(found.rewardsDeployment?.rewardPerParticipant ?? trustPerParticipant),
           maxClaimableParticipants: Number(found.rewardsDeployment?.maxClaimableParticipants ?? participantCount),
+          remainderWithdrawalTxHash: found.rewardsDeployment?.remainderWithdrawalTxHash ?? "",
         });
       } else {
         setRewardsDeployment(null);
@@ -948,6 +950,20 @@ const syncPublishedRewardIncrease = async (
   });
 };
 
+const syncPublishedRewardClaimStart = async () => {
+  if (!isPublished || !hasRewards || !rewardContractAddress.trim()) return;
+
+  const claimStartTimestamp = getCampaignClaimStartTimestamp();
+  const syncResult = await syncRewardContractStartDate(rewardContractAddress.trim(), claimStartTimestamp);
+
+  if (!syncResult.updated) return;
+
+  toast({
+    title: "Rewards contract reopened",
+    description: "Updated the on-chain claim date to match the latest campaign end date.",
+  });
+};
+
 const handleDeployRewardsContract = async () => {
   if (!hasRewards) {
     toast({ title: "Rewards are disabled", description: "Turn on campaign rewards before deploying a rewards contract.", variant: "destructive" });
@@ -1082,6 +1098,10 @@ const handleUpdateCampaign = async () => {
 
     if (hasRewards && isPublished && rewardConfig) {
       await syncPublishedRewardIncrease(savedCampaignId, rewardConfig);
+    }
+
+    if (hasRewards && isPublished) {
+      await syncPublishedRewardClaimStart();
     }
 
     setCampaignId(savedCampaignId);

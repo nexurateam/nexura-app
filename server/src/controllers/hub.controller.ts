@@ -716,14 +716,29 @@ export const saveCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 
     const existingPool = Number(campaignFound.reward?.pool ?? 0);
     const existingMaxParticipants = Number((campaignFound as any).maxParticipants ?? campaignFound.participants ?? 0);
+    const existingEndsAt = campaignFound.ends_at ? new Date(campaignFound.ends_at) : null;
     const incomingPool = updateFields.reward
       ? Number((updateFields.reward as Record<string, unknown>).pool ?? existingPool)
       : existingPool;
     const incomingMaxParticipants = updateFields.maxParticipants !== undefined
       ? Number(updateFields.maxParticipants ?? existingMaxParticipants)
       : existingMaxParticipants;
+    const incomingEndsAt = updateFields.ends_at ? new Date(String(updateFields.ends_at)) : existingEndsAt;
+    const rewardsContractSettled = Boolean((campaignFound as any).rewardsDeployment?.remainderWithdrawalTxHash);
 
     if (campaignFound.status !== "Save" && campaignFound.contractAddress && existingPool > 0) {
+      if (
+        rewardsContractSettled &&
+        existingEndsAt &&
+        incomingEndsAt &&
+        incomingEndsAt.getTime() > existingEndsAt.getTime()
+      ) {
+        res.status(BAD_REQUEST).json({
+          error: "this rewards campaign cannot be extended because its remaining funds have already been withdrawn",
+        });
+        return;
+      }
+
       if (incomingPool < existingPool) {
         res.status(BAD_REQUEST).json({ error: "reward pool cannot be reduced after publishing" });
         return;

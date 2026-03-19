@@ -504,14 +504,29 @@ export const updateCampaign = async (
 
 		const existingPool = Number(existingCampaign.reward?.pool ?? 0);
 		const existingMaxParticipants = Number((existingCampaign as any).maxParticipants ?? existingCampaign.participants ?? 0);
+		const existingEndsAt = existingCampaign.ends_at ? new Date(existingCampaign.ends_at) : null;
 		const incomingPool = campaignUpdateData.reward
 			? Number((campaignUpdateData.reward as Record<string, unknown>).pool ?? existingPool)
 			: existingPool;
 		const incomingMaxParticipants = campaignUpdateData.maxParticipants !== undefined
 			? Number(campaignUpdateData.maxParticipants ?? existingMaxParticipants)
 			: existingMaxParticipants;
+		const incomingEndsAt = campaignUpdateData.ends_at ? new Date(String(campaignUpdateData.ends_at)) : existingEndsAt;
+		const rewardsContractSettled = Boolean((existingCampaign as any).rewardsDeployment?.remainderWithdrawalTxHash);
 
 		if (existingCampaign.status !== "Save" && existingCampaign.contractAddress && existingPool > 0) {
+			if (
+				rewardsContractSettled &&
+				existingEndsAt &&
+				incomingEndsAt &&
+				incomingEndsAt.getTime() > existingEndsAt.getTime()
+			) {
+				res.status(BAD_REQUEST).json({
+					error: "this rewards campaign cannot be extended because its remaining funds have already been withdrawn",
+				});
+				return;
+			}
+
 			if (incomingPool < existingPool) {
 				res.status(BAD_REQUEST).json({ error: "reward pool cannot be reduced after publishing" });
 				return;
@@ -707,9 +722,16 @@ export const reopenCampaign = async (
 		const now = new Date();
 		const startsAt = foundCampaign.starts_at ? new Date(foundCampaign.starts_at) : null;
 		const endsAt = foundCampaign.ends_at ? new Date(foundCampaign.ends_at) : null;
+		const rewardsContractSettled = Boolean((foundCampaign as any).rewardsDeployment?.remainderWithdrawalTxHash);
 
 		if (endsAt && endsAt <= now) {
 			res.status(FORBIDDEN).json({ error: "campaign end date has passed and it cannot be reopened" });
+			return;
+		}
+		if (foundCampaign.contractAddress && Number(foundCampaign.reward?.pool ?? 0) > 0 && rewardsContractSettled) {
+			res.status(BAD_REQUEST).json({
+				error: "this rewards campaign cannot be reopened because its remaining funds have already been withdrawn",
+			});
 			return;
 		}
 
