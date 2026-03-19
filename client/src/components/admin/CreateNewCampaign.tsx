@@ -9,7 +9,7 @@ import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";
 
 import { projectApiRequest, getStoredProjectInfo } from "../../lib/projectApi";
-import { addReward, closeRewardCampaign, createRewardsContract, getRewardContractStartDate, payStudioHubFee, syncRewardContractStartDate } from "../../lib/performOnchainAction";
+import { addReward, closeRewardCampaign, createRewardsContract, getRewardContractStartDate, getServerAuthorizedAddress, payStudioHubFee, syncRewardContractStartDate } from "../../lib/performOnchainAction";
 import { useToast } from "../../hooks/use-toast";
 import { formatEther, parseEther } from "viem";
 import {
@@ -41,6 +41,7 @@ type RewardsDeploymentState = {
   fundedAmount: string;
   rewardPerParticipant: string;
   maxClaimableParticipants: number;
+  authorizedAddress?: string;
   remainderWithdrawalTxHash?: string;
 };
 
@@ -259,6 +260,7 @@ useEffect(() => {
           fundedAmount: String(found.rewardsDeployment?.fundedAmount ?? existingRewardPool),
           rewardPerParticipant: String(found.rewardsDeployment?.rewardPerParticipant ?? trustPerParticipant),
           maxClaimableParticipants: Number(found.rewardsDeployment?.maxClaimableParticipants ?? participantCount),
+          authorizedAddress: found.rewardsDeployment?.authorizedAddress ?? "",
           remainderWithdrawalTxHash: found.rewardsDeployment?.remainderWithdrawalTxHash ?? "",
         });
       } else {
@@ -992,6 +994,7 @@ const syncPublishedRewardIncrease = async (
       fundedAmount: Number(config.totalPoolRaw),
       rewardPerParticipant: Number(config.rewardPerParticipantRaw),
       maxClaimableParticipants: config.participantCount,
+      authorizedAddress: rewardsDeployment?.authorizedAddress,
     },
   });
 
@@ -1000,6 +1003,7 @@ const syncPublishedRewardIncrease = async (
     fundedAmount: config.totalPoolRaw,
     rewardPerParticipant: config.rewardPerParticipantRaw,
     maxClaimableParticipants: config.participantCount,
+    authorizedAddress: rewardsDeployment?.authorizedAddress,
   });
   setOnchainBaseline(captureCurrentEditBaseline());
 
@@ -1075,6 +1079,7 @@ const replaceScheduledRewardsContract = async (
       fundedAmount: Number(deployment.fundedAmount),
       rewardPerParticipant: Number(deployment.rewardPerParticipant),
       maxClaimableParticipants: deployedParticipantCap,
+      authorizedAddress: deployment.authorizedAddress,
     },
   });
 
@@ -1086,6 +1091,7 @@ const replaceScheduledRewardsContract = async (
     fundedAmount: deployment.fundedAmount,
     rewardPerParticipant: deployment.rewardPerParticipant,
     maxClaimableParticipants: deployedParticipantCap,
+    authorizedAddress: deployment.authorizedAddress,
   });
   setOnchainBaseline(captureCurrentEditBaseline());
 
@@ -1159,6 +1165,7 @@ const handleDeployRewardsContract = async () => {
         fundedAmount: Number(deployment.fundedAmount),
         rewardPerParticipant: Number(deployment.rewardPerParticipant),
         maxClaimableParticipants: deployedParticipantCap,
+        authorizedAddress: deployment.authorizedAddress,
       },
     });
 
@@ -1171,6 +1178,7 @@ const handleDeployRewardsContract = async () => {
       fundedAmount: deployment.fundedAmount,
       rewardPerParticipant: deployment.rewardPerParticipant,
       maxClaimableParticipants: deployedParticipantCap,
+      authorizedAddress: deployment.authorizedAddress,
     });
     setOnchainBaseline(captureCurrentEditBaseline());
     setEditBaseline({
@@ -1223,36 +1231,21 @@ const handleUpdateCampaign = async () => {
     Number.isFinite(nextCampaignStartMs) &&
     nextCampaignStartMs < publishedCampaignStartMs;
 
-  console.log("[handleUpdateCampaign] Decision vars:", {
-    hasRewards, hasDeployedRewardsContract, isEnded, isPublished,
-    startDateChanged, movesStartEarlier, publishedCampaignHasStarted,
-    formStart: `${startDate}T${startTime}`,
-    onchainBaselineStart: onchainBaseline ? `${onchainBaseline.startDate}T${onchainBaseline.startTime}` : "N/A",
-    publishedCampaignStartMs, nextCampaignStartMs,
-    rewardContractAddress: rewardContractAddress.trim(),
-    rewardsDeployment: !!rewardsDeployment,
-  });
-
   if (hasRewards) {
     try {
       rewardConfig = getRewardDeploymentConfig();
       if (hasDeployedRewardsContract && !isEnded) {
+        const serverAuthorizedAddress = (await getServerAuthorizedAddress()).toLowerCase();
+        const deploymentAuthorizedAddress = rewardsDeployment?.authorizedAddress?.trim().toLowerCase();
+        const authorizedAddressMismatch = !deploymentAuthorizedAddress || deploymentAuthorizedAddress !== serverAuthorizedAddress;
         const deployed = getPublishedDeploymentSnapshot();
         const perParticipantTrustChanged = rewardConfig.rewardPerParticipantWei !== deployed.rewardPerParticipantWei;
         const reducedPool = rewardConfig.totalPoolWei < deployed.fundedAmountWei;
         const reducedParticipants = rewardConfig.participantCount < deployed.maxClaimableParticipants;
 
-        console.log("[handleUpdateCampaign] Reward comparison:", {
-          configPerParticipantWei: rewardConfig.rewardPerParticipantWei.toString(),
-          deployedPerParticipantWei: deployed.rewardPerParticipantWei.toString(),
-          perParticipantTrustChanged, reducedPool, reducedParticipants,
-          configTotalPoolWei: rewardConfig.totalPoolWei.toString(),
-          deployedFundedAmountWei: deployed.fundedAmountWei.toString(),
-          configParticipants: rewardConfig.participantCount,
-          deployedParticipants: deployed.maxClaimableParticipants,
-        });
-
-        if (!publishedCampaignHasStarted && (perParticipantTrustChanged || reducedPool || reducedParticipants || movesStartEarlier)) {
+        if (authorizedAddressMismatch) {
+          shouldReplaceScheduledRewardsContract = true;
+        } else if (!publishedCampaignHasStarted && (perParticipantTrustChanged || reducedPool || reducedParticipants || movesStartEarlier)) {
           shouldReplaceScheduledRewardsContract = true;
         } else {
           getPublishedRewardIncreaseDelta(rewardConfig);
@@ -1260,13 +1253,10 @@ const handleUpdateCampaign = async () => {
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Invalid rewards configuration.";
-      console.error("[handleUpdateCampaign] Blocked by reward validation:", message);
       toast({ title: "Update blocked", description: message, variant: "destructive" });
       return;
     }
   }
-
-  console.log("[handleUpdateCampaign] Past reward validation. shouldReplace:", shouldReplaceScheduledRewardsContract);
 
   setLoading(true);
   try {
@@ -1283,7 +1273,6 @@ const handleUpdateCampaign = async () => {
     }
 
     const willSyncStartDate = hasDeployedRewardsContract && !isEnded && startDateChanged && !shouldReplaceScheduledRewardsContract;
-    console.log("[handleUpdateCampaign] Will sync start date?", willSyncStartDate);
     if (willSyncStartDate) {
       await syncPublishedRewardStart();
     }

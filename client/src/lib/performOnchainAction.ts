@@ -71,6 +71,11 @@ const getStudioPaymentConfig = async (): Promise<StudioPaymentConfig> => {
   return response.json();
 };
 
+export const getServerAuthorizedAddress = async (): Promise<string> => {
+  const config = await getStudioPaymentConfig();
+  return requireContractAddress(config.authorizedAddress, "Server authorized address", config.network ?? "the server");
+};
+
 const ensureSwitch = async (targetChainId: string) => {
   // Fast path: switch if chain is already in wallet
   try {
@@ -154,11 +159,7 @@ export const createRewardsContract = async ({ nameOfCampaign, totalRewards, rewa
 
     await ensureSwitch(chainId);
 
-    const config = await getStudioPaymentConfig();
-    const authorizedAddress = config.authorizedAddress?.trim();
-    if (!authorizedAddress || !ethers.isAddress(authorizedAddress)) {
-      throw new Error("Server authorized address is not configured. Contact the Nexura team.");
-    }
+    const authorizedAddress = await getServerAuthorizedAddress();
 
     const totalRewardsWei = toWeiAmount(totalRewards, "Total rewards");
     const rewardTokenWei = toWeiAmount(rewardToken, "Reward per participant");
@@ -210,6 +211,7 @@ export const createRewardsContract = async ({ nameOfCampaign, totalRewards, rewa
     return {
       txHash: receipt.transactionHash,
       contractAddress: receipt.contractAddress,
+      authorizedAddress,
       fundedAmount: formatEther(tx.value),
       rewardPerParticipant: formatEther(rewardTokenWei),
       maxClaimableParticipants,

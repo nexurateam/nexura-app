@@ -319,6 +319,7 @@ export const addCampaignAddress = async (
 			fundedAmount,
 			rewardPerParticipant,
 			maxClaimableParticipants,
+			authorizedAddress,
 		}: {
 			id: string;
 			contractAddress: string;
@@ -326,6 +327,7 @@ export const addCampaignAddress = async (
 			fundedAmount?: number;
 			rewardPerParticipant?: number;
 			maxClaimableParticipants?: number;
+			authorizedAddress?: string;
 		} = req.body;
 
 		if (!id) {
@@ -358,6 +360,7 @@ export const addCampaignAddress = async (
 				fundedAmount: Number(fundedAmount ?? foundCampaign.reward?.pool ?? 0),
 				rewardPerParticipant: Number(rewardPerParticipant ?? foundCampaign.reward?.trustTokens ?? 0),
 				maxClaimableParticipants: Number(maxClaimableParticipants ?? (foundCampaign as any).maxParticipants ?? 0),
+				authorizedAddress: authorizedAddress ?? existingRewardsDeployment.authorizedAddress,
 			};
 		}
 		if (Number.isFinite(Number(fundedAmount)) && Number(fundedAmount) >= 0) {
