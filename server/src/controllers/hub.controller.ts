@@ -729,6 +729,7 @@ export const saveCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
 
     const existingPool = Number(campaignFound.reward?.pool ?? 0);
     const existingMaxParticipants = Number((campaignFound as any).maxParticipants ?? campaignFound.participants ?? 0);
+    const existingStartsAt = campaignFound.starts_at ? new Date(campaignFound.starts_at) : null;
     const existingEndsAt = campaignFound.ends_at ? new Date(campaignFound.ends_at) : null;
     const incomingPool = updateFields.reward
       ? Number((updateFields.reward as Record<string, unknown>).pool ?? existingPool)
@@ -738,6 +739,7 @@ export const saveCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
       : existingMaxParticipants;
     const incomingEndsAt = updateFields.ends_at ? new Date(String(updateFields.ends_at)) : existingEndsAt;
     const rewardsContractSettled = Boolean((campaignFound as any).rewardsDeployment?.remainderWithdrawalTxHash);
+    const campaignHasStarted = existingStartsAt ? existingStartsAt.getTime() <= Date.now() : false;
 
     if (campaignFound.status !== "Save" && campaignFound.contractAddress && existingPool > 0) {
       if (
@@ -752,13 +754,15 @@ export const saveCampaign = async (req: GlobalRequest, res: GlobalResponse) => {
         return;
       }
 
-      if (incomingPool < existingPool) {
-        res.status(BAD_REQUEST).json({ error: "reward pool cannot be reduced after publishing" });
-        return;
-      }
-      if (incomingMaxParticipants < existingMaxParticipants) {
-        res.status(BAD_REQUEST).json({ error: "participant limit cannot be reduced after publishing" });
-        return;
+      if (campaignHasStarted) {
+        if (incomingPool < existingPool) {
+          res.status(BAD_REQUEST).json({ error: "reward pool cannot be reduced after publishing" });
+          return;
+        }
+        if (incomingMaxParticipants < existingMaxParticipants) {
+          res.status(BAD_REQUEST).json({ error: "participant limit cannot be reduced after publishing" });
+          return;
+        }
       }
 
     }

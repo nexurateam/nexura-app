@@ -510,6 +510,7 @@ export const updateCampaign = async (
 
 		const existingPool = Number(existingCampaign.reward?.pool ?? 0);
 		const existingMaxParticipants = Number((existingCampaign as any).maxParticipants ?? existingCampaign.participants ?? 0);
+		const existingStartsAt = existingCampaign.starts_at ? new Date(existingCampaign.starts_at) : null;
 		const existingEndsAt = existingCampaign.ends_at ? new Date(existingCampaign.ends_at) : null;
 		const incomingPool = campaignUpdateData.reward
 			? Number((campaignUpdateData.reward as Record<string, unknown>).pool ?? existingPool)
@@ -519,6 +520,7 @@ export const updateCampaign = async (
 			: existingMaxParticipants;
 		const incomingEndsAt = campaignUpdateData.ends_at ? new Date(String(campaignUpdateData.ends_at)) : existingEndsAt;
 		const rewardsContractSettled = Boolean((existingCampaign as any).rewardsDeployment?.remainderWithdrawalTxHash);
+		const campaignHasStarted = existingStartsAt ? existingStartsAt.getTime() <= Date.now() : false;
 
 		if (existingCampaign.status !== "Save" && existingCampaign.contractAddress && existingPool > 0) {
 			if (
@@ -533,13 +535,15 @@ export const updateCampaign = async (
 				return;
 			}
 
-			if (incomingPool < existingPool) {
-				res.status(BAD_REQUEST).json({ error: "reward pool cannot be reduced after publishing" });
-				return;
-			}
-			if (incomingMaxParticipants < existingMaxParticipants) {
-				res.status(BAD_REQUEST).json({ error: "participant limit cannot be reduced after publishing" });
-				return;
+			if (campaignHasStarted) {
+				if (incomingPool < existingPool) {
+					res.status(BAD_REQUEST).json({ error: "reward pool cannot be reduced after publishing" });
+					return;
+				}
+				if (incomingMaxParticipants < existingMaxParticipants) {
+					res.status(BAD_REQUEST).json({ error: "participant limit cannot be reduced after publishing" });
+					return;
+				}
 			}
 
 		}

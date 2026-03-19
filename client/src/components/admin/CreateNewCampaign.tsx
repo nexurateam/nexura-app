@@ -9,7 +9,7 @@ import { Button } from "../../components/ui/button";
 import { Switch } from "../../components/ui/switch";
 
 import { projectApiRequest, getStoredProjectInfo } from "../../lib/projectApi";
-import { addReward, createRewardsContract, payStudioHubFee, syncRewardContractStartDate } from "../../lib/performOnchainAction";
+import { addReward, closeRewardCampaign, createRewardsContract, payStudioHubFee, syncRewardContractStartDate } from "../../lib/performOnchainAction";
 import { useToast } from "../../hooks/use-toast";
 import { formatEther, parseEther } from "viem";
 import {
@@ -525,6 +525,10 @@ const hasDeployedRewardsContract = Boolean(
   rewardContractAddress.trim() &&
   rewardsDeployment
 );
+const publishedCampaignStartMs = editBaseline
+  ? new Date(`${editBaseline.startDate}T${editBaseline.startTime || "00:00"}`).getTime()
+  : Number.NaN;
+const publishedCampaignHasStarted = Number.isFinite(publishedCampaignStartMs) && publishedCampaignStartMs <= Date.now();
 
 const updateCampaignButtonLabel =
   rewardFieldsChanged && !otherDetailsChanged ? "Update Rewards Contract" : "Update Campaign Details";
@@ -977,6 +981,71 @@ const syncPublishedRewardStart = async () => {
   });
 };
 
+const replaceScheduledRewardsContract = async (
+  savedCampaignId: string,
+  config: {
+    totalPool: number;
+    totalPoolWei: bigint;
+    totalPoolRaw: string;
+    participantCount: number;
+    rewardPerParticipant: number;
+    rewardPerParticipantWei: bigint;
+    rewardPerParticipantRaw: string;
+  }
+) => {
+  if (!rewardContractAddress.trim()) {
+    throw new Error("Rewards contract is required for published rewards campaigns.");
+  }
+
+  const contractStartTimestamp = getCampaignStartTimestamp();
+  await closeRewardCampaign(rewardContractAddress.trim());
+
+  const deployment = await createRewardsContract({
+    nameOfCampaign: campaignName.trim(),
+    totalRewards: config.totalPoolRaw,
+    rewardToken: config.rewardPerParticipantRaw,
+    startDate: contractStartTimestamp,
+  });
+
+  const deployedParticipantCap = Number(deployment.maxClaimableParticipants ?? 0);
+  if (!Number.isInteger(deployedParticipantCap) || deployedParticipantCap <= 0) {
+    throw new Error("Unable to verify participant withdrawal limit from the replaced contract.");
+  }
+  if (deployedParticipantCap !== config.participantCount) {
+    throw new Error(
+      `Replacement mismatch. Contract allows ${deployedParticipantCap} participants, expected ${config.participantCount}.`
+    );
+  }
+
+  await projectApiRequest({
+    method: "PATCH",
+    endpoint: "/hub/add-campaign-address",
+    data: {
+      id: savedCampaignId,
+      contractAddress: deployment.contractAddress,
+      deploymentTxHash: deployment.txHash,
+      fundedAmount: Number(deployment.fundedAmount),
+      rewardPerParticipant: Number(deployment.rewardPerParticipant),
+      maxClaimableParticipants: deployedParticipantCap,
+    },
+  });
+
+  setRewardContractAddress(deployment.contractAddress);
+  setRewardPool(deployment.fundedAmount);
+  setParticipants(String(deployedParticipantCap));
+  setRewardsDeployment({
+    txHash: deployment.txHash,
+    fundedAmount: deployment.fundedAmount,
+    rewardPerParticipant: deployment.rewardPerParticipant,
+    maxClaimableParticipants: deployedParticipantCap,
+  });
+
+  toast({
+    title: "Rewards contract replaced",
+    description: `Replaced the scheduled rewards contract with ${deployment.fundedAmount} TRUST funded at ${deployment.rewardPerParticipant} TRUST per participant.`,
+  });
+};
+
 const handleDeployRewardsContract = async () => {
   if (!hasRewards) {
     toast({ title: "Rewards are disabled", description: "Turn on campaign rewards before deploying a rewards contract.", variant: "destructive" });
@@ -1091,11 +1160,21 @@ const handleUpdateCampaign = async () => {
   }
 
   let rewardConfig: ReturnType<typeof getRewardDeploymentConfig> | null = null;
+  let shouldReplaceScheduledRewardsContract = false;
   if (hasRewards) {
     try {
       rewardConfig = getRewardDeploymentConfig();
       if (hasDeployedRewardsContract && !isEnded) {
-        getPublishedRewardIncreaseDelta(rewardConfig);
+        const deployed = getPublishedDeploymentSnapshot();
+        const perParticipantTrustChanged = rewardConfig.rewardPerParticipantWei !== deployed.rewardPerParticipantWei;
+        const reducedPool = rewardConfig.totalPoolWei < deployed.fundedAmountWei;
+        const reducedParticipants = rewardConfig.participantCount < deployed.maxClaimableParticipants;
+
+        if (!publishedCampaignHasStarted && (perParticipantTrustChanged || reducedPool || reducedParticipants)) {
+          shouldReplaceScheduledRewardsContract = true;
+        } else {
+          getPublishedRewardIncreaseDelta(rewardConfig);
+        }
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Invalid rewards configuration.";
@@ -1116,11 +1195,13 @@ const handleUpdateCampaign = async () => {
       editBaseline &&
       (startDate !== editBaseline.startDate || startTime !== editBaseline.startTime);
 
-    if (hasDeployedRewardsContract && !isEnded && rewardConfig) {
+    if (shouldReplaceScheduledRewardsContract && rewardConfig) {
+      await replaceScheduledRewardsContract(savedCampaignId, rewardConfig);
+    } else if (hasDeployedRewardsContract && !isEnded && rewardConfig) {
       await syncPublishedRewardIncrease(savedCampaignId, rewardConfig);
     }
 
-    if (hasDeployedRewardsContract && !isEnded && startDateChanged) {
+    if (hasDeployedRewardsContract && !isEnded && startDateChanged && !shouldReplaceScheduledRewardsContract) {
       await syncPublishedRewardStart();
     }
 
