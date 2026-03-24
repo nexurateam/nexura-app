@@ -75,7 +75,7 @@ function Router() {
       <Route path="/home" component={Home} />
       <Route path="/discover" component={Discover} />
       <Route path="/levels" component={Levels} />
-      <Route path="/docs" component={Docs} />
+      {/*<Route path="/docs" component={Docs} />*/}
       {/* NEXURA pages */}
       <Route path="/learn" component={Learn} />
       <Route path="/quests" component={Quests} />
@@ -88,7 +88,7 @@ function Router() {
       <Route path="/x/callback" component={XCallback} />
       <Route path="/campaigns/tasks" component={CampaignEnvironment} />
       <Route path="/quests/tasks-card" component={QuestEnvironment} />
-      {/*<Route path="/analytics" component={Analytics} />*/}
+      <Route path="/analytics" component={Analytics} />
       <Route path="/portal-claims" component={PortalClaims} />
       <Route path="/portal-claims/:id" component={ClaimDetails} />
       <Route path="/studio" component={NexuraStudio} />
