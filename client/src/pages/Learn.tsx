@@ -69,12 +69,12 @@ useEffect(() => {
 
         {/* Top Card */}
         <Card
-          className="rounded-2xl sm:rounded-3xl p-4 sm:p-8 animate-slide-up delay-300"
-          style={{
-            backgroundColor: "#8B3EFE",
-            border: "1px solid rgba(255, 255, 255, 0.6)",
-          }}
-        >
+  className="rounded-2xl sm:rounded-3xl p-4 sm:p-8 animate-slide-up delay-300"
+  style={{
+    background: "linear-gradient(135deg, #2A085E 0%, #3D0F8A 100%)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+  }}
+>
           <CardContent className="p-0">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
 
@@ -121,8 +121,12 @@ useEffect(() => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
             {lessons.map((lesson) => {
-              const isCompleted = progressData[lesson.id]?.completed === true;
               const progress = progressData[lesson.id]?.progress || 0;
+              const quizCompleted = progressData[lesson.id]?.quizCompleted === true;
+              const isCompleted = progress === 9 && quizCompleted;
+
+const isInProgress = progress > 0 && !isCompleted;
+const isNotStarted = progress === 0;
               const percent = (progress / 9) * 100;
 
               return (
@@ -140,7 +144,11 @@ useEffect(() => {
                   />
 
                   <div className="absolute top-2 right-2 px-2 py-1 text-[10px] font-semibold text-black bg-[#DFDFDF] rounded-full">
-  {isCompleted ? "COMPLETED" : "NOT STARTED"}
+  {isCompleted
+  ? "COMPLETED"
+  : isInProgress
+  ? "IN PROGRESS"
+  : "NOT STARTED"}
 </div>
 
                   <img
@@ -166,12 +174,12 @@ useEffect(() => {
                     <span>{progress}/9</span>
                   </div>
 
-                  <div className="w-full h-1 bg-[#DFDFDF] rounded-full overflow-hidden">
-                    <div
-  className="h-full bg-white rounded-full"
-  style={{ width: `${percent}%` }}
-></div>
-                  </div>
+                  <div className="w-full h-1 bg-white rounded-full overflow-hidden">
+  <div
+    className="h-full bg-purple-600 rounded-full"
+    style={{ width: `${percent}%` }}
+  />
+</div>
 
                   <div className="flex justify-between items-center pt-1">
                     <img
@@ -181,10 +189,12 @@ useEffect(() => {
                     />
 
                     <button
-  onClick={() => setLocation(`/learn/${lesson.id}`)}
+  onClick={() =>
+  setLocation(`/learn/${lesson.id}`)
+}
   className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#8B3EFE] text-white text-xs"
 >
-  START →
+{isCompleted ? "REVIEW →" : isInProgress ? "CONTINUE →" : "START →"}
 </button>
                   </div>
 
