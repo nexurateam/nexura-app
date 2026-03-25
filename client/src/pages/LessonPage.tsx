@@ -45,18 +45,17 @@ const isQuizStep = isQuiz1Step || isQuiz2Step;
   const progress = ((currentStep + 1) / steps.length) * 100;
   const [showXPModal, setShowXPModal] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
   const data = JSON.parse(localStorage.getItem(storageKey)) || {};
 
   data[id] = {
-    progress: currentStep,
-    completed: currentStep >= steps.length - 1,
+    progress: currentStep + 1,
+    completed: showXPModal === true, 
   };
 
   localStorage.setItem(storageKey, JSON.stringify(data));
-
   window.dispatchEvent(new Event("progress-update"));
-}, [currentStep]);
+}, [currentStep, showXPModal]);
 
 
   ///////////////// local storage
