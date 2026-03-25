@@ -28,7 +28,11 @@ const storageKey = `learn-progress-${walletAddress}`;
     "Tokens and wallets give users control over value and identity."
   ];
 
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(() => {
+  const data = JSON.parse(localStorage.getItem(storageKey)) || {};
+  const saved = data[id];
+  return saved?.progress ? saved.progress - 1 : 0;
+});
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [status, setStatus] = useState(null); // "correct" | "wrong"
@@ -36,85 +40,210 @@ const storageKey = `learn-progress-${walletAddress}`;
   const [showCompletionSlide, setShowCompletionSlide] = useState(false);
   const [showBronze, setShowBronze] = useState(true);
   const [completionType, setCompletionType] = useState(null); // "silver" | "gold"
-  const [activeQuiz, setActiveQuiz] = useState(1);
+//   const [activeQuiz, setActiveQuiz] = useState(1);
+const initialQuiz = currentStep >= 8 ? 2 : 1;
+const [activeQuiz, setActiveQuiz] = useState(initialQuiz);
 //   const isQuizStep = currentStep === 4;
 const isQuiz1Step = currentStep === 4;
-const isQuiz2Step = currentStep === 8;
+const isQuiz2Step = currentStep >= 8 && currentStep <= 12;
 const isQuizStep = isQuiz1Step || isQuiz2Step;
 
   const progress = ((currentStep + 1) / steps.length) * 100;
   const [showXPModal, setShowXPModal] = useState(false);
+
+  useEffect(() => {
+  if (currentStep >= 8) {
+    setActiveQuiz(2);
+  } else if (currentStep >= 4) {
+    setActiveQuiz(1);
+  }
+}, [currentStep]);
 
 useEffect(() => {
   const data = JSON.parse(localStorage.getItem(storageKey)) || {};
 
   data[id] = {
     progress: currentStep + 1,
-    completed: showXPModal === true, 
+    quizCompleted: quizCompleted, // use real state
   };
 
   localStorage.setItem(storageKey, JSON.stringify(data));
   window.dispatchEvent(new Event("progress-update"));
-}, [currentStep, showXPModal]);
+}, [currentStep, quizCompleted]);
 
 
   ///////////////// local storage
   const handleClaimXP = () => {
   const data = JSON.parse(localStorage.getItem(storageKey)) || {};
 
-  data[id] = {
-    completed: true,
-    progress: steps.length - 1, // keep it consistent with your system
-  };
+data[id] = {
+  ...data[id],
+  completed: true,
+  progress: steps.length - 1,
+  quizCompleted: true,
+};
 
-  localStorage.setItem(storageKey, JSON.stringify(data));
+localStorage.setItem(storageKey, JSON.stringify(data));
 
-  window.dispatchEvent(new Event("progress-update"));
+window.dispatchEvent(new Event("progress-update"));
 
-  setShowXPModal(true);
+setShowXPModal(true);
 };
 
 const goNext = () => {
-  // Step 1: entering quiz → show bronze first
-  if (isQuizStep && showBronze) {
-    setShowBronze(false);
+  if (isQuizStep) {
+    const currentQuiz = activeQuiz === 1 ? quiz : quiz2;
+
+    // Enter quiz from bronze screen
+    if (showBronze) {
+      setShowBronze(false);
+      return;
+    }
+
+    // Completion slide handling
+    if (showCompletionSlide) {
+      const data = JSON.parse(localStorage.getItem(storageKey)) || {};
+
+      if (!data[id]) data[id] = {};
+      if (!data[id].quizState) data[id].quizState = {};
+
+      const quizKey = `quiz-${activeQuiz}`;
+
+    data[id].quizState[quizKey] = {
+  ...data[id].quizState?.[quizKey],
+  activeQuiz,
+  currentQuizIndex,
+  showBronze,
+  showCompletionSlide,
+  isQuizStep: true,
+};
+
+      localStorage.setItem(storageKey, JSON.stringify(data));
+
+      setShowCompletionSlide(false);
+      setShowBronze(true);
+
+      if (completionType === "silver") {
+        setActiveQuiz(2);
+        setCurrentQuizIndex(0);
+        setShowBronze(true);
+        setCurrentStep((prev) => prev + 1);
+      }
+
+      if (completionType === "gold") {
+        setCurrentStep((prev) => prev + 1);
+      }
+
+      return;
+    }
+
+    if (!selected) return;
+
+    // SAVE current answer
+    const data = JSON.parse(localStorage.getItem(storageKey)) || {};
+
+    if (!data[id]) data[id] = {};
+    if (!data[id].quizState) data[id].quizState = {};
+
+    const quizKey = `quiz-${activeQuiz}`;
+
+    if (!data[id].quizState[quizKey]) {
+      data[id].quizState[quizKey] = { answers: {} };
+    }
+
+    if (!data[id].quizState[quizKey].answers) {
+      data[id].quizState[quizKey].answers = {};
+    }
+
+    data[id].quizState[quizKey].answers[currentQuizIndex] = {
+      selected,
+      status,
+    };
+
+    localStorage.setItem(storageKey, JSON.stringify(data));
+
+    // MOVE NEXT (DO NOT RESET STATE HERE)
+    if (status === "correct") {
+      if (currentQuizIndex < currentQuiz.length - 1) {
+        setCurrentQuizIndex((prev) => prev + 1);
+
+        // ⚠️ DO NOT clear blindly — let rehydration handle it
+        // setSelected(null);
+        // setStatus(null);
+      } else {
+        setCompletionType(activeQuiz === 1 ? "silver" : "gold");
+        setShowCompletionSlide(true);
+      }
+    }
+
     return;
   }
 
-  // Step 2: block leaving quiz until completion
-  if (isQuizStep && !showCompletionSlide) return;
-
-  // Step 3: leaving completion
-  if (showCompletionSlide) {
-    setShowCompletionSlide(false);
-    setShowBronze(true); // reset for next quiz
-
-    if (completionType === "silver") {
-  setActiveQuiz(2);
-
-  setCurrentQuizIndex(0);
-  setSelected(null);
-  setStatus(null);
-  setShowBronze(true);
-  setShowCompletionSlide(false);
-
-  setCurrentStep((prev) => prev + 1);
-}
-
-    return;
-  }
-
-  // normal navigation
   if (currentStep < steps.length - 1) {
     setCurrentStep((prev) => prev + 1);
   }
 };
 
-  const goPrev = () => {
+const goPrev = () => {
+  // 🚨 If completion slide is showing, exit it first
+if (showCompletionSlide) {
+  setShowCompletionSlide(false);
+  setShowBronze(true);
+
+  // 🔥 CRITICAL RESET
+  setCurrentQuizIndex(0);
+  setSelected(null);
+  setStatus(null);
+
+  return;
+}
+
+  // 🚫 Outside quiz → normal step navigation
+  if (!isQuizStep) {
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
     }
-  };
+    return;
+  }
+
+  // 🚨 Inside quiz
+  if (showBronze) {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
+    }
+    return;
+  }
+
+  const quizList = activeQuiz === 1 ? quiz : quiz2;
+
+  if (currentQuizIndex > 0) {
+    const prevIndex = currentQuizIndex - 1;
+
+    setCurrentQuizIndex(prevIndex);
+
+    const data = JSON.parse(localStorage.getItem(storageKey)) || {};
+    const quizKey = `quiz-${activeQuiz}`;
+    const saved = data[id]?.quizState?.[quizKey];
+
+    const savedAnswer = saved?.answers?.[prevIndex];
+
+    if (savedAnswer) {
+      setSelected(savedAnswer.selected);
+      setStatus(savedAnswer.status);
+    } else {
+      setSelected(null);
+      setStatus(null);
+    }
+
+    return;
+  }
+
+  if (currentQuizIndex === 0) {
+    setShowBronze(true);
+    setSelected(null);
+    setStatus(null);
+  }
+};
 
 const handleAnswer = (option) => {
   const currentQuiz = activeQuiz === 1 ? quiz : quiz2;
@@ -124,33 +253,51 @@ const handleAnswer = (option) => {
 
   if (option === currentQuestion.answer) {
     setStatus("correct");
-
-    setTimeout(() => {
-      if (currentQuizIndex < currentQuiz.length - 1) {
-        setCurrentQuizIndex((prev) => prev + 1);
-        setSelected(null);
-        setStatus(null);
-      } else {
-        // QUIZ FINISHED
-
-        if (activeQuiz === 1) {
-  setCompletionType("silver");
-  setShowCompletionSlide(true);
-
-  setSelected(null);
-  setStatus(null);
-  setCurrentQuizIndex(0);
-} else {
-          // FINAL COMPLETION
-          setCompletionType("gold");
-          setShowCompletionSlide(true);
-        }
-      }
-    }, 600);
   } else {
     setStatus("wrong");
   }
+
+  const data = JSON.parse(localStorage.getItem(storageKey)) || {};
+
+if (!data[id]) data[id] = {};
+if (!data[id].quizState) data[id].quizState = {};
+
+const quizKey = `quiz-${activeQuiz}`;
+
+data[id].quizState[quizKey] = {
+  activeQuiz,
+  currentQuizIndex,
+  showBronze,
+  showCompletionSlide,
+  answers: {
+    ...(data[id].quizState[quizKey]?.answers || {}),
+    [currentQuizIndex]: {
+      selected: option,
+      status: option === currentQuestion.answer ? "correct" : "wrong",
+    },
+  },
 };
+
+localStorage.setItem(storageKey, JSON.stringify(data));
+};
+
+useEffect(() => {
+  const data = JSON.parse(localStorage.getItem(storageKey)) || {};
+  const quizKey = `quiz-${activeQuiz}`;
+  const saved = data[id]?.quizState?.[quizKey];
+
+  if (!saved) return;
+
+  const savedAnswer = saved.answers?.[currentQuizIndex];
+
+  if (savedAnswer) {
+    setSelected(savedAnswer.selected);
+    setStatus(savedAnswer.status);
+  } else {
+    setSelected(null);
+    setStatus(null);
+  }
+}, [currentQuizIndex, activeQuiz]);
 
   return (
     <div className="min-h-screen bg-black text-white p-6 space-y-6 flex flex-col items-center">
@@ -388,17 +535,29 @@ const handleAnswer = (option) => {
       <div className="flex flex-col gap-3 mt-4">
 
         <button
-  onClick={() => {
-    setLocation("/learn");
-    window.location.reload();
-  }}
+onClick={() => {
+  const data = JSON.parse(localStorage.getItem(storageKey)) || {};
+
+  data[id] = {
+    ...data[id],
+    progress: 9,
+    quizCompleted: true,
+  };
+
+  localStorage.setItem(storageKey, JSON.stringify(data));
+
+  window.dispatchEvent(new Event("progress-update"));
+
+  setLocation("/learn");
+}}
   className="w-full py-2 rounded-md text-white"
   style={{ background: "#8A3FFC66" }}
 >
   RETURN TO LESSONS
 </button>
 
-        <button
+<button
+  onClick={() => window.location.reload()}
   className="w-full py-2 px-1 rounded-md text-white border border-white bg-transparent"
 >
   TAKE LESSON AGAIN
