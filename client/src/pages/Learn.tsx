@@ -69,12 +69,12 @@ useEffect(() => {
 
         {/* Top Card */}
         <Card
-          className="rounded-2xl sm:rounded-3xl p-4 sm:p-8 animate-slide-up delay-300"
-          style={{
-            backgroundColor: "#8B3EFE",
-            border: "1px solid rgba(255, 255, 255, 0.6)",
-          }}
-        >
+  className="rounded-2xl sm:rounded-3xl p-4 sm:p-8 animate-slide-up delay-300"
+  style={{
+    background: "linear-gradient(135deg, #2A085E 0%, #3D0F8A 100%)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+  }}
+>
           <CardContent className="p-0">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
 
