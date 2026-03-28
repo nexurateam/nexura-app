@@ -59,10 +59,10 @@ export const createMiniLesson = async (req: GlobalRequest, res: GlobalResponse) 
 
 export const rewardLessonXp = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const { lesson: lessonId } = req.body;
+    const { id: lessonId } = req.query as { id: string };
     const { id } = req;
 
-    const lessonExists = await lesson.findById(lessonId).select("reward noOfQuestions");
+    const lessonExists = await lesson.findById(lessonId).lean().select("reward noOfQuestions");
     if (!lessonExists) {
       res.status(NOT_FOUND).json({ error: "lesson does not exist" });
       return;
@@ -70,7 +70,7 @@ export const rewardLessonXp = async (req: GlobalRequest, res: GlobalResponse) =>
 
     const questionsAnswered = await questionCompleted.countDocuments({ done: true, user: id, lesson: lessonId });
 
-    if (lessonExists.noOfQuestions != questionsAnswered) {
+    if (lessonExists.noOfQuestions !== questionsAnswered) {
       res.status(FORBIDDEN).json({ error: "answer all questions before reward can be claimed" });
       return;
     }
@@ -123,7 +123,7 @@ export const getLessons = async (req: GlobalRequest, res: GlobalResponse) => {
 export const getMiniLessonAndQuestions = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
     const { id } = req;
-    const { lesson: lessonId } = req.body;
+    const { id: lessonId } = req.query as { id: string };
     if (lessonId) {
       res.status(BAD_REQUEST).json({ error: "lesson id is required" });
       return;
