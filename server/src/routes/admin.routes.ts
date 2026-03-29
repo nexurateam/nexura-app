@@ -13,6 +13,7 @@ import {
   removeAdmin,
   manageAdmin
 } from "@/controllers/admin.controller";
+import { createLesson, createQuestion, createMiniLesson } from "@/controllers/lesson.controller";
 
 const router = Router();
 
@@ -26,6 +27,9 @@ router
   .post("/reward-xp", rewardXp)
   .post("/ban-user", banUser)
   .post("/unban-user", unBanUser)
+  .post("/create-lesson", createLesson)
+  .post("/create-mini-lesson", createMiniLesson)
+	.post("/create-question", createQuestion)
   .get("/get-banned-users", getBannedUsers)
   .get("/get-quests", getTasks)
   .get("/get-admins", getAdmins);
