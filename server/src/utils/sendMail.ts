@@ -59,15 +59,17 @@ const options: NodemailerExpressHandlebarsOptions = {
 
 transporter.use("compile", hbs(options));
 
-export const sendEmailToAdmin = async (email: string, code: string) => {
+export const sendEmailToAdmin = async (email: string, code: string, origin?: string) => {
   try {
+    const baseUrl = origin || ADMIN_URL;
+    const signUpUrl = `${baseUrl.replace(/\/$/, "")}/?email=${encodeURIComponent(email)}`;
     await transporter.sendMail({
       from: EMAIL_USER,
       to: email,
       subject: "Complete Nexura Admin Setup",
       template: "admin",
       context: {
-        url: `${ADMIN_URL}/admin/signup`,
+        url: signUpUrl,
         code
       },
     } as MailOptions);

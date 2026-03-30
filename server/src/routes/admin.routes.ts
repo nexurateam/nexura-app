@@ -8,12 +8,16 @@ import {
   getBannedUsers,
   createQuest,
   getAdmins,
+  resendAdminInvite,
+  deleteAdminInvite,
   getTasks,
+  getUserSummary,
+  getAdminLeaderboard,
   markTask,
   removeAdmin,
   manageAdmin
 } from "@/controllers/admin.controller";
-import { createLesson, createQuestion, createMiniLesson } from "@/controllers/lesson.controller";
+import { createLesson, createQuestion, createMiniLesson, getAllLessons } from "@/controllers/lesson.controller";
 
 const router = Router();
 
@@ -21,6 +25,7 @@ router
   .post("/create-quest", createQuest)
   .post("/validate-task", markTask)
   .post("/add-admin", addAdmin)
+  .post("/resend-invite", resendAdminInvite)
   .post("/logout", adminLogout)
   .post("/remove-admin", removeAdmin)
   .post("/manage-admin", manageAdmin)
@@ -32,6 +37,10 @@ router
 	.post("/create-question", createQuestion)
   .get("/get-banned-users", getBannedUsers)
   .get("/get-quests", getTasks)
-  .get("/get-admins", getAdmins);
+  .get("/get-admins", getAdmins)
+  .delete("/delete-invite", deleteAdminInvite)
+  .get("/user-summary", getUserSummary)
+  .get("/leaderboard", getAdminLeaderboard)
+  .get("/get-lessons", getAllLessons);
 
 export default router;

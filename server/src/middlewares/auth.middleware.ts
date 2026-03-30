@@ -7,6 +7,7 @@ import { BAD_REQUEST, INTERNAL_SERVER_ERROR, UNAUTHORIZED } from "@/utils/status
 import { JWT } from "@/utils/utils";
 import { REDIS } from "@/utils/redis.utils";
 import multer from "multer";
+import { updateAdminLastActivity } from "@/utils/adminActivityCron";
 
 type decodedDataType = {
 	id: string;
@@ -224,6 +225,9 @@ export const authenticateAdmin = async (req: GlobalRequest, res: GlobalResponse,
     req.token = token;
     req.role = isAdmin.role;
 
+    // Update admin last activity and online status
+    updateAdminLastActivity(id);
+
     next();
   } catch (error: any) {
     logger.error(error);
@@ -234,4 +238,4 @@ export const authenticateAdmin = async (req: GlobalRequest, res: GlobalResponse,
 
     res.status(INTERNAL_SERVER_ERROR).json({ error: "Invalid authentication token, kindly re-login." });
   }
-};
+}
