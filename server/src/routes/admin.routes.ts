@@ -17,7 +17,7 @@ import {
   removeAdmin,
   manageAdmin
 } from "@/controllers/admin.controller";
-import { createLesson, createQuestion, createMiniLesson, getAllLessons } from "@/controllers/lesson.controller";
+import { createLesson, createQuestion, createMiniLesson, getAllLessons, getLessonDetailsForAdmin } from "@/controllers/lesson.controller";
 
 const router = Router();
 
@@ -41,6 +41,7 @@ router
   .delete("/delete-invite", deleteAdminInvite)
   .get("/user-summary", getUserSummary)
   .get("/leaderboard", getAdminLeaderboard)
+  .get("/get-lesson-details", getLessonDetailsForAdmin)
   .get("/get-lessons", getAllLessons);
 
 export default router;

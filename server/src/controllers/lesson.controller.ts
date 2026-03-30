@@ -130,6 +130,30 @@ export const getAllLessons = async (_req: GlobalRequest, res: GlobalResponse) =>
   }
 };
 
+export const getLessonDetailsForAdmin = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    const { id: lessonId } = req.query as { id: string };
+    if (!lessonId) {
+      res.status(BAD_REQUEST).json({ error: "lesson id is required" });
+      return;
+    }
+
+    const lessonExists = await lesson.exists({ _id: lessonId });
+    if (!lessonExists) {
+      res.status(NOT_FOUND).json({ error: "lesson does not exist" });
+      return;
+    }
+
+    const miniLessons = await miniLesson.find({ lesson: lessonId }).sort({ createdAt: 1 }).lean();
+    const questions = await question.find({ lesson: lessonId }).sort({ createdAt: 1 }).lean();
+
+    res.status(OK).json({ message: "lesson details fetched", miniLessons, questions });
+  } catch (error) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error getting lesson details" });
+  }
+};
+
 export const getMiniLessonAndQuestions = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
     const { id } = req;
