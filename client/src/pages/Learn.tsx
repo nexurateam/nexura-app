@@ -1,12 +1,10 @@
 "use client";
 
-import { useLocation } from "wouter";
 import { Card, CardContent } from "../components/ui/card";
 import AnimatedBackground from "../components/AnimatedBackground";
 import learnIcon from "/learn-icon.png";
 import xpRewardIcon from "/xp-reward.png";
 import { useEffect, useState } from "react";
-import { useWallet } from "../hooks/use-wallet"; 
 import { useAuth } from "../lib/auth";
 import { apiRequestV2 } from "../lib/queryClient";
 import { Loader2 } from "lucide-react";
@@ -17,14 +15,14 @@ interface Lesson {
   description: string;
   reward: number;
   noOfQuestions: number;
+  coverImage?: string;
+  profileImage?: string;
   done: boolean;
   createdAt: string;
 }
 
 export default function Learn() {
-  const { isConnected, connectWallet } = useWallet();
-  const { user, loading: authLoading } = useAuth();
-  const [location, setLocation] = useLocation();
+  const { loading: authLoading } = useAuth();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -49,21 +47,6 @@ export default function Learn() {
       fetchLessons();
     }
   }, [authLoading]);
-
-  const handleStartLesson = async (lessonId: string, isDone: boolean) => {
-    if (!isConnected) {
-      await connectWallet();
-      return;
-    }
-
-    if (!user) {
-      alert("You must sign in to start this lesson.");
-      return;
-    }
-
-    const url = isDone ? `/learn/${lessonId}?review=1` : `/learn/${lessonId}`;
-    setLocation(url);
-  };
 
   return (
     <div className="min-h-screen bg-black text-white overflow-auto p-6 relative">
@@ -153,69 +136,11 @@ export default function Learn() {
               <p className="text-white/60 text-center">No lessons available yet. Check back soon!</p>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-              {lessons.map((lesson) => (
-                <div
-                  key={lesson._id}
-                  onClick={() => handleStartLesson(lesson._id, lesson.done)}
-                  className="rounded-2xl overflow-hidden bg-[#1C0E3480] border border-white/10 cursor-pointer hover:scale-[1.02] transition"
-                >
-
-                  {/* Image Placeholder */}
-                  <div className="relative bg-gradient-to-br from-purple-900/50 to-blue-900/50 h-36 flex items-center justify-center">
-                    <div
-                      className="absolute top-2 right-2 px-2 py-1 text-[10px] font-semibold"
-                      style={{
-                        color: lesson.done ? "#00FF88" : "#00CCF933",
-                        background: "#000000A6",
-                        boxShadow: "0px 3px 10px 0px rgba(0, 0, 0, 0.5)",
-                      }}
-                    >
-                      {lesson.done ? "COMPLETED" : "NOT STARTED"}
-                    </div>
-                    <span className="text-sm font-semibold uppercase tracking-[0.35em] text-white/50">Learn</span>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-3 space-y-3">
-
-                    <h3 className="text-sm font-bold text-white">
-                      {lesson.title}
-                    </h3>
-
-                    <p className="text-xs text-white/70 leading-relaxed line-clamp-2">
-                      {lesson.description}
-                    </p>
-
-                    <div className="flex justify-between text-[10px] text-white/60">
-                      <span>QUESTIONS</span>
-                      <span>{lesson.noOfQuestions} QUESTIONS</span>
-                    </div>
-
-                    <div className="flex justify-between items-center pt-1">
-                      {/* XP Badge */}
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-yellow-400 font-semibold">+{lesson.reward} XP</span>
-                      </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartLesson(lesson._id, lesson.done);
-                        }}
-                        className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#8B3EFE] text-white text-xs transition-all duration-200 hover:scale-105 hover:bg-[#7A2FE0]"
-                      >
-                        {lesson.done ? "REVIEW ->" : "START ->"}
-                      </button>
-                    </div>
-
-                  </div>
-
-                </div>
-              ))}
-
-            </div>
+            <Card className="rounded-2xl p-8 bg-white/5 border-white/10">
+              <p className="text-white/60 text-center">
+                Lesson cards are temporarily hidden while the learn experience is being redesigned.
+              </p>
+            </Card>
           )}
 
         </div>

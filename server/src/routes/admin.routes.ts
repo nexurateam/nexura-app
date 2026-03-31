@@ -17,6 +17,10 @@ import {
   removeAdmin,
   manageAdmin
 } from "@/controllers/admin.controller";
+import { publishAdminCampaign } from "@/controllers/adminCampaign.controller";
+import { addCampaignAddress, closeCampaign, deleteCampaign, fetchHubCampaigns, recordCampaignRewardsWithdrawal, reopenCampaign } from "@/controllers/campaign.controller";
+import { fetchChannels, fetchRoles, fetchServers } from "@/controllers/hub.auth.controller";
+import { getCampaign, getHub, saveCampaign, saveCampaignWithQuests } from "@/controllers/hub.controller";
 import {
   createLesson,
   createQuestion,
@@ -27,6 +31,8 @@ import {
   updateMiniLesson,
   updateQuestion,
 } from "@/controllers/lesson.controller";
+import { upload } from "@/config/multer";
+import { attachAdminCampaignHub, requireAdminSuperadmin } from "@/middlewares/auth.middleware";
 
 const router = Router();
 
@@ -41,8 +47,22 @@ router
   .post("/reward-xp", rewardXp)
   .post("/ban-user", banUser)
   .post("/unban-user", unBanUser)
-  .post("/create-lesson", createLesson)
-  .patch("/update-lesson", updateLesson)
+  .get("/me", attachAdminCampaignHub, getHub)
+  .get("/get-campaigns", attachAdminCampaignHub, fetchHubCampaigns)
+  .get("/get-campaign", attachAdminCampaignHub, getCampaign)
+  .get("/get-roles", fetchRoles)
+  .get("/get-channels", fetchChannels)
+  .get("/get-servers", fetchServers)
+  .patch("/save-campaign", requireAdminSuperadmin, attachAdminCampaignHub, upload.single("coverImage"), saveCampaign)
+  .patch("/save-campaign-quests", requireAdminSuperadmin, attachAdminCampaignHub, upload.single("coverImage"), saveCampaignWithQuests)
+  .patch("/add-campaign-address", requireAdminSuperadmin, attachAdminCampaignHub, addCampaignAddress)
+  .patch("/publish-campaign", requireAdminSuperadmin, attachAdminCampaignHub, publishAdminCampaign)
+  .delete("/delete-campaign", requireAdminSuperadmin, attachAdminCampaignHub, deleteCampaign)
+  .patch("/close-campaign", requireAdminSuperadmin, attachAdminCampaignHub, closeCampaign)
+  .patch("/reopen-campaign", requireAdminSuperadmin, attachAdminCampaignHub, reopenCampaign)
+  .patch("/record-campaign-rewards-withdrawal", requireAdminSuperadmin, attachAdminCampaignHub, recordCampaignRewardsWithdrawal)
+  .post("/create-lesson", upload.fields([{ name: "coverImage", maxCount: 1 }, { name: "profileImage", maxCount: 1 }]), createLesson)
+  .patch("/update-lesson", upload.fields([{ name: "coverImage", maxCount: 1 }, { name: "profileImage", maxCount: 1 }]), updateLesson)
   .post("/create-mini-lesson", createMiniLesson)
   .patch("/update-mini-lesson", updateMiniLesson)
 	.post("/create-question", createQuestion)

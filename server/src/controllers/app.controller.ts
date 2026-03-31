@@ -793,7 +793,7 @@ export const validatePortalTask =  async (req: GlobalRequest, res: GlobalRespons
 
 export const getAnalytics = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const userFound = await user.find().select("updatedAt createdAt refRewardClaimed badges status").lean();
+    const userFound = await user.find().select("updatedAt createdAt refRewardClaimed badges status xp").lean();
     const totalReferrals = await referredUsers.countDocuments();
 
     const totalCampaigns = await campaign.countDocuments();
@@ -810,6 +810,9 @@ export const getAnalytics = async (req: GlobalRequest, res: GlobalResponse) => {
     const joinRatio = (totalCampaignsCompleted / totalCampaignsCompletedFound.length) * 100;
 
     const totalUsers = userFound.length;
+    const totalXpInCirculation = userFound.reduce((sum, current) => {
+      return sum + Number(current.xp ?? 0);
+    }, 0);
 
     const now = new Date();
 
@@ -943,6 +946,7 @@ export const getAnalytics = async (req: GlobalRequest, res: GlobalResponse) => {
         totalCampaignsCompleted,
         joinRatio,
         totalTrustDistributed,
+        totalXpInCirculation,
         usersByDay,
         usersByHour,
         tomorrowName,

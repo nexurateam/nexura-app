@@ -2,10 +2,37 @@ import logger from "@/config/logger";
 import { lesson, lessonCompleted, miniLesson, question, questionCompleted } from "@/models/lesson.model";
 import { user } from "@/models/user.model";
 import { BAD_REQUEST, OK, NOT_FOUND, INTERNAL_SERVER_ERROR, CREATED, FORBIDDEN } from "@/utils/status.utils";
+import { uploadImg } from "@/utils/img.utils";
 import { validateCreateLesson, validateCreateQuestion } from "@/utils/utils";
+
+const getUploadedLessonImage = async (
+  req: GlobalRequest,
+  fieldName: "coverImage" | "profileImage",
+  folder: string,
+) => {
+  const files = req.files as Record<string, Array<{ buffer: Buffer; originalname?: string }>> | undefined;
+  const uploadedFile = files?.[fieldName]?.[0];
+
+  if (!uploadedFile?.buffer) {
+    return undefined;
+  }
+
+  return uploadImg({
+    file: uploadedFile.buffer,
+    filename: uploadedFile.originalname || `${fieldName}.jpg`,
+    folder,
+    maxSize: 2 * 1024 ** 2,
+  });
+};
 
 export const createLesson = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
+    const coverImage = await getUploadedLessonImage(req, "coverImage", "lesson-covers");
+    const profileImage = await getUploadedLessonImage(req, "profileImage", "lesson-profiles");
+
+    if (coverImage) req.body.coverImage = coverImage;
+    if (profileImage) req.body.profileImage = profileImage;
+
     const { success } = validateCreateLesson(req.body);
     if (!success) {
       res.status(BAD_REQUEST).json({ error: "Send the required values. Required values are: title, description and reward" });
@@ -56,6 +83,17 @@ export const updateLesson = async (req: GlobalRequest, res: GlobalResponse) => {
         return;
       }
       lessonExists.reward = normalizedReward;
+    }
+
+    const coverImage = await getUploadedLessonImage(req, "coverImage", "lesson-covers");
+    const profileImage = await getUploadedLessonImage(req, "profileImage", "lesson-profiles");
+
+    if (coverImage) {
+      lessonExists.coverImage = coverImage;
+    }
+
+    if (profileImage) {
+      lessonExists.profileImage = profileImage;
     }
 
     await lessonExists.save();

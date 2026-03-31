@@ -9,6 +9,14 @@ const lessonSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  coverImage: {
+    type: String,
+    default: "",
+  },
+  profileImage: {
+    type: String,
+    default: "",
+  },
   noOfQuestions: {
     type: Number,
     default: 0,

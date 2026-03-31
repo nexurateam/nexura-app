@@ -366,7 +366,9 @@ export const validateCreateLesson = (reqData: any) => {
 	const lessonSchema = z.object({
 		title: z.string().trim(),
 		description: z.string().trim(),
-		reward: z.number(),
+		reward: z.coerce.number(),
+		coverImage: z.string().trim().optional(),
+		profileImage: z.string().trim().optional(),
 	});
 
 	const parseData = lessonSchema.safeParse(reqData);
