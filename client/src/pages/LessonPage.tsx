@@ -765,22 +765,25 @@ useEffect(() => {
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
 
     <div
-      className="w-[90%] max-w-sm rounded-2xl border border-purple-500/20 bg-[#0d0d14] p-6 text-center space-y-5 shadow-[0_0_60px_rgba(131,58,253,0.2)] animate-modal-pop"
+      className="w-[90%] max-w-sm rounded-2xl border border-purple-300/30 p-6 text-center space-y-5 shadow-[0_0_60px_rgba(131,58,253,0.28)] animate-modal-pop"
+      style={{
+        background: "linear-gradient(180deg, #8B3EFE 0%, #6F2BDA 100%)",
+      }}
     >
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-purple-500/15 border border-purple-400/30">
-        <Trophy className="h-8 w-8 text-purple-300" />
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/25 bg-white/10">
+        <Trophy className="h-8 w-8 text-white" />
       </div>
 
       <h2 className="text-xl sm:text-2xl font-bold text-white">
         Lesson Completed
       </h2>
 
-      <p className="text-sm text-white/70">
+      <p className="text-sm text-white/85">
         You finished the lesson successfully and your XP reward has been claimed.
       </p>
 
-      <div className="rounded-xl border border-purple-500/20 bg-purple-500/10 px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-purple-200/70">
+      <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/75">
           XP Earned
         </p>
         <div className="mt-2 flex items-center justify-center gap-2 text-2xl font-extrabold text-white">
@@ -792,14 +795,14 @@ useEffect(() => {
       <div className="flex flex-col gap-3">
         <button
           onClick={() => setLocation("/learn")}
-          className="w-full rounded-xl bg-[#8B3EFE] px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-[#7A2FE0] hover:shadow-[0_0_20px_rgba(131,58,253,0.35)]"
+          className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition-all duration-200 hover:bg-white/90"
         >
           Back to Lessons
         </button>
 
         <button
           onClick={resetLesson}
-          className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-white/10"
+          className="w-full rounded-xl bg-black px-4 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-black/85"
         >
           Retake Lesson
         </button>
