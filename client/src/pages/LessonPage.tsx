@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useParams } from "wouter";
 import { Loader2, Trophy } from "lucide-react";
 import Confetti from "react-confetti";
@@ -20,6 +21,8 @@ type MiniLesson = {
   _id: string;
   text: string;
   lesson: string;
+  order?: number;
+  createdAt?: string;
 };
 
 type LessonQuestion = {
@@ -29,9 +32,15 @@ type LessonQuestion = {
   lesson: string;
   done: boolean;
   answer?: string;
+  solution?: string;
+  order?: number;
+  createdAt?: string;
+  introText?: string;
+  introTrophy?: "bronze" | "silver" | "";
 };
 
 type LessonStep =
+  | { kind: "intro"; key: string; text: string; trophy: "bronze" | "silver" | "" }
   | { kind: "mini"; key: string; text: string }
   | { kind: "question"; key: string; question: LessonQuestion }
   | { kind: "claim"; key: string };
@@ -59,7 +68,6 @@ export default function LessonPage() {
   const [miniLessons, setMiniLessons] = useState<MiniLesson[]>([]);
   const [questions, setQuestions] = useState<LessonQuestion[]>([]);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
-  const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<string, "correct" | "wrong" | null>>({});
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
@@ -71,20 +79,37 @@ export default function LessonPage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [didInitStep, setDidInitStep] = useState(false);
+  const direction = useRef(1);
 
-  const lessonSteps = useMemo<LessonStep[]>(
-    () => [
-      ...miniLessons.map((entry) => ({ kind: "mini" as const, key: `mini-${entry._id}`, text: entry.text })),
-      ...questions.map((entry) => ({ kind: "question" as const, key: `question-${entry._id}`, question: entry })),
+  const lessonSteps = useMemo<LessonStep[]>(() => {
+    type AnyItem = { kind: "mini"; entry: MiniLesson } | { kind: "question"; entry: LessonQuestion };
+    const combined: AnyItem[] = [
+      ...miniLessons.map((entry) => ({ kind: "mini" as const, entry })),
+      ...questions.map((entry) => ({ kind: "question" as const, entry })),
+    ].sort((a, b) => {
+      const orderDiff = (a.entry.order ?? 0) - (b.entry.order ?? 0);
+      if (orderDiff !== 0) return orderDiff;
+      return (a.entry.createdAt ?? "").localeCompare(b.entry.createdAt ?? "");
+    });
+    return [
+      ...combined.flatMap((item) => {
+        if (item.kind === "question" && item.entry.introText) {
+          return [
+            { kind: "intro" as const, key: `intro-${item.entry._id}`, text: item.entry.introText, trophy: item.entry.introTrophy ?? "" },
+            { kind: "question" as const, key: `question-${item.entry._id}`, question: item.entry },
+          ];
+        }
+        return item.kind === "mini"
+          ? [{ kind: "mini" as const, key: `mini-${item.entry._id}`, text: item.entry.text }]
+          : [{ kind: "question" as const, key: `question-${item.entry._id}`, question: item.entry }];
+      }),
       { kind: "claim" as const, key: "claim" },
-    ],
-    [miniLessons, questions]
-  );
+    ];
+  }, [miniLessons, questions]);
 
   const activeStep = lessonSteps[currentStep];
   const currentQuestion = activeStep?.kind === "question" ? activeStep.question : null;
   const currentSelection = currentQuestion ? selectedAnswers[currentQuestion._id] ?? currentQuestion.answer ?? "" : "";
-  const currentFeedback = currentQuestion ? feedbackByQuestion[currentQuestion._id] : null;
   const completedQuestions = useMemo(() => questions.filter((question) => question.done).length, [questions]);
   const allQuestionsDone = questions.length > 0 && completedQuestions === questions.length;
   const progress = lessonSteps.length ? ((currentStep + 1) / lessonSteps.length) * 100 : 0;
@@ -139,13 +164,6 @@ export default function LessonPage() {
       setMiniLessons(nextMiniLessons);
       setQuestions(nextQuestions);
       setSelectedAnswers((current) => ({ ...current, ...nextSelectedAnswers }));
-      setFeedbackByQuestion((current) => {
-        const next = { ...current };
-        for (const entry of nextQuestions) {
-          if (entry.done) next[entry._id] = "correct";
-        }
-        return next;
-      });
       syncLocalProgress(lessonMatch, nextQuestions);
     } catch (error) {
       setPageError(normalizeApiMessage(error, "Failed to load lesson"));
@@ -185,6 +203,11 @@ export default function LessonPage() {
   }, [currentStep, lesson?.done, lesson?.reward, lessonId, lessonSteps.length, questions.length, storageKey]);
 
   useEffect(() => {
+    if (!lessonId || !didInitStep) return;
+    syncLocalProgress(lesson, questions);
+  }, [didInitStep, lessonId, lesson?.done, lesson?.reward, questions]);
+
+  useEffect(() => {
     if (!showXPModal) return;
     setShowConfetti(true);
     const timeout = window.setTimeout(() => setShowConfetti(false), 4000);
@@ -204,6 +227,16 @@ export default function LessonPage() {
 
     return true;
   };
+
+  const isCorrectAnswer = (question: LessonQuestion, answer: string) =>
+    answer.trim().toLowerCase() === String(question.solution || "").trim().toLowerCase();
+
+  const currentFeedback =
+    currentQuestion && currentSelection
+      ? isCorrectAnswer(currentQuestion, currentSelection)
+        ? "correct"
+        : "wrong"
+      : null;
 
   const startLesson = async () => {
     if (!lessonId) return false;
@@ -233,9 +266,14 @@ export default function LessonPage() {
     if (!currentQuestion || !lessonId) return;
     const answer = currentSelection;
     if (!answer) return;
+    const answerIsCorrect = isCorrectAnswer(currentQuestion, answer);
+    if (!answerIsCorrect) {
+      setActionMessage("Keep selecting until you find the correct answer.");
+      return false;
+    }
 
     const started = await startLesson();
-    if (!started) return;
+    if (!started) return false;
 
     setSubmittingQuestionId(currentQuestion._id);
     setActionMessage("");
@@ -247,23 +285,25 @@ export default function LessonPage() {
         answer,
       });
 
-      setFeedbackByQuestion((current) => ({ ...current, [currentQuestion._id]: "correct" }));
-      setActionMessage(response.message || "Correct answer saved.");
-      await loadLesson();
+      if (answerIsCorrect) {
+        setQuestions((current) =>
+          current.map((entry) =>
+            entry._id === currentQuestion._id
+              ? { ...entry, done: true, answer }
+              : entry
+          )
+        );
+        setActionMessage(response.message || "Correct answer saved.");
+        return true;
+      }
     } catch (error) {
       const message = normalizeApiMessage(error, "Unable to submit answer");
-      setFeedbackByQuestion((current) => ({ ...current, [currentQuestion._id]: "wrong" }));
       setActionMessage(message);
-      if (
-        message.toLowerCase().includes("wrong answer") ||
-        message.toLowerCase().includes("correct answer") ||
-        message.toLowerCase().includes("already answered")
-      ) {
-        await loadLesson();
-      }
     } finally {
       setSubmittingQuestionId(null);
     }
+
+    return false;
   };
 
   const claimXp = async () => {
@@ -294,6 +334,7 @@ export default function LessonPage() {
 
   const goPrev = () => {
     if (currentStep <= 0) return;
+    direction.current = -1;
     setActionMessage("");
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
@@ -304,12 +345,16 @@ export default function LessonPage() {
     if (activeStep.kind === "question") {
       if (!activeStep.question.done) {
         if (!currentSelection) return;
-        await submitAnswer();
+        const saved = await submitAnswer();
+        if (saved && currentStep < lessonSteps.length - 1) {
+          setCurrentStep((prev) => Math.min(prev + 1, lessonSteps.length - 1));
+        }
         return;
       }
 
       if (currentStep < lessonSteps.length - 1) {
         setActionMessage("");
+        direction.current = 1;
         setCurrentStep((prev) => Math.min(prev + 1, lessonSteps.length - 1));
       }
       return;
@@ -324,6 +369,7 @@ export default function LessonPage() {
 
     if (currentStep < lessonSteps.length - 1) {
       setActionMessage("");
+      direction.current = 1;
       setCurrentStep((prev) => Math.min(prev + 1, lessonSteps.length - 1));
     }
   };
@@ -409,8 +455,33 @@ export default function LessonPage() {
             <img src="/prev-arrow.png" alt="Previous" className="w-12 h-14 object-contain" />
           </button>
 
-          <div className="flex-1 px-2 pb-12 sm:pb-10">
-            {activeStep?.kind === "mini" ? (
+          <AnimatePresence mode="wait" initial={false} custom={direction.current}>
+            <motion.div
+              key={currentStep}
+              custom={direction.current}
+              variants={{
+                enter: (d) => ({ x: d * 60, opacity: 0 }),
+                center: { x: 0, opacity: 1 },
+                exit: (d) => ({ x: d * -60, opacity: 0 }),
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.8 }}
+              className="flex-1 px-2 pb-12 sm:pb-10"
+            >
+            {activeStep?.kind === "intro" ? (
+              <div className="flex flex-col items-center space-y-4 text-center">
+                {activeStep.trophy && (
+                  <img
+                    src={`/nexura-${activeStep.trophy}.png`}
+                    alt={`${activeStep.trophy} trophy`}
+                    className="w-56 h-56 object-contain"
+                  />
+                )}
+                <p className="text-lg sm:text-xl leading-relaxed whitespace-pre-wrap">{activeStep.text}</p>
+              </div>
+            ) : activeStep?.kind === "mini" ? (
               <p className="text-lg sm:text-xl leading-relaxed whitespace-pre-wrap">{activeStep.text}</p>
             ) : activeStep?.kind === "question" ? (
               <div className="flex flex-col space-y-4 text-left">
@@ -438,11 +509,11 @@ export default function LessonPage() {
                         key={`${activeStep.question._id}-${option}`}
                         onClick={() => {
                           if (activeStep.question.done) return;
-                          setFeedbackByQuestion((current) => ({ ...current, [activeStep.question._id]: null }));
                           setSelectedAnswers((current) => ({
                             ...current,
                             [activeStep.question._id]: option,
                           }));
+                          setActionMessage("");
                         }}
                         className={style}
                       >
@@ -495,7 +566,8 @@ export default function LessonPage() {
                 </button>
               </div>
             )}
-          </div>
+            </motion.div>
+          </AnimatePresence>
 
           <button
             onClick={() => void goNext()}
@@ -513,7 +585,10 @@ export default function LessonPage() {
             {lessonSteps.map((step, index) => (
               <button
                 key={step.key}
-                onClick={() => setCurrentStep(index)}
+                onClick={() => {
+                  direction.current = index > currentStep ? 1 : -1;
+                  setCurrentStep(index);
+                }}
                 className={`w-2 h-2 rounded-full transition ${index === currentStep ? "bg-white" : "bg-white/40"}`}
               />
             ))}
@@ -523,11 +598,15 @@ export default function LessonPage() {
             <button
               onClick={() => void goNext()}
               disabled={
-                (activeStep?.kind === "question" && !activeStep.question.done && !currentSelection) ||
+                (activeStep?.kind === "question" &&
+                  !activeStep.question.done &&
+                  (!currentSelection || currentFeedback === "wrong")) ||
                 submittingQuestionId === currentQuestion?._id
               }
               className={`absolute bottom-4 right-4 px-4 py-1.5 rounded-3xl text-sm text-white transition-all duration-200 ${
-                activeStep?.kind === "question" && !activeStep.question.done && !currentSelection
+                activeStep?.kind === "question" &&
+                !activeStep.question.done &&
+                (!currentSelection || currentFeedback === "wrong")
                   ? "bg-gray-500/50 blur-[1px] cursor-not-allowed opacity-60"
                   : "bg-[#8B3EFE] hover:bg-[#7A2FE0]"
               }`}
@@ -536,8 +615,8 @@ export default function LessonPage() {
                 ? activeStep.question.done
                   ? "Continue"
                   : submittingQuestionId === activeStep.question._id
-                    ? "Checking..."
-                    : "Submit"
+                    ? "Saving..."
+                    : "Continue"
                 : "Continue"}
             </button>
           ) : null}

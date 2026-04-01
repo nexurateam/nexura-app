@@ -113,7 +113,10 @@ export const createQuestion = async (req: GlobalRequest, res: GlobalResponse) =>
       return;
     }
 
-    await question.create(req.body);
+    const maxOrderDoc = await question.findOne({ lesson: req.body.lesson }).sort({ order: -1 }).select("order").lean();
+    const nextOrder = maxOrderDoc ? (Number(maxOrderDoc.order) || 0) + 1 : 0;
+
+    await question.create({ ...req.body, order: nextOrder });
 
     await lesson.updateOne({ _id: req.body.lesson }, { $inc: { noOfQuestions: 1 } });
 
@@ -126,11 +129,13 @@ export const createQuestion = async (req: GlobalRequest, res: GlobalResponse) =>
 
 export const updateQuestion = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const { questionId, question: questionText, options, solution } = req.body as {
+    const { questionId, question: questionText, options, solution, introText, introTrophy } = req.body as {
       questionId?: string;
       question?: string;
       options?: string[];
       solution?: string;
+      introText?: string;
+      introTrophy?: string;
     };
 
     if (!questionId) {
@@ -166,6 +171,8 @@ export const updateQuestion = async (req: GlobalRequest, res: GlobalResponse) =>
 
     questionExists.options = normalizedOptions;
     questionExists.solution = normalizedSolution;
+    if (typeof introText === "string") questionExists.introText = introText;
+    if (typeof introTrophy === "string") questionExists.introTrophy = introTrophy;
 
     await questionExists.save();
 
@@ -184,7 +191,10 @@ export const createMiniLesson = async (req: GlobalRequest, res: GlobalResponse) 
       return;
     }
 
-    await miniLesson.create(req.body);
+    const maxOrderDoc = await miniLesson.findOne({ lesson: lessonId }).sort({ order: -1 }).select("order").lean();
+    const nextOrder = maxOrderDoc ? (Number(maxOrderDoc.order) || 0) + 1 : 0;
+
+    await miniLesson.create({ ...req.body, order: nextOrder });
 
     res.status(CREATED).json({ message: "mini lesson created" });
   } catch (error) {
@@ -222,7 +232,7 @@ export const rewardLessonXp = async (req: GlobalRequest, res: GlobalResponse) =>
     const { id: lessonId } = req.query as { id: string };
     const { id } = req;
 
-    const lessonExists = await lesson.findById(lessonId).lean().select("reward noOfQuestions");
+    const lessonExists = await lesson.findById(lessonId).lean().select("reward");
     if (!lessonExists) {
       res.status(NOT_FOUND).json({ error: "lesson does not exist" });
       return;
@@ -239,8 +249,11 @@ export const rewardLessonXp = async (req: GlobalRequest, res: GlobalResponse) =>
       return;
     }
 
-    const questionsAnswered = await questionCompleted.countDocuments({ done: true, user: id, lesson: lessonId });
-    if (lessonExists.noOfQuestions !== questionsAnswered) {
+    const [totalQuestions, questionsAnswered] = await Promise.all([
+      question.countDocuments({ lesson: lessonId }),
+      questionCompleted.countDocuments({ done: true, user: id, lesson: lessonId }),
+    ]);
+    if (totalQuestions > 0 && questionsAnswered < totalQuestions) {
       res.status(FORBIDDEN).json({ error: "answer all questions before reward can be claimed" });
       return;
     }
@@ -261,7 +274,7 @@ export const rewardLessonXp = async (req: GlobalRequest, res: GlobalResponse) =>
 
 export const getLessons = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const lessons = await lesson.find().lean();
+    const lessons = await lesson.find({ status: "published" }).lean();
     const lessonsCompleted = await lessonCompleted.find({ user: req.id }).lean();
 
     const mergedLessons: any[] = [];
@@ -295,6 +308,74 @@ export const getAllLessons = async (_req: GlobalRequest, res: GlobalResponse) =>
   }
 };
 
+export const publishLesson = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    const { lessonId } = req.body as { lessonId?: string };
+    if (!lessonId) {
+      res.status(BAD_REQUEST).json({ error: "lessonId is required" });
+      return;
+    }
+    const lessonExists = await lesson.findById(lessonId);
+    if (!lessonExists) {
+      res.status(NOT_FOUND).json({ error: "lesson does not exist" });
+      return;
+    }
+    lessonExists.status = "published";
+    await lessonExists.save();
+    res.status(OK).json({ message: "lesson published" });
+  } catch (error) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error publishing lesson" });
+  }
+};
+
+export const unpublishLesson = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    const { lessonId } = req.body as { lessonId?: string };
+    if (!lessonId) {
+      res.status(BAD_REQUEST).json({ error: "lessonId is required" });
+      return;
+    }
+    const lessonExists = await lesson.findById(lessonId);
+    if (!lessonExists) {
+      res.status(NOT_FOUND).json({ error: "lesson does not exist" });
+      return;
+    }
+    lessonExists.status = "draft";
+    await lessonExists.save();
+    res.status(OK).json({ message: "lesson saved as draft" });
+  } catch (error) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error saving lesson as draft" });
+  }
+};
+
+export const updateQuestionIntro = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    const { questionId, introText, introTrophy } = req.body as {
+      questionId?: string;
+      introText?: string;
+      introTrophy?: string;
+    };
+    if (!questionId) {
+      res.status(BAD_REQUEST).json({ error: "questionId is required" });
+      return;
+    }
+    const questionExists = await question.findById(questionId);
+    if (!questionExists) {
+      res.status(NOT_FOUND).json({ error: "question does not exist" });
+      return;
+    }
+    questionExists.introText = introText ?? "";
+    questionExists.introTrophy = introTrophy ?? "";
+    await questionExists.save();
+    res.status(OK).json({ message: "question intro updated" });
+  } catch (error) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error updating question intro" });
+  }
+};
+
 export const getLessonDetailsForAdmin = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
     const { id: lessonId } = req.query as { id: string };
@@ -309,8 +390,8 @@ export const getLessonDetailsForAdmin = async (req: GlobalRequest, res: GlobalRe
       return;
     }
 
-    const miniLessons = await miniLesson.find({ lesson: lessonId }).sort({ createdAt: 1 }).lean();
-    const questions = await question.find({ lesson: lessonId }).sort({ createdAt: 1 }).lean();
+    const miniLessons = await miniLesson.find({ lesson: lessonId }).sort({ order: 1, createdAt: 1 }).lean();
+    const questions = await question.find({ lesson: lessonId }).sort({ order: 1, createdAt: 1 }).lean();
 
     res.status(OK).json({ message: "lesson details fetched", miniLessons, questions });
   } catch (error) {
@@ -328,9 +409,15 @@ export const getMiniLessonAndQuestions = async (req: GlobalRequest, res: GlobalR
       return;
     }
 
-    const miniLessons = await miniLesson.find({ lesson: lessonId }).lean();
+    const lessonExists = await lesson.findById(lessonId).select("status").lean();
+    if (!lessonExists || lessonExists.status !== "published") {
+      res.status(NOT_FOUND).json({ error: "lesson not found" });
+      return;
+    }
 
-    const questions = await question.find({ lesson: lessonId }).select("options question lesson").lean();
+    const miniLessons = await miniLesson.find({ lesson: lessonId }).sort({ order: 1, createdAt: 1 }).lean();
+
+    const questions = await question.find({ lesson: lessonId }).select("options question lesson solution order createdAt introText introTrophy").sort({ order: 1, createdAt: 1 }).lean();
     const questionsCompleted = id
       ? await questionCompleted.find({ user: id, lesson: lessonId }).lean()
       : [];
@@ -376,9 +463,11 @@ export const answerQuestion = async (req: GlobalRequest, res: GlobalResponse) =>
       return;
     }
 
+    const lowerSolution = (questionExists.solution || "").toLowerCase();
+
     const questionAlreadyAnswered = await questionCompleted.findOne({ question: questionId, lesson: lessonId, user: id });
     if (!questionAlreadyAnswered) {
-      if (lowerAnswer !== questionExists.solution) {
+      if (lowerAnswer !== lowerSolution) {
         await questionCompleted.create({ user: id, answer: lowerAnswer, lesson: lessonId, question: questionId });
 
         res.status(BAD_REQUEST).json({ error: "wrong answer" });
@@ -396,7 +485,7 @@ export const answerQuestion = async (req: GlobalRequest, res: GlobalResponse) =>
       return;
     }
 
-    if (lowerAnswer !== questionExists.solution) {
+    if (lowerAnswer !== lowerSolution) {
       if (lowerAnswer !== questionAlreadyAnswered.answer) {
         questionAlreadyAnswered.answer = lowerAnswer;
 
@@ -474,12 +563,58 @@ export const deleteLesson = async (req: GlobalRequest, res: GlobalResponse) => {
   }
 };
 
-export const deleteLesson = async (req: GlobalRequest, res: GlobalResponse) => {
+export const deleteMiniLesson = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const { id: lessonId } = req.query as { id: string };
+    const { id: miniLessonId } = req.query as { id: string };
+    if (!miniLessonId) {
+      res.status(BAD_REQUEST).json({ error: "mini lesson id is required" });
+      return;
+    }
+    const exists = await miniLesson.exists({ _id: miniLessonId });
+    if (!exists) {
+      res.status(NOT_FOUND).json({ error: "mini lesson does not exist" });
+      return;
+    }
+    await miniLesson.deleteOne({ _id: miniLessonId });
+    res.status(OK).json({ message: "mini lesson deleted" });
+  } catch (error) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error deleting mini lesson" });
+  }
+};
 
-    if (!lessonId) {
-      res.status(BAD_REQUEST).json({ error: "lesson id is required" });
+export const deleteQuestion = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    const { id: questionId } = req.query as { id: string };
+    if (!questionId) {
+      res.status(BAD_REQUEST).json({ error: "question id is required" });
+      return;
+    }
+    const exists = await question.exists({ _id: questionId });
+    if (!exists) {
+      res.status(NOT_FOUND).json({ error: "question does not exist" });
+      return;
+    }
+    await Promise.all([
+      question.deleteOne({ _id: questionId }),
+      questionCompleted.deleteMany({ question: questionId }),
+    ]);
+    res.status(OK).json({ message: "question deleted" });
+  } catch (error) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error deleting question" });
+  }
+};
+
+export const reorderLessonContent = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    const { lessonId, items } = req.body as {
+      lessonId?: string;
+      items?: Array<{ id: string; kind: "mini" | "question"; order: number }>;
+    };
+
+    if (!lessonId || !Array.isArray(items) || items.length === 0) {
+      res.status(BAD_REQUEST).json({ error: "lessonId and items array are required" });
       return;
     }
 
@@ -489,18 +624,19 @@ export const deleteLesson = async (req: GlobalRequest, res: GlobalResponse) => {
       return;
     }
 
-    await Promise.all([
-      lesson.deleteOne({ _id: lessonId }),
-      miniLesson.deleteMany({ lesson: lessonId }),
-      question.deleteMany({ lesson: lessonId }),
-      lessonCompleted.deleteMany({ lesson: lessonId }),
-      questionCompleted.deleteMany({ lesson: lessonId }),
-    ]);
+    await Promise.all(
+      items.map((item) => {
+        if (item.kind === "mini") {
+          return miniLesson.updateOne({ _id: item.id, lesson: lessonId }, { $set: { order: item.order } });
+        }
+        return question.updateOne({ _id: item.id, lesson: lessonId }, { $set: { order: item.order } });
+      })
+    );
 
-    res.status(OK).json({ message: "lesson deleted" });
+    res.status(OK).json({ message: "order updated" });
   } catch (error) {
     logger.error(error);
-    res.status(INTERNAL_SERVER_ERROR).json({ error: "error deleting lesson" });
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error reordering lesson content" });
   }
 };
 

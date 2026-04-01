@@ -24,6 +24,8 @@ import { getCampaign, getHub, saveCampaign, saveCampaignWithQuests } from "@/con
 import {
   createLesson,
   deleteLesson,
+  deleteMiniLesson,
+  deleteQuestion,
   createQuestion,
   createMiniLesson,
   getAllLessons,
@@ -31,6 +33,10 @@ import {
   updateLesson,
   updateMiniLesson,
   updateQuestion,
+  reorderLessonContent,
+  publishLesson,
+  unpublishLesson,
+  updateQuestionIntro,
 } from "@/controllers/lesson.controller";
 import { upload } from "@/config/multer";
 import { attachAdminCampaignHub, requireAdminSuperadmin } from "@/middlewares/auth.middleware";
@@ -67,8 +73,14 @@ router
   .patch("/update-lesson", upload.fields([{ name: "coverImage", maxCount: 1 }, { name: "profileImage", maxCount: 1 }]), updateLesson)
   .post("/create-mini-lesson", createMiniLesson)
   .patch("/update-mini-lesson", updateMiniLesson)
-	.post("/create-question", createQuestion)
+  .delete("/delete-mini-lesson", deleteMiniLesson)
+  .post("/create-question", createQuestion)
   .patch("/update-question", updateQuestion)
+  .delete("/delete-question", deleteQuestion)
+  .patch("/reorder-lesson-content", reorderLessonContent)
+  .patch("/publish-lesson", publishLesson)
+  .patch("/unpublish-lesson", unpublishLesson)
+  .patch("/update-question-intro", updateQuestionIntro)
   .get("/get-banned-users", getBannedUsers)
   .get("/get-quests", getTasks)
   .get("/get-admins", getAdmins)

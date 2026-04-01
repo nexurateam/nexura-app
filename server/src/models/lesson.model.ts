@@ -24,6 +24,11 @@ const lessonSchema = new mongoose.Schema({
   reward: {
     type: Number,
     required: true
+  },
+  status: {
+    type: String,
+    enum: ["draft", "published"],
+    default: "draft",
   }
 }, { timestamps: true });
 
@@ -66,6 +71,10 @@ const miniLessonSchema = new mongoose.Schema({
   text: {
     type: String,
     required: true
+  },
+  order: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 
@@ -76,6 +85,10 @@ const questionSchema = new mongoose.Schema({
   question: {
     type: String,
     required: true
+  },
+  order: {
+    type: Number,
+    default: 0
   },
   options: [{
     type: String,
@@ -89,6 +102,15 @@ const questionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "lessons",
     required: true
+  },
+  introText: {
+    type: String,
+    default: "",
+  },
+  introTrophy: {
+    type: String,
+    enum: ["silver", "bronze", ""],
+    default: "",
   }
 }, { timestamps: true });
 
