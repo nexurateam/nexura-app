@@ -75,6 +75,24 @@ const miniLessonSchema = new mongoose.Schema({
   order: {
     type: Number,
     default: 0
+  },
+  introText: {
+    type: String,
+    default: "",
+  },
+  introTrophy: {
+    type: String,
+    enum: ["bronze", "silver", "gold", ""],
+    default: "",
+  },
+  outroText: {
+    type: String,
+    default: "",
+  },
+  outroTrophy: {
+    type: String,
+    enum: ["bronze", "silver", "gold", ""],
+    default: "",
   }
 }, { timestamps: true });
 
@@ -109,7 +127,16 @@ const questionSchema = new mongoose.Schema({
   },
   introTrophy: {
     type: String,
-    enum: ["silver", "bronze", ""],
+    enum: ["bronze", "silver", "gold", ""],
+    default: "",
+  },
+  outroText: {
+    type: String,
+    default: "",
+  },
+  outroTrophy: {
+    type: String,
+    enum: ["bronze", "silver", "gold", ""],
     default: "",
   }
 }, { timestamps: true });

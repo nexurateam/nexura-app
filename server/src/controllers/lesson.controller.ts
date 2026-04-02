@@ -186,6 +186,9 @@ export const updateQuestion = async (req: GlobalRequest, res: GlobalResponse) =>
     questionExists.solution = normalizedSolution;
     if (typeof introText === "string") questionExists.introText = introText;
     if (typeof introTrophy === "string") questionExists.introTrophy = introTrophy;
+    const { outroText, outroTrophy } = req.body as { outroText?: string; outroTrophy?: string };
+    if (typeof outroText === "string") questionExists.outroText = outroText;
+    if (typeof outroTrophy === "string") questionExists.outroTrophy = outroTrophy;
 
     await questionExists.save();
 
@@ -217,7 +220,14 @@ export const createMiniLesson = async (req: GlobalRequest, res: GlobalResponse) 
 
 export const updateMiniLesson = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const { miniLessonId, text } = req.body as { miniLessonId?: string; text?: string };
+    const { miniLessonId, text, introText, introTrophy, outroText, outroTrophy } = req.body as {
+      miniLessonId?: string;
+      text?: string;
+      introText?: string;
+      introTrophy?: string;
+      outroText?: string;
+      outroTrophy?: string;
+    };
     if (!miniLessonId || !text?.trim()) {
       res.status(BAD_REQUEST).json({ error: "miniLessonId and text are required" });
       return;
@@ -230,6 +240,10 @@ export const updateMiniLesson = async (req: GlobalRequest, res: GlobalResponse) 
     }
 
     miniLessonExists.text = text.trim();
+    if (typeof introText === "string") miniLessonExists.introText = introText;
+    if (typeof introTrophy === "string") miniLessonExists.introTrophy = introTrophy;
+    if (typeof outroText === "string") miniLessonExists.outroText = outroText;
+    if (typeof outroTrophy === "string") miniLessonExists.outroTrophy = outroTrophy;
     await miniLessonExists.save();
 
     res.status(OK).json({ message: "mini lesson updated" });
@@ -429,7 +443,7 @@ export const getMiniLessonAndQuestions = async (req: GlobalRequest, res: GlobalR
 
     const miniLessons = await miniLesson.find({ lesson: lessonId }).sort({ order: 1, createdAt: 1 }).lean();
 
-    const questions = await question.find({ lesson: lessonId }).select("options question lesson solution order createdAt introText introTrophy").sort({ order: 1, createdAt: 1 }).lean();
+    const questions = await question.find({ lesson: lessonId }).select("options question lesson solution order createdAt introText introTrophy outroText outroTrophy").sort({ order: 1, createdAt: 1 }).lean();
     const questionsCompleted = id
       ? await questionCompleted.find({ user: id, lesson: lessonId }).lean()
       : [];
