@@ -407,13 +407,13 @@ export default function LessonPage() {
 
   if (pageError) {
     return (
-      <div className="min-h-screen bg-black p-6 text-white">
+      <div className="min-h-screen bg-black p-4 sm:p-6 text-white">
         <div className="mx-auto max-w-3xl space-y-4">
           <button onClick={() => setLocation("/learn")} className="text-sm text-purple-300 hover:text-white">
-            Back to lessons
+            ← Back to lessons
           </button>
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-6">
-            <p className="text-red-300">{pageError}</p>
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 sm:p-6">
+            <p className="text-sm text-red-300">{pageError}</p>
           </div>
         </div>
       </div>
@@ -421,14 +421,15 @@ export default function LessonPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white space-y-3 flex flex-col items-center px-4 py-6">
+    <div className="min-h-screen bg-black text-white flex flex-col items-center gap-3 px-3 sm:px-4 pt-4 sm:pt-6 pb-10">
       {showConfetti ? (
         <Confetti width={windowSize.width} height={windowSize.height} numberOfPieces={180} recycle={false} />
       ) : null}
 
+      {/* Back link + breadcrumb */}
       <div className="w-full max-w-3xl space-y-1">
         <button onClick={() => setLocation("/learn")} className="text-sm text-purple-300 hover:text-white">
-          Back to lessons
+          ← Back to lessons
         </button>
         <div className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
@@ -436,168 +437,182 @@ export default function LessonPage() {
         </div>
       </div>
 
-      <h1 className="w-full max-w-3xl text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
+      {/* Lesson title */}
+      <h1 className="w-full max-w-3xl text-2xl sm:text-4xl font-extrabold leading-tight bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
         {lesson?.title || "Lesson"}
       </h1>
 
-      <div className="w-full max-w-3xl mt-1">
+      {/* Progress bar */}
+      <div className="w-full max-w-3xl">
         <div className="w-full h-2 rounded-full overflow-hidden bg-white/20">
           <div
-            className="h-full"
-            style={{
-              width: `${progress}%`,
-              background: "linear-gradient(90deg, #94E2FF, #8A3FFC)",
-            }}
+            className="h-full transition-all duration-300"
+            style={{ width: `${progress}%`, background: "linear-gradient(90deg, #94E2FF, #8A3FFC)" }}
           />
         </div>
-
-        <div className="flex justify-between text-[10px] text-white/60 mt-1">
-          <span style={{ color: "#94E2FF" }}>{(lesson?.title || "LESSON").toUpperCase()}</span>
-          <span>{currentStepLabel}</span>
+        <div className="flex justify-between items-center mt-1.5 gap-2">
+          <span
+            className="text-[11px] font-medium truncate max-w-[60%] uppercase tracking-wide"
+            style={{ color: "#94E2FF" }}
+          >
+            {lesson?.title || "Lesson"}
+          </span>
+          <span className="text-[11px] text-white/50 shrink-0 tabular-nums">{currentStepLabel}</span>
         </div>
       </div>
 
-      <div className="w-full max-w-3xl space-y-3">
+      {/* Card + XP widget */}
+      <div className="w-full max-w-3xl flex flex-col gap-3">
+
+        {/* Step card */}
         <div
-          className="rounded-2xl min-h-[340px] flex flex-col"
-          style={{
-            background: "linear-gradient(135deg, #8B3EFE, #532598)",
-          }}
+          className="rounded-3xl min-h-[400px] sm:min-h-[360px] flex flex-col overflow-hidden"
+          style={{ background: "linear-gradient(145deg, #8B3EFE, #4A1B8A)" }}
         >
-          {/* Content row: prev arrow | step content | next arrow */}
-          <div className="flex items-center gap-2 sm:gap-4 px-1 sm:px-2 pt-6 pb-2 flex-1">
+          {/* Content row: prev | content | next */}
+          <div className="flex items-center gap-1 sm:gap-3 px-0.5 sm:px-2 pt-6 sm:pt-7 pb-2 flex-1">
+
+            {/* Prev button */}
             <button
               onClick={goPrev}
               disabled={currentStep === 0}
-              className="shrink-0 px-1 sm:px-2 disabled:opacity-30 transition hover:scale-110"
+              className="shrink-0 p-1 sm:p-2 transition-opacity opacity-55 hover:opacity-90 disabled:opacity-15 sm:opacity-75 sm:disabled:opacity-25"
             >
-              <img src="/prev-arrow.png" alt="Previous" className="w-8 h-10 sm:w-12 sm:h-14 object-contain" />
+              <img src="/prev-arrow.png" alt="Previous" className="w-7 h-9 sm:w-11 sm:h-14 object-contain" />
             </button>
 
+            {/* Animated content */}
             <AnimatePresence mode="wait" initial={false} custom={direction.current}>
               <motion.div
                 key={currentStep}
                 custom={direction.current}
                 variants={{
-                  enter: (d) => ({ x: d * 60, opacity: 0 }),
+                  enter: (d) => ({ x: d * 50, opacity: 0 }),
                   center: { x: 0, opacity: 1 },
-                  exit: (d) => ({ x: d * -60, opacity: 0 }),
+                  exit: (d) => ({ x: d * -50, opacity: 0 }),
                 }}
                 initial="enter"
                 animate="center"
                 exit="exit"
                 transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.8 }}
-                className="flex-1 min-w-0 px-1 sm:px-2 text-center"
+                className="flex-1 min-w-0 px-2 sm:px-4 text-center"
               >
-            {(activeStep?.kind === "intro" || activeStep?.kind === "outro") ? (
-              <div className="flex flex-col items-center space-y-3 text-center">
-                {activeStep.trophy && (
-                  <img
-                    src={`/nexura-${activeStep.trophy}.png`}
-                    alt={`${activeStep.trophy} trophy`}
-                    className="w-28 h-28 sm:w-44 sm:h-44 object-contain"
-                  />
+                {/* Intro / Outro */}
+                {(activeStep?.kind === "intro" || activeStep?.kind === "outro") ? (
+                  <div className="flex flex-col items-center gap-3 sm:gap-5">
+                    {activeStep.trophy && (
+                      <img
+                        src={`/nexura-${activeStep.trophy}.png`}
+                        alt={`${activeStep.trophy} trophy`}
+                        className="w-28 h-28 sm:w-44 sm:h-44 object-contain"
+                      />
+                    )}
+                    {activeStep.header && (
+                      <p className="text-xl sm:text-2xl font-bold leading-snug">{activeStep.header}</p>
+                    )}
+                    {activeStep.body && (
+                      <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap text-white/80">
+                        {activeStep.body}
+                      </p>
+                    )}
+                  </div>
+
+                /* Mini lesson */
+                ) : activeStep?.kind === "mini" ? (
+                  <p className="text-base sm:text-xl leading-relaxed whitespace-pre-wrap py-2">
+                    {activeStep.text}
+                  </p>
+
+                /* Question */
+                ) : activeStep?.kind === "question" ? (
+                  <div className="flex flex-col gap-3 sm:gap-4 text-left">
+                    <h2 className="text-[15px] sm:text-xl font-bold text-center leading-snug uppercase tracking-wide">
+                      {activeStep.question.question}
+                    </h2>
+
+                    <div className="flex flex-col gap-2">
+                      {activeStep.question.options.map((option, index) => {
+                        const isSelected = currentSelection === option;
+                        const isCorrect = isSelected && (activeStep.question.done || currentFeedback === "correct");
+                        const isWrong = isSelected && currentFeedback === "wrong" && !activeStep.question.done;
+
+                        const base = "flex items-center justify-between px-3 sm:px-4 py-3 rounded-xl border transition-colors cursor-pointer";
+                        const style = isCorrect
+                          ? `${base} bg-[#00E1A220] border-[#00E1A2CC]`
+                          : isWrong
+                            ? `${base} bg-[#F43F5E20] border-[#F43F5E]`
+                            : `${base} bg-white/8 border-white/12 active:bg-white/15`;
+
+                        return (
+                          <div
+                            key={`${activeStep.question._id}-${option}`}
+                            onClick={() => {
+                              if (activeStep.question.done) return;
+                              setSelectedAnswers((current) => ({
+                                ...current,
+                                [activeStep.question._id]: option,
+                              }));
+                              setActionMessage("");
+                            }}
+                            className={style}
+                          >
+                            <span className="flex items-center gap-2.5 min-w-0">
+                              <span className="shrink-0 w-6 h-6 flex items-center justify-center rounded-lg bg-white/15 text-xs font-bold">
+                                {String.fromCharCode(65 + index)}
+                              </span>
+                              <span className="capitalize text-sm sm:text-base break-words leading-snug">{option}</span>
+                            </span>
+                            {isCorrect ? (
+                              <span className="shrink-0 ml-2 w-5 h-5 flex items-center justify-center rounded-full bg-[#00E1A2] text-black font-bold text-xs">✓</span>
+                            ) : isWrong ? (
+                              <span className="shrink-0 ml-2 w-5 h-5 flex items-center justify-center rounded-full bg-[#F43F5E] text-black font-bold text-xs">✕</span>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <p className="text-center text-[11px] text-white/45 mt-1">
+                      Question {questions.findIndex((e) => e._id === activeStep.question._id) + 1} of {questions.length}
+                    </p>
+                  </div>
+
+                /* Congratulations / Claim */
+                ) : (
+                  <div className="flex flex-col items-center gap-3 w-full">
+                    <img
+                      src="/nexura-gold.png"
+                      alt="Gold Trophy"
+                      className="w-28 h-28 sm:w-40 sm:h-40 object-contain"
+                    />
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Congratulations</h2>
+                    <p className="text-sm sm:text-base text-white/80 leading-relaxed max-w-xs">
+                      {allQuestionsDone
+                        ? `You have mastered the basics of ${lesson?.title ?? "this lesson"}. Your XP rewards are ready to be claimed.`
+                        : "Finish every question to unlock your XP reward."}
+                    </p>
+                    <button
+                      onClick={() => void claimXp()}
+                      disabled={!allQuestionsDone || claiming || lesson?.done}
+                      className={`w-full sm:w-auto px-8 py-3 rounded-full font-bold text-sm text-white transition ${
+                        !allQuestionsDone || lesson?.done
+                          ? "bg-white/20 cursor-not-allowed opacity-60"
+                          : "bg-[#5B1BA0] hover:bg-[#4a1585] active:scale-95"
+                      }`}
+                    >
+                      {lesson?.done ? "XP Claimed" : claiming ? "Claiming…" : "Claim XP"}
+                    </button>
+                    <div className="w-full border-t border-white/15 pt-2.5">
+                      <p className="text-[11px] text-yellow-300/70">
+                        Original Content by Nexura. Adapted by Nexura.
+                      </p>
+                    </div>
+                  </div>
                 )}
-                {activeStep.header && (
-                  <p className="text-xl sm:text-2xl font-bold leading-tight">{activeStep.header}</p>
-                )}
-                {activeStep.body && (
-                  <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap text-white/80">{activeStep.body}</p>
-                )}
-              </div>
-            ) : activeStep?.kind === "mini" ? (
-              <p className="text-base sm:text-xl leading-relaxed whitespace-pre-wrap">{activeStep.text}</p>
-            ) : activeStep?.kind === "question" ? (
-              <div className="flex flex-col space-y-3 text-left">
-                <h2 className="text-base sm:text-xl font-bold text-center leading-snug">
-                  {activeStep.question.question.toUpperCase()}
-                </h2>
-
-                <div className="space-y-2 sm:space-y-3">
-                  {activeStep.question.options.map((option, index) => {
-                    let style =
-                      "flex justify-between items-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg cursor-pointer border bg-[#181C2180]";
-
-                    if (currentSelection === option) {
-                      if (activeStep.question.done || currentFeedback === "correct") {
-                        style =
-                          "flex justify-between items-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border bg-[#00E1A233] border-[#00E1A2E5]";
-                      } else if (currentFeedback === "wrong") {
-                        style =
-                          "flex justify-between items-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border bg-[#F43F5E33] border-[#F43F5E]";
-                      }
-                    }
-
-                    return (
-                      <div
-                        key={`${activeStep.question._id}-${option}`}
-                        onClick={() => {
-                          if (activeStep.question.done) return;
-                          setSelectedAnswers((current) => ({
-                            ...current,
-                            [activeStep.question._id]: option,
-                          }));
-                          setActionMessage("");
-                        }}
-                        className={style}
-                      >
-                        <span className="flex items-center gap-2 min-w-0">
-                          <span className="shrink-0 bg-[#31353B] px-2 py-1 rounded text-xs font-bold">
-                            {String.fromCharCode(65 + index)}
-                          </span>
-                          <span className="capitalize text-sm sm:text-base break-words">{option}</span>
-                        </span>
-
-                        {currentSelection === option && (activeStep.question.done || currentFeedback === "correct") ? (
-                          <span className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-[#00E1A2] text-black font-bold text-xs">
-                            ✓
-                          </span>
-                        ) : null}
-                        {currentSelection === option && currentFeedback === "wrong" && !activeStep.question.done ? (
-                          <span className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-[#F43F5E] text-black font-bold text-xs">
-                            ✕
-                          </span>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <p className="text-center text-xs sm:text-sm text-white/70 mt-1">
-                  Question {questions.findIndex((entry) => entry._id === activeStep.question._id) + 1} of {questions.length}
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center text-center w-full">
-                <img src="/nexura-gold.png" alt="Gold Trophy" className="w-24 h-24 sm:w-36 sm:h-36 object-contain mb-3" />
-                <h2 className="text-xl sm:text-3xl font-extrabold text-white">Congratulations</h2>
-                <p className="mt-2 text-xs sm:text-base text-white/80 max-w-[220px] sm:max-w-xs leading-relaxed">
-                  {allQuestionsDone
-                    ? `You have mastered the basics of ${lesson?.title ?? "this lesson"}. Your XP rewards are ready to be claimed.`
-                    : "Finish every question to unlock your XP reward."}
-                </p>
-
-                <button
-                  onClick={() => void claimXp()}
-                  disabled={!allQuestionsDone || claiming || lesson?.done}
-                  className={`mt-4 sm:mt-6 px-6 sm:px-8 py-2 sm:py-2.5 rounded-full font-bold text-white text-sm transition ${
-                    !allQuestionsDone || lesson?.done
-                      ? "bg-white/20 cursor-not-allowed"
-                      : "bg-[#5B1BA0] hover:bg-[#4a1585]"
-                  }`}
-                >
-                  {lesson?.done ? "XP Claimed" : claiming ? "Claiming..." : "Claim XP"}
-                </button>
-
-                <div className="mt-4 sm:mt-6 w-full border-t border-white/20" />
-                <p className="mt-2 sm:mt-3 text-xs text-yellow-300/80">
-                  Original Content by Nexura. Adapted by Nexura.
-                </p>
-              </div>
-            )}
               </motion.div>
             </AnimatePresence>
 
+            {/* Next button */}
             <button
               onClick={() => void goNext()}
               disabled={
@@ -605,23 +620,21 @@ export default function LessonPage() {
                 (activeStep?.kind === "question" && !activeStep.question.done && !currentSelection) ||
                 submittingQuestionId === currentQuestion?._id
               }
-              className="shrink-0 px-1 sm:px-2 disabled:opacity-30 transition hover:scale-110"
+              className="shrink-0 p-1 sm:p-2 transition-opacity opacity-55 hover:opacity-90 disabled:opacity-15 sm:opacity-75 sm:disabled:opacity-25"
             >
-              <img src="/next-arrow.png" alt="Next" className="w-8 h-10 sm:w-12 sm:h-14 object-contain" />
+              <img src="/next-arrow.png" alt="Next" className="w-7 h-9 sm:w-11 sm:h-14 object-contain" />
             </button>
           </div>
 
-          {/* Bottom bar: dots centered, Continue button right — all in normal flow, never overlaps */}
-          <div className="flex items-center px-3 sm:px-4 pb-4 pt-1 gap-2">
-            {/* Mirror spacer: invisible clone of Continue button keeps dots truly centered */}
+          {/* Bottom bar: dots + Continue — in normal flow, no overlap possible */}
+          <div className="flex items-center px-4 sm:px-5 pb-5 pt-2 gap-3">
+            {/* Invisible mirror spacer keeps dots centered */}
             {activeStep?.kind !== "claim" ? (
-              <span className="shrink-0 invisible px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium" aria-hidden>
-                Continue
-              </span>
+              <span className="shrink-0 invisible px-4 py-2 text-xs font-semibold" aria-hidden>Continue</span>
             ) : null}
 
             {/* Step dots */}
-            <div className="flex-1 flex flex-wrap justify-center gap-1.5">
+            <div className="flex-1 flex flex-wrap justify-center gap-1.5 sm:gap-2">
               {lessonSteps.map((step, index) => (
                 <button
                   key={step.key}
@@ -629,7 +642,11 @@ export default function LessonPage() {
                     direction.current = index > currentStep ? 1 : -1;
                     setCurrentStep(index);
                   }}
-                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition ${index === currentStep ? "bg-white" : "bg-white/40"}`}
+                  className={`rounded-full transition-all duration-200 ${
+                    index === currentStep
+                      ? "w-4 h-1.5 bg-white"
+                      : "w-1.5 h-1.5 bg-white/35 hover:bg-white/60"
+                  }`}
                 />
               ))}
             </div>
@@ -644,74 +661,76 @@ export default function LessonPage() {
                     (!currentSelection || currentFeedback === "wrong")) ||
                   submittingQuestionId === currentQuestion?._id
                 }
-                className={`shrink-0 px-3 sm:px-4 py-1.5 rounded-3xl text-xs sm:text-sm text-white transition-all duration-200 ${
+                className={`shrink-0 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold text-white transition-all duration-200 ${
                   activeStep?.kind === "question" &&
                   !activeStep.question.done &&
                   (!currentSelection || currentFeedback === "wrong")
-                    ? "bg-gray-500/50 blur-[1px] cursor-not-allowed opacity-60"
-                    : "bg-[#8B3EFE] hover:bg-[#7A2FE0]"
+                    ? "bg-white/15 cursor-not-allowed opacity-50"
+                    : "bg-[#8B3EFE] hover:bg-[#7A2FE0] active:scale-95"
                 }`}
               >
                 {activeStep?.kind === "question" && submittingQuestionId === activeStep.question._id
-                  ? "Saving..."
+                  ? "Saving…"
                   : "Continue"}
               </button>
             ) : null}
           </div>
         </div>
 
-        <button
-          className="flex items-center gap-2 px-4 py-3 rounded-lg border"
-          style={{
-            background: "#1D182E80",
-            borderColor: "#D4BBFF1A",
-            borderWidth: "1px",
-          }}
-          type="button"
+        {/* XP rewards badge */}
+        <div
+          className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border w-full"
+          style={{ background: "#1D182E80", borderColor: "#D4BBFF1A" }}
         >
-          <img src="/xp-icon.png" alt="XP Icon" className="w-12 h-12 object-contain" />
-          <div className="flex flex-col leading-none">
-            <span className="text-[15px] font-bold" style={{ color: "#94E2FF" }}>
-              XP REWARDS
+          <img src="/xp-icon.png" alt="XP" className="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" />
+          <div className="flex flex-col gap-0.5 leading-none">
+            <span className="text-[12px] sm:text-[14px] font-bold uppercase tracking-wide" style={{ color: "#94E2FF" }}>
+              XP Rewards
             </span>
-            <span className="text-xl font-bold text-white">{lesson?.reward ?? 0}</span>
+            <span className="text-lg sm:text-xl font-bold text-white">{lesson?.reward ?? 0}</span>
           </div>
-        </button>
+        </div>
 
-        {actionMessage ? <p className="text-sm text-center text-purple-200">{actionMessage}</p> : null}
+        {actionMessage ? (
+          <p className="text-sm text-center text-purple-200 px-2 leading-relaxed">{actionMessage}</p>
+        ) : null}
       </div>
 
+      {/* Lesson Complete modal */}
       {showXPModal ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-sm rounded-[28px] bg-[#2D1B6B] p-6 sm:p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
-            <div className="mx-auto flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-2xl bg-[#3D2080]">
-              <img src="/nexura-gold.png" alt="Gold Trophy" className="h-14 w-14 sm:h-16 sm:w-16 object-contain" />
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/75 px-0 sm:px-4">
+          <div className="w-full sm:max-w-sm rounded-t-[32px] sm:rounded-[28px] bg-[#2D1B6B] px-5 pt-6 pb-8 sm:p-8 text-center shadow-[0_-8px_40px_rgba(0,0,0,0.5)]">
+            {/* Drag handle (mobile sheet feel) */}
+            <div className="mx-auto w-10 h-1 rounded-full bg-white/20 mb-5 sm:hidden" />
+
+            <div className="mx-auto flex h-[68px] w-[68px] sm:h-24 sm:w-24 items-center justify-center rounded-2xl bg-[#3D2080]">
+              <img src="/nexura-gold.png" alt="Gold Trophy" className="h-11 w-11 sm:h-16 sm:w-16 object-contain" />
             </div>
 
-            <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-extrabold text-white">Lesson Complete!</h2>
-            <p className="mt-2 text-xs sm:text-sm text-white/70 leading-relaxed">
+            <h2 className="mt-4 sm:mt-6 text-xl sm:text-3xl font-extrabold text-white">Lesson Complete!</h2>
+            <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
               {lesson?.description || "You've successfully completed this lesson."}
             </p>
 
-            <div className="mt-4 sm:mt-6 flex items-center justify-center gap-2 sm:gap-3">
+            <div className="mt-4 sm:mt-6 flex items-center justify-center gap-2.5">
               <span className="text-3xl sm:text-4xl font-extrabold text-white">+{lesson?.reward ?? 0} XP</span>
-              <span className="rounded-full border border-white/30 px-2.5 sm:px-3 py-1 text-xs font-bold uppercase tracking-widest text-white/80">
+              <span className="rounded-full border border-white/25 px-2.5 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-white/75">
                 Earned
               </span>
             </div>
 
-            <div className="mt-5 sm:mt-8 space-y-3">
+            <div className="mt-5 sm:mt-7 flex flex-col gap-2.5">
               <button
                 type="button"
                 onClick={() => setLocation("/learn")}
-                className="w-full rounded-xl bg-[#7C3AED] px-4 py-3 sm:py-3.5 text-xs sm:text-sm font-bold uppercase tracking-widest text-white transition hover:bg-[#6D28D9]"
+                className="w-full rounded-xl bg-[#7C3AED] px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#6D28D9] active:scale-[0.98]"
               >
                 Return to Lessons
               </button>
               <button
                 type="button"
                 onClick={resetLessonView}
-                className="w-full rounded-xl border border-[#7C3AED] bg-transparent px-4 py-3 sm:py-3.5 text-xs sm:text-sm font-bold uppercase tracking-widest text-white transition hover:bg-[#7C3AED]/20"
+                className="w-full rounded-xl border border-[#7C3AED] bg-transparent px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#7C3AED]/20 active:scale-[0.98]"
               >
                 Take Lesson Again
               </button>
