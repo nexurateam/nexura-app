@@ -142,13 +142,17 @@ export const createQuestion = async (req: GlobalRequest, res: GlobalResponse) =>
 
 export const updateQuestion = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const { questionId, question: questionText, options, solution, introText, introTrophy } = req.body as {
+    const { questionId, question: questionText, options, solution, introHeader, introBody, introTrophy, outroHeader, outroBody, outroTrophy } = req.body as {
       questionId?: string;
       question?: string;
       options?: string[];
       solution?: string;
-      introText?: string;
+      introHeader?: string;
+      introBody?: string;
       introTrophy?: string;
+      outroHeader?: string;
+      outroBody?: string;
+      outroTrophy?: string;
     };
 
     if (!questionId) {
@@ -184,10 +188,11 @@ export const updateQuestion = async (req: GlobalRequest, res: GlobalResponse) =>
 
     questionExists.options = normalizedOptions;
     questionExists.solution = normalizedSolution;
-    if (typeof introText === "string") questionExists.introText = introText;
+    if (typeof introHeader === "string") questionExists.introHeader = introHeader;
+    if (typeof introBody === "string") questionExists.introBody = introBody;
     if (typeof introTrophy === "string") questionExists.introTrophy = introTrophy;
-    const { outroText, outroTrophy } = req.body as { outroText?: string; outroTrophy?: string };
-    if (typeof outroText === "string") questionExists.outroText = outroText;
+    if (typeof outroHeader === "string") questionExists.outroHeader = outroHeader;
+    if (typeof outroBody === "string") questionExists.outroBody = outroBody;
     if (typeof outroTrophy === "string") questionExists.outroTrophy = outroTrophy;
 
     await questionExists.save();
@@ -220,12 +225,14 @@ export const createMiniLesson = async (req: GlobalRequest, res: GlobalResponse) 
 
 export const updateMiniLesson = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const { miniLessonId, text, introText, introTrophy, outroText, outroTrophy } = req.body as {
+    const { miniLessonId, text, introHeader, introBody, introTrophy, outroHeader, outroBody, outroTrophy } = req.body as {
       miniLessonId?: string;
       text?: string;
-      introText?: string;
+      introHeader?: string;
+      introBody?: string;
       introTrophy?: string;
-      outroText?: string;
+      outroHeader?: string;
+      outroBody?: string;
       outroTrophy?: string;
     };
     if (!miniLessonId || !text?.trim()) {
@@ -240,9 +247,11 @@ export const updateMiniLesson = async (req: GlobalRequest, res: GlobalResponse) 
     }
 
     miniLessonExists.text = text.trim();
-    if (typeof introText === "string") miniLessonExists.introText = introText;
+    if (typeof introHeader === "string") miniLessonExists.introHeader = introHeader;
+    if (typeof introBody === "string") miniLessonExists.introBody = introBody;
     if (typeof introTrophy === "string") miniLessonExists.introTrophy = introTrophy;
-    if (typeof outroText === "string") miniLessonExists.outroText = outroText;
+    if (typeof outroHeader === "string") miniLessonExists.outroHeader = outroHeader;
+    if (typeof outroBody === "string") miniLessonExists.outroBody = outroBody;
     if (typeof outroTrophy === "string") miniLessonExists.outroTrophy = outroTrophy;
     await miniLessonExists.save();
 
@@ -378,9 +387,10 @@ export const unpublishLesson = async (req: GlobalRequest, res: GlobalResponse) =
 
 export const updateQuestionIntro = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
-    const { questionId, introText, introTrophy } = req.body as {
+    const { questionId, introHeader, introBody, introTrophy } = req.body as {
       questionId?: string;
-      introText?: string;
+      introHeader?: string;
+      introBody?: string;
       introTrophy?: string;
     };
     if (!questionId) {
@@ -392,7 +402,8 @@ export const updateQuestionIntro = async (req: GlobalRequest, res: GlobalRespons
       res.status(NOT_FOUND).json({ error: "question does not exist" });
       return;
     }
-    questionExists.introText = introText ?? "";
+    questionExists.introHeader = introHeader ?? "";
+    questionExists.introBody = introBody ?? "";
     questionExists.introTrophy = introTrophy ?? "";
     await questionExists.save();
     res.status(OK).json({ message: "question intro updated" });
@@ -443,7 +454,7 @@ export const getMiniLessonAndQuestions = async (req: GlobalRequest, res: GlobalR
 
     const miniLessons = await miniLesson.find({ lesson: lessonId }).sort({ order: 1, createdAt: 1 }).lean();
 
-    const questions = await question.find({ lesson: lessonId }).select("options question lesson solution order createdAt introText introTrophy outroText outroTrophy").sort({ order: 1, createdAt: 1 }).lean();
+    const questions = await question.find({ lesson: lessonId }).select("options question lesson solution order createdAt introHeader introBody introTrophy outroHeader outroBody outroTrophy").sort({ order: 1, createdAt: 1 }).lean();
     const questionsCompleted = id
       ? await questionCompleted.find({ user: id, lesson: lessonId }).lean()
       : [];

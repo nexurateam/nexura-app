@@ -76,7 +76,11 @@ const miniLessonSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  introText: {
+  introHeader: {
+    type: String,
+    default: "",
+  },
+  introBody: {
     type: String,
     default: "",
   },
@@ -85,7 +89,11 @@ const miniLessonSchema = new mongoose.Schema({
     enum: ["bronze", "silver", "gold", ""],
     default: "",
   },
-  outroText: {
+  outroHeader: {
+    type: String,
+    default: "",
+  },
+  outroBody: {
     type: String,
     default: "",
   },
@@ -121,7 +129,11 @@ const questionSchema = new mongoose.Schema({
     ref: "lessons",
     required: true
   },
-  introText: {
+  introHeader: {
+    type: String,
+    default: "",
+  },
+  introBody: {
     type: String,
     default: "",
   },
@@ -130,7 +142,11 @@ const questionSchema = new mongoose.Schema({
     enum: ["bronze", "silver", "gold", ""],
     default: "",
   },
-  outroText: {
+  outroHeader: {
+    type: String,
+    default: "",
+  },
+  outroBody: {
     type: String,
     default: "",
   },

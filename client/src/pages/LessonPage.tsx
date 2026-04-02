@@ -23,6 +23,12 @@ type MiniLesson = {
   lesson: string;
   order?: number;
   createdAt?: string;
+  introHeader?: string;
+  introBody?: string;
+  introTrophy?: "bronze" | "silver" | "gold" | "";
+  outroHeader?: string;
+  outroBody?: string;
+  outroTrophy?: "bronze" | "silver" | "gold" | "";
 };
 
 type LessonQuestion = {
@@ -35,12 +41,17 @@ type LessonQuestion = {
   solution?: string;
   order?: number;
   createdAt?: string;
-  introText?: string;
-  introTrophy?: "bronze" | "silver" | "";
+  introHeader?: string;
+  introBody?: string;
+  introTrophy?: "bronze" | "silver" | "gold" | "";
+  outroHeader?: string;
+  outroBody?: string;
+  outroTrophy?: "bronze" | "silver" | "gold" | "";
 };
 
 type LessonStep =
-  | { kind: "intro"; key: string; text: string; trophy: "bronze" | "silver" | "" }
+  | { kind: "intro"; key: string; header: string; body: string; trophy: "bronze" | "silver" | "gold" | "" }
+  | { kind: "outro"; key: string; header: string; body: string; trophy: "bronze" | "silver" | "gold" | "" }
   | { kind: "mini"; key: string; text: string }
   | { kind: "question"; key: string; question: LessonQuestion }
   | { kind: "claim"; key: string };
@@ -93,15 +104,21 @@ export default function LessonPage() {
     });
     return [
       ...combined.flatMap((item) => {
-        if (item.kind === "question" && item.entry.introText) {
-          return [
-            { kind: "intro" as const, key: `intro-${item.entry._id}`, text: item.entry.introText, trophy: item.entry.introTrophy ?? "" },
-            { kind: "question" as const, key: `question-${item.entry._id}`, question: item.entry },
-          ];
+        const steps: LessonStep[] = [];
+        const hasIntro = item.entry.introHeader || item.entry.introBody;
+        const hasOutro = item.entry.outroHeader || item.entry.outroBody;
+        if (hasIntro) {
+          steps.push({ kind: "intro" as const, key: `intro-${item.entry._id}`, header: item.entry.introHeader ?? "", body: item.entry.introBody ?? "", trophy: item.entry.introTrophy ?? "" });
         }
-        return item.kind === "mini"
-          ? [{ kind: "mini" as const, key: `mini-${item.entry._id}`, text: item.entry.text }]
-          : [{ kind: "question" as const, key: `question-${item.entry._id}`, question: item.entry }];
+        if (item.kind === "mini") {
+          steps.push({ kind: "mini" as const, key: `mini-${item.entry._id}`, text: item.entry.text });
+        } else {
+          steps.push({ kind: "question" as const, key: `question-${item.entry._id}`, question: item.entry });
+        }
+        if (hasOutro) {
+          steps.push({ kind: "outro" as const, key: `outro-${item.entry._id}`, header: item.entry.outroHeader ?? "", body: item.entry.outroBody ?? "", trophy: item.entry.outroTrophy ?? "" });
+        }
+        return steps;
       }),
       { kind: "claim" as const, key: "claim" },
     ];
@@ -470,7 +487,7 @@ export default function LessonPage() {
               transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.8 }}
               className="flex-1 px-2 pb-12 sm:pb-10"
             >
-            {activeStep?.kind === "intro" ? (
+            {(activeStep?.kind === "intro" || activeStep?.kind === "outro") ? (
               <div className="flex flex-col items-center space-y-4 text-center">
                 {activeStep.trophy && (
                   <img
@@ -479,7 +496,12 @@ export default function LessonPage() {
                     className="w-56 h-56 object-contain"
                   />
                 )}
-                <p className="text-lg sm:text-xl leading-relaxed whitespace-pre-wrap">{activeStep.text}</p>
+                {activeStep.header && (
+                  <p className="text-2xl sm:text-3xl font-bold leading-tight">{activeStep.header}</p>
+                )}
+                {activeStep.body && (
+                  <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap text-white/80">{activeStep.body}</p>
+                )}
               </div>
             ) : activeStep?.kind === "mini" ? (
               <p className="text-lg sm:text-xl leading-relaxed whitespace-pre-wrap">{activeStep.text}</p>
