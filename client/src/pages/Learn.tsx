@@ -179,8 +179,8 @@ export default function Learn() {
                       <div
                         className="absolute right-2 top-2 px-2 py-1 text-[10px] font-semibold"
                         style={{
-                          color: "#00CCF933",
-                          background: "#000000A6",
+                            color: "#00CCF9",
+                            background: "#00CCF933",
                           boxShadow: "0px 3px 10px 0px rgba(0, 0, 0, 0.5)",
                         }}
                       >
@@ -220,7 +220,7 @@ export default function Learn() {
                         {isCompleted ? (
                           <img src="/xp-claimed.png" alt="XP Claimed" className="w-16 object-contain" />
                         ) : (
-                          <div className="rounded-full border border-yellow-300/40 bg-yellow-400/10 px-3 py-1 text-[11px] font-semibold text-yellow-200">
+                            <div className="rounded-full border border-[#8B3EFE66] bg-[#8B3EFE33] px-3 py-1 text-[11px] font-semibold text-[#E7D8FF] shadow-[0_0_20px_rgba(139,62,254,0.18)]">
                             +{lesson.reward} XP
                           </div>
                         )}
