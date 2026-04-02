@@ -542,11 +542,6 @@ export const deleteLesson = async (req: GlobalRequest, res: GlobalResponse) => {
       return;
     }
 
-    const lessonExists = await lesson.exists({ _id: lessonId });
-    if (!lessonExists) {
-      res.status(NOT_FOUND).json({ error: "lesson does not exist" });
-      return;
-    }
 
     await Promise.all([
       lesson.deleteOne({ _id: lessonId }),
@@ -570,11 +565,6 @@ export const deleteMiniLesson = async (req: GlobalRequest, res: GlobalResponse) 
       res.status(BAD_REQUEST).json({ error: "mini lesson id is required" });
       return;
     }
-    const exists = await miniLesson.exists({ _id: miniLessonId });
-    if (!exists) {
-      res.status(NOT_FOUND).json({ error: "mini lesson does not exist" });
-      return;
-    }
     await miniLesson.deleteOne({ _id: miniLessonId });
     res.status(OK).json({ message: "mini lesson deleted" });
   } catch (error) {
@@ -588,11 +578,6 @@ export const deleteQuestion = async (req: GlobalRequest, res: GlobalResponse) =>
     const { id: questionId } = req.query as { id: string };
     if (!questionId) {
       res.status(BAD_REQUEST).json({ error: "question id is required" });
-      return;
-    }
-    const exists = await question.exists({ _id: questionId });
-    if (!exists) {
-      res.status(NOT_FOUND).json({ error: "question does not exist" });
       return;
     }
     await Promise.all([
