@@ -459,7 +459,7 @@ export default function LessonPage() {
 
       <div className="w-full max-w-3xl space-y-3">
         <div
-          className="relative rounded-2xl min-h-[320px] flex items-center justify-between gap-4 px-2 py-6 sm:p-6 text-center"
+          className="relative rounded-2xl min-h-[340px] flex items-center justify-between gap-2 sm:gap-4 px-1 sm:px-2 py-6 sm:p-6 text-center"
           style={{
             background: "linear-gradient(135deg, #8B3EFE, #532598)",
           }}
@@ -467,9 +467,9 @@ export default function LessonPage() {
           <button
             onClick={goPrev}
             disabled={currentStep === 0}
-            className="px-2 disabled:opacity-30 transition hover:scale-110"
+            className="shrink-0 px-1 sm:px-2 disabled:opacity-30 transition hover:scale-110"
           >
-            <img src="/prev-arrow.png" alt="Previous" className="w-12 h-14 object-contain" />
+            <img src="/prev-arrow.png" alt="Previous" className="w-8 h-10 sm:w-12 sm:h-14 object-contain" />
           </button>
 
           <AnimatePresence mode="wait" initial={false} custom={direction.current}>
@@ -485,44 +485,44 @@ export default function LessonPage() {
               animate="center"
               exit="exit"
               transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.8 }}
-              className="flex-1 px-2 pb-12 sm:pb-10"
+              className="flex-1 min-w-0 px-1 sm:px-2 pb-14 sm:pb-10"
             >
             {(activeStep?.kind === "intro" || activeStep?.kind === "outro") ? (
-              <div className="flex flex-col items-center space-y-4 text-center">
+              <div className="flex flex-col items-center space-y-3 text-center">
                 {activeStep.trophy && (
                   <img
                     src={`/nexura-${activeStep.trophy}.png`}
                     alt={`${activeStep.trophy} trophy`}
-                    className="w-56 h-56 object-contain"
+                    className="w-28 h-28 sm:w-44 sm:h-44 object-contain"
                   />
                 )}
                 {activeStep.header && (
-                  <p className="text-2xl sm:text-3xl font-bold leading-tight">{activeStep.header}</p>
+                  <p className="text-xl sm:text-2xl font-bold leading-tight">{activeStep.header}</p>
                 )}
                 {activeStep.body && (
-                  <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap text-white/80">{activeStep.body}</p>
+                  <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap text-white/80">{activeStep.body}</p>
                 )}
               </div>
             ) : activeStep?.kind === "mini" ? (
-              <p className="text-lg sm:text-xl leading-relaxed whitespace-pre-wrap">{activeStep.text}</p>
+              <p className="text-base sm:text-xl leading-relaxed whitespace-pre-wrap">{activeStep.text}</p>
             ) : activeStep?.kind === "question" ? (
-              <div className="flex flex-col space-y-4 text-left">
-                <h2 className="text-xl sm:text-2xl font-bold text-center">
+              <div className="flex flex-col space-y-3 text-left">
+                <h2 className="text-base sm:text-xl font-bold text-center leading-snug">
                   {activeStep.question.question.toUpperCase()}
                 </h2>
 
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {activeStep.question.options.map((option, index) => {
                     let style =
-                      "flex justify-between items-center px-4 py-3 rounded-lg cursor-pointer border bg-[#181C2180]";
+                      "flex justify-between items-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg cursor-pointer border bg-[#181C2180]";
 
                     if (currentSelection === option) {
                       if (activeStep.question.done || currentFeedback === "correct") {
                         style =
-                          "flex justify-between items-center px-4 py-3 rounded-lg border bg-[#00E1A233] border-[#00E1A2E5]";
+                          "flex justify-between items-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border bg-[#00E1A233] border-[#00E1A2E5]";
                       } else if (currentFeedback === "wrong") {
                         style =
-                          "flex justify-between items-center px-4 py-3 rounded-lg border bg-[#F43F5E33] border-[#F43F5E]";
+                          "flex justify-between items-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border bg-[#F43F5E33] border-[#F43F5E]";
                       }
                     }
 
@@ -539,20 +539,20 @@ export default function LessonPage() {
                         }}
                         className={style}
                       >
-                        <span className="flex items-center gap-2">
-                          <span className="bg-[#31353B] px-2 py-1 rounded text-xs font-bold">
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="shrink-0 bg-[#31353B] px-2 py-1 rounded text-xs font-bold">
                             {String.fromCharCode(65 + index)}
                           </span>
-                          <span className="capitalize">{option}</span>
+                          <span className="capitalize text-sm sm:text-base break-words">{option}</span>
                         </span>
 
                         {currentSelection === option && (activeStep.question.done || currentFeedback === "correct") ? (
-                          <span className="w-5 h-5 flex items-center justify-center rounded-full bg-[#00E1A2] text-black font-bold">
+                          <span className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-[#00E1A2] text-black font-bold text-xs">
                             ✓
                           </span>
                         ) : null}
                         {currentSelection === option && currentFeedback === "wrong" && !activeStep.question.done ? (
-                          <span className="w-5 h-5 flex items-center justify-center rounded-full bg-[#F43F5E] text-black font-bold">
+                          <span className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-[#F43F5E] text-black font-bold text-xs">
                             ✕
                           </span>
                         ) : null}
@@ -561,15 +561,15 @@ export default function LessonPage() {
                   })}
                 </div>
 
-                <p className="text-center text-sm text-white/70 mt-2">
+                <p className="text-center text-xs sm:text-sm text-white/70 mt-1">
                   Question {questions.findIndex((entry) => entry._id === activeStep.question._id) + 1} of {questions.length}
                 </p>
               </div>
             ) : (
               <div className="flex flex-col items-center text-center w-full">
-                <img src="/nexura-gold.png" alt="Gold Trophy" className="w-36 h-36 object-contain mb-4" />
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Congratulations</h2>
-                <p className="mt-3 text-sm sm:text-base text-white/80 max-w-xs leading-relaxed">
+                <img src="/nexura-gold.png" alt="Gold Trophy" className="w-24 h-24 sm:w-36 sm:h-36 object-contain mb-3" />
+                <h2 className="text-xl sm:text-3xl font-extrabold text-white">Congratulations</h2>
+                <p className="mt-2 text-xs sm:text-base text-white/80 max-w-[220px] sm:max-w-xs leading-relaxed">
                   {allQuestionsDone
                     ? `You have mastered the basics of ${lesson?.title ?? "this lesson"}. Your XP rewards are ready to be claimed.`
                     : "Finish every question to unlock your XP reward."}
@@ -578,7 +578,7 @@ export default function LessonPage() {
                 <button
                   onClick={() => void claimXp()}
                   disabled={!allQuestionsDone || claiming || lesson?.done}
-                  className={`mt-6 px-8 py-2.5 rounded-full font-bold text-white text-sm transition ${
+                  className={`mt-4 sm:mt-6 px-6 sm:px-8 py-2 sm:py-2.5 rounded-full font-bold text-white text-sm transition ${
                     !allQuestionsDone || lesson?.done
                       ? "bg-white/20 cursor-not-allowed"
                       : "bg-[#5B1BA0] hover:bg-[#4a1585]"
@@ -587,8 +587,8 @@ export default function LessonPage() {
                   {lesson?.done ? "XP Claimed" : claiming ? "Claiming..." : "Claim XP"}
                 </button>
 
-                <div className="mt-6 w-full border-t border-white/20" />
-                <p className="mt-3 text-xs text-yellow-300/80">
+                <div className="mt-4 sm:mt-6 w-full border-t border-white/20" />
+                <p className="mt-2 sm:mt-3 text-xs text-yellow-300/80">
                   Original Content by Nexura. Adapted by Nexura.
                 </p>
               </div>
@@ -603,12 +603,13 @@ export default function LessonPage() {
               (activeStep?.kind === "question" && !activeStep.question.done && !currentSelection) ||
               submittingQuestionId === currentQuestion?._id
             }
-            className="px-2 disabled:opacity-30 transition hover:scale-110"
+            className="shrink-0 px-1 sm:px-2 disabled:opacity-30 transition hover:scale-110"
           >
-            <img src="/next-arrow.png" alt="Next" className="w-12 h-14 object-contain" />
+            <img src="/next-arrow.png" alt="Next" className="w-8 h-10 sm:w-12 sm:h-14 object-contain" />
           </button>
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex max-w-[70%] flex-wrap justify-center gap-2">
+          {/* Dot indicators — capped at 50% width so they don't overlap the Continue button */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex max-w-[50%] flex-wrap justify-center gap-1.5">
             {lessonSteps.map((step, index) => (
               <button
                 key={step.key}
@@ -616,7 +617,7 @@ export default function LessonPage() {
                   direction.current = index > currentStep ? 1 : -1;
                   setCurrentStep(index);
                 }}
-                className={`w-2 h-2 rounded-full transition ${index === currentStep ? "bg-white" : "bg-white/40"}`}
+                className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition ${index === currentStep ? "bg-white" : "bg-white/40"}`}
               />
             ))}
           </div>
@@ -630,7 +631,7 @@ export default function LessonPage() {
                   (!currentSelection || currentFeedback === "wrong")) ||
                 submittingQuestionId === currentQuestion?._id
               }
-              className={`absolute bottom-4 right-4 px-4 py-1.5 rounded-3xl text-sm text-white transition-all duration-200 ${
+              className={`absolute bottom-3 right-3 z-10 px-3 sm:px-4 py-1.5 rounded-3xl text-xs sm:text-sm text-white transition-all duration-200 ${
                 activeStep?.kind === "question" &&
                 !activeStep.question.done &&
                 (!currentSelection || currentFeedback === "wrong")
@@ -672,35 +673,35 @@ export default function LessonPage() {
 
       {showXPModal ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-sm rounded-[28px] bg-[#2D1B6B] p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-2xl bg-[#3D2080]">
-              <img src="/nexura-gold.png" alt="Gold Trophy" className="h-16 w-16 object-contain" />
+          <div className="w-full max-w-sm rounded-[28px] bg-[#2D1B6B] p-6 sm:p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.6)]">
+            <div className="mx-auto flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-2xl bg-[#3D2080]">
+              <img src="/nexura-gold.png" alt="Gold Trophy" className="h-14 w-14 sm:h-16 sm:w-16 object-contain" />
             </div>
 
-            <h2 className="mt-6 text-3xl font-extrabold text-white">Lesson Complete!</h2>
-            <p className="mt-2 text-sm text-white/70 leading-relaxed">
+            <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-extrabold text-white">Lesson Complete!</h2>
+            <p className="mt-2 text-xs sm:text-sm text-white/70 leading-relaxed">
               {lesson?.description || "You've successfully completed this lesson."}
             </p>
 
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <span className="text-4xl font-extrabold text-white">+{lesson?.reward ?? 0} XP</span>
-              <span className="rounded-full border border-white/30 px-3 py-1 text-xs font-bold uppercase tracking-widest text-white/80">
+            <div className="mt-4 sm:mt-6 flex items-center justify-center gap-2 sm:gap-3">
+              <span className="text-3xl sm:text-4xl font-extrabold text-white">+{lesson?.reward ?? 0} XP</span>
+              <span className="rounded-full border border-white/30 px-2.5 sm:px-3 py-1 text-xs font-bold uppercase tracking-widest text-white/80">
                 Earned
               </span>
             </div>
 
-            <div className="mt-8 space-y-3">
+            <div className="mt-5 sm:mt-8 space-y-3">
               <button
                 type="button"
                 onClick={() => setLocation("/learn")}
-                className="w-full rounded-xl bg-[#7C3AED] px-4 py-3.5 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-[#6D28D9]"
+                className="w-full rounded-xl bg-[#7C3AED] px-4 py-3 sm:py-3.5 text-xs sm:text-sm font-bold uppercase tracking-widest text-white transition hover:bg-[#6D28D9]"
               >
                 Return to Lessons
               </button>
               <button
                 type="button"
                 onClick={resetLessonView}
-                className="w-full rounded-xl border border-[#7C3AED] bg-transparent px-4 py-3.5 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-[#7C3AED]/20"
+                className="w-full rounded-xl border border-[#7C3AED] bg-transparent px-4 py-3 sm:py-3.5 text-xs sm:text-sm font-bold uppercase tracking-widest text-white transition hover:bg-[#7C3AED]/20"
               >
                 Take Lesson Again
               </button>
