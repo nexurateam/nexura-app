@@ -491,7 +491,7 @@ export default function LessonPage() {
 
         {/* Step card */}
         <div
-          className="rounded-3xl min-h-[340px] sm:min-h-[280px] flex flex-col justify-between overflow-hidden"
+          className="rounded-3xl min-h-[420px] sm:min-h-[360px] flex flex-col justify-between overflow-hidden"
           style={{ background: "linear-gradient(145deg, #8B3EFE, #4A1B8A)" }}
         >
           {/* Content row: prev | content | next */}
