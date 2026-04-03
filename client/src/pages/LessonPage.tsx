@@ -495,7 +495,7 @@ export default function LessonPage() {
           style={{ background: "linear-gradient(145deg, #8B3EFE, #4A1B8A)" }}
         >
           {/* Content row: prev | content | next */}
-          <div className="flex items-start gap-1 sm:gap-3 px-1 sm:px-2 pt-6 sm:pt-7 pb-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-3 px-1 sm:px-2 pt-6 sm:pt-7 pb-2 shrink-0">
 
             {/* Prev button */}
             <button
@@ -533,10 +533,10 @@ export default function LessonPage() {
                       />
                     )}
                     {activeStep.header && (
-                      <p className="text-xl sm:text-2xl font-bold leading-snug">{activeStep.header}</p>
+                      <p className="text-2xl sm:text-3xl font-bold leading-snug">{activeStep.header}</p>
                     )}
                     {activeStep.body && (
-                      <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap text-white/80">
+                      <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap text-white/80">
                         {activeStep.body}
                       </p>
                     )}
@@ -544,14 +544,14 @@ export default function LessonPage() {
 
                 /* Mini lesson */
                 ) : activeStep?.kind === "mini" ? (
-                  <p className="text-base sm:text-xl leading-relaxed whitespace-pre-wrap py-2">
+                  <p className="text-lg sm:text-2xl leading-relaxed whitespace-pre-wrap py-2">
                     {activeStep.text}
                   </p>
 
                 /* Question */
                 ) : activeStep?.kind === "question" ? (
                   <div className="flex flex-col gap-3 sm:gap-4 text-left">
-                    <h2 className="text-[15px] sm:text-xl font-bold text-center leading-snug uppercase tracking-wide">
+                    <h2 className="text-base sm:text-2xl font-bold text-center leading-snug uppercase tracking-wide">
                       {activeStep.question.question}
                     </h2>
 
@@ -585,7 +585,7 @@ export default function LessonPage() {
                               <span className="shrink-0 w-6 h-6 flex items-center justify-center rounded-lg bg-white/15 text-xs font-bold">
                                 {String.fromCharCode(65 + index)}
                               </span>
-                              <span className="capitalize text-sm sm:text-base break-words leading-snug">{option}</span>
+                              <span className="capitalize text-base sm:text-lg break-words leading-snug">{option}</span>
                             </span>
                             {isCorrect ? (
                               <span className="shrink-0 ml-2 w-5 h-5 flex items-center justify-center rounded-full bg-[#00E1A2] text-black font-bold text-xs">✓</span>
