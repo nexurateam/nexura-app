@@ -651,10 +651,10 @@ export default function LessonPage() {
             </button>
           </div>
 
-          {/* Bottom bar: dots centered, Continue right-aligned below */}
-          <div className="px-4 sm:px-5 pb-6 sm:pb-5 pt-3">
-            {/* Step dots — sliding window of max 7, outer dots shrink to hint at more */}
-            <div className="flex items-center justify-center gap-1">
+          {/* Bottom bar: dots left, Continue right — same row */}
+          <div className="px-4 sm:px-5 pb-6 sm:pb-5 pt-3 flex items-center justify-between">
+            {/* Step dots — sliding window of max 7 */}
+            <div className="flex items-center gap-1">
               {lessonSteps.slice(dotsWinStart, dotsWinEnd).map((step, wi) => {
                 const gi = dotsWinStart + wi;
                 const dist = Math.abs(gi - currentStep);
@@ -678,9 +678,9 @@ export default function LessonPage() {
               })}
             </div>
 
-            {/* Continue — right-aligned on its own row */}
+            {/* Continue — right-aligned, same row as dots */}
             {activeStep?.kind !== "claim" ? (
-              <div className="flex justify-end mt-2.5">
+              <div className="flex">
                 <button
                   onClick={() => void goNext()}
                   disabled={
