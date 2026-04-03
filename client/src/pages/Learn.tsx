@@ -174,7 +174,7 @@ export default function Learn() {
                   <div
                     key={lesson._id}
                     onClick={() => setLocation(`/learn/${lesson._id}${isCompleted ? "?review=1" : ""}`)}
-                    className="cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-[#1C0E3480] transition hover:scale-[1.02]"
+                    className="cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-[#1C0E3480] transition hover:scale-[1.02] flex flex-col"
                   >
                     <div className="relative">
                       <img
@@ -201,29 +201,31 @@ export default function Learn() {
                       />
                     </div>
 
-                    <div className="space-y-3 p-3">
+                    <div className="flex flex-col gap-3 p-3 flex-1">
                       <h3 className="text-sm font-bold text-white">{lesson.title}</h3>
 
                       <p className="line-clamp-3 text-xs leading-relaxed text-white/70">{lesson.description}</p>
 
-                      <div className="flex justify-between text-[10px] text-white/60">
-                        <span>PROGRESS</span>
-                        <span>
-                          {progress}/{totalQuestions} LESSONS
-                        </span>
+                      <div className="mt-auto">
+                        <div className="flex justify-between text-[10px] text-white/60">
+                          <span>PROGRESS</span>
+                          <span>
+                            {progress}/{totalQuestions} LESSONS
+                          </span>
+                        </div>
+
+                        <div className="h-1 w-full overflow-hidden rounded-3xl bg-white mt-2">
+                          <div
+                            className="h-full rounded-3xl"
+                            style={{
+                              width: `${percent}%`,
+                              background: "linear-gradient(90deg, #94E2FF, #8A3FFC)",
+                            }}
+                          />
+                        </div>
                       </div>
 
-                      <div className="h-1 w-full overflow-hidden rounded-3xl bg-white">
-                        <div
-                          className="h-full rounded-3xl"
-                          style={{
-                            width: `${percent}%`,
-                            background: "linear-gradient(90deg, #94E2FF, #8A3FFC)",
-                          }}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center justify-between">
                         {isCompleted ? (
                           <img src="/xp-claimed.png" alt="XP Claimed" className="w-16 object-contain" />
                         ) : (

@@ -145,18 +145,23 @@ export default function LessonPage() {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  const syncLocalProgress = (nextLesson: LessonSummary | null, nextQuestions: LessonQuestion[]) => {
+  const syncLocalProgress = (nextLesson: LessonSummary | null, nextQuestions: LessonQuestion[], skipStepIndex = false) => {
     if (!lessonId) return;
 
     const data = JSON.parse(localStorage.getItem(storageKey) || "{}");
     const maxStepIndex = Math.max(nextQuestions.length + miniLessons.length, 0);
-    data[lessonId] = {
-      ...(data[lessonId] || {}),
+    const updates: Record<string, unknown> = {
       progress: nextLesson?.done ? nextQuestions.length : nextQuestions.filter((entry) => entry.done).length,
       totalQuestions: nextQuestions.length,
       quizCompleted: Boolean(nextLesson?.done),
       claimedReward: Number(nextLesson?.reward || 0),
-      stepIndex: Math.min(currentStep, maxStepIndex),
+    };
+    if (!skipStepIndex) {
+      updates.stepIndex = Math.min(currentStep, maxStepIndex);
+    }
+    data[lessonId] = {
+      ...(data[lessonId] || {}),
+      ...updates,
     };
     localStorage.setItem(storageKey, JSON.stringify(data));
     window.dispatchEvent(new Event("progress-update"));
@@ -179,15 +184,21 @@ export default function LessonPage() {
       const nextMiniLessons = detailsResponse.miniLessons || [];
       const nextQuestions = detailsResponse.questions || [];
       const nextSelectedAnswers = nextQuestions.reduce((acc: Record<string, string>, entry: LessonQuestion) => {
-        acc[entry._id] = entry.answer || "";
+        if (entry.done && entry.answer) {
+          acc[entry._id] = entry.answer;
+        }
         return acc;
       }, {});
+
+      // Restore locally saved selections for incomplete questions
+      const localData = JSON.parse(localStorage.getItem(storageKey) || "{}");
+      const savedSelections = localData[lessonId]?.selectedAnswers || {};
 
       setLesson(lessonMatch);
       setMiniLessons(nextMiniLessons);
       setQuestions(nextQuestions);
-      setSelectedAnswers((current) => ({ ...current, ...nextSelectedAnswers }));
-      syncLocalProgress(lessonMatch, nextQuestions);
+      setSelectedAnswers((current) => ({ ...savedSelections, ...current, ...nextSelectedAnswers }));
+      syncLocalProgress(lessonMatch, nextQuestions, !didInitStep);
     } catch (error) {
       setPageError(normalizeApiMessage(error, "Failed to load lesson"));
     } finally {
@@ -217,13 +228,14 @@ export default function LessonPage() {
     data[lessonId] = {
       ...(data[lessonId] || {}),
       stepIndex: currentStep,
+      selectedAnswers: selectedAnswers,
       progress: data[lessonId]?.progress || 0,
       totalQuestions: questions.length,
       quizCompleted: Boolean(lesson?.done),
       claimedReward: Number(lesson?.reward || 0),
     };
     localStorage.setItem(storageKey, JSON.stringify(data));
-  }, [currentStep, lesson?.done, lesson?.reward, lessonId, lessonSteps.length, questions.length, storageKey]);
+  }, [currentStep, selectedAnswers, lesson?.done, lesson?.reward, lessonId, lessonSteps.length, questions.length, storageKey]);
 
   useEffect(() => {
     if (!lessonId || !didInitStep) return;
@@ -341,6 +353,13 @@ export default function LessonPage() {
     try {
       const response = await apiRequestV2("POST", `/api/lesson/reward-lesson-xp?id=${lessonId}`);
       setActionMessage(response.message || "XP reward claimed.");
+      // Reset saved step progress on completion
+      const data = JSON.parse(localStorage.getItem(storageKey) || "{}");
+      if (data[lessonId]) {
+        data[lessonId].stepIndex = 0;
+        delete data[lessonId].selectedAnswers;
+        localStorage.setItem(storageKey, JSON.stringify(data));
+      }
       await loadLesson();
       setShowXPModal(true);
     } catch (error) {
@@ -472,11 +491,11 @@ export default function LessonPage() {
 
         {/* Step card */}
         <div
-          className="rounded-3xl min-h-[300px] sm:min-h-[260px] flex flex-col overflow-hidden"
+          className="rounded-3xl min-h-[340px] sm:min-h-[280px] flex flex-col overflow-hidden"
           style={{ background: "linear-gradient(145deg, #8B3EFE, #4A1B8A)" }}
         >
           {/* Content row: prev | content | next */}
-          <div className="flex items-center gap-1 sm:gap-3 px-1 sm:px-2 pt-4 sm:pt-5 pb-2 flex-1">
+          <div className="flex items-start gap-1 sm:gap-3 px-1 sm:px-2 pt-6 sm:pt-7 pb-2 shrink-0">
 
             {/* Prev button */}
             <button
@@ -514,10 +533,10 @@ export default function LessonPage() {
                       />
                     )}
                     {activeStep.header && (
-                      <p className="text-base sm:text-xl font-bold leading-snug">{activeStep.header}</p>
+                      <p className="text-xl sm:text-2xl font-bold leading-snug">{activeStep.header}</p>
                     )}
                     {activeStep.body && (
-                      <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap text-white/80">
+                      <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap text-white/80">
                         {activeStep.body}
                       </p>
                     )}
@@ -525,14 +544,14 @@ export default function LessonPage() {
 
                 /* Mini lesson */
                 ) : activeStep?.kind === "mini" ? (
-                  <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap py-1">
+                  <p className="text-base sm:text-xl leading-relaxed whitespace-pre-wrap py-2">
                     {activeStep.text}
                   </p>
 
                 /* Question */
                 ) : activeStep?.kind === "question" ? (
                   <div className="flex flex-col gap-3 sm:gap-4 text-left">
-                    <h2 className="text-[13px] sm:text-base font-bold text-center leading-snug uppercase tracking-wide">
+                    <h2 className="text-[15px] sm:text-xl font-bold text-center leading-snug uppercase tracking-wide">
                       {activeStep.question.question}
                     </h2>
 
@@ -542,7 +561,7 @@ export default function LessonPage() {
                         const isCorrect = isSelected && (activeStep.question.done || currentFeedback === "correct");
                         const isWrong = isSelected && currentFeedback === "wrong" && !activeStep.question.done;
 
-                        const base = "flex items-center justify-between px-3 sm:px-4 py-2 rounded-xl border transition-colors cursor-pointer";
+                        const base = "flex items-center justify-between px-3 sm:px-4 py-3 rounded-xl border transition-colors cursor-pointer";
                         const style = isCorrect
                           ? `${base} bg-[#00E1A220] border-[#00E1A2CC]`
                           : isWrong
@@ -566,7 +585,7 @@ export default function LessonPage() {
                               <span className="shrink-0 w-6 h-6 flex items-center justify-center rounded-lg bg-white/15 text-xs font-bold">
                                 {String.fromCharCode(65 + index)}
                               </span>
-                              <span className="capitalize text-xs sm:text-sm break-words leading-snug">{option}</span>
+                              <span className="capitalize text-sm sm:text-base break-words leading-snug">{option}</span>
                             </span>
                             {isCorrect ? (
                               <span className="shrink-0 ml-2 w-5 h-5 flex items-center justify-center rounded-full bg-[#00E1A2] text-black font-bold text-xs">✓</span>
@@ -633,7 +652,7 @@ export default function LessonPage() {
           </div>
 
           {/* Bottom bar: dots centered, Continue right-aligned below */}
-          <div className="px-4 sm:px-5 pb-4 sm:pb-3 pt-2">
+          <div className="px-4 sm:px-5 pb-6 sm:pb-5 pt-3 mt-auto">
             {/* Step dots — sliding window of max 7, outer dots shrink to hint at more */}
             <div className="flex items-center justify-center gap-1">
               {lessonSteps.slice(dotsWinStart, dotsWinEnd).map((step, wi) => {
@@ -688,18 +707,23 @@ export default function LessonPage() {
         </div>
 
         {/* XP rewards badge */}
-        <div
-          className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border w-full"
-          style={{ background: "#1D182E80", borderColor: "#D4BBFF1A" }}
+        <button
+          className="flex items-center gap-2 px-4 py-3 rounded-lg border self-start"
+          style={{
+            background: "#1D182E80",
+            borderColor: "#D4BBFF1A",
+            borderWidth: "1px",
+          }}
+          type="button"
         >
-          <img src="/xp-icon.png" alt="XP" className="w-10 h-10 sm:w-12 sm:h-12 object-contain shrink-0" />
-          <div className="flex flex-col gap-0.5 leading-none">
-            <span className="text-[12px] sm:text-[14px] font-bold uppercase tracking-wide" style={{ color: "#94E2FF" }}>
-              XP Rewards
+          <img src="/xp-icon.png" alt="XP Icon" className="w-12 h-12 object-contain" />
+          <div className="flex flex-col leading-none">
+            <span className="text-[15px] font-bold" style={{ color: "#94E2FF" }}>
+              XP REWARDS
             </span>
-            <span className="text-lg sm:text-xl font-bold text-white">{lesson?.reward ?? 0}</span>
+            <span className="text-xl font-bold text-white">{lesson?.reward ?? 0}</span>
           </div>
-        </div>
+        </button>
 
         {actionMessage ? (
           <p className="text-sm text-center text-purple-200 px-2 leading-relaxed">{actionMessage}</p>
@@ -720,4 +744,37 @@ export default function LessonPage() {
               <img src="/nexura-gold.png" alt="Gold Trophy" className="h-14 w-14 sm:h-16 sm:w-16 object-contain" />
             </div>
 
-            <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-extrabold text-white">L
+            <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-extrabold text-white">Lesson Complete!</h2>
+            <p className="mt-2 text-sm text-white/65 leading-relaxed px-1">
+              {lesson?.description || "You've successfully completed this lesson."}
+            </p>
+
+            <div className="mt-4 sm:mt-6 flex items-center justify-center gap-2.5">
+              <span className="text-3xl sm:text-4xl font-extrabold text-white">+{lesson?.reward ?? 0} XP</span>
+              <span className="rounded-full border border-white/25 px-2.5 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide text-white/75">
+                Earned
+              </span>
+            </div>
+
+            <div className="mt-5 sm:mt-7 flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => setLocation("/learn")}
+                className="w-full rounded-xl bg-[#7C3AED] px-4 py-4 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#6D28D9] active:scale-[0.98]"
+              >
+                Return to Lessons
+              </button>
+              <button
+                type="button"
+                onClick={resetLessonView}
+                className="w-full rounded-xl border border-[#7C3AED] bg-transparent px-4 py-4 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#7C3AED]/20 active:scale-[0.98]"
+              >
+                Take Lesson Again
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
