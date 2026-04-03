@@ -667,7 +667,7 @@ export default function LessonPage() {
 
                 /* Congratulations / Claim */
                 ) : (
-                  <div className="flex flex-col items-center w-full pt-2">
+                  <div className="flex flex-col items-center justify-center w-full h-full">
                     <motion.div
                       className="relative"
                       initial={{ scale: 0, opacity: 0, rotate: -20 }}
