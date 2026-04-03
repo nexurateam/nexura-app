@@ -93,7 +93,6 @@ export default function LessonPage() {
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [didInitStep, setDidInitStep] = useState(false);
   const didInitStepRef = useRef(false);
-  const skipNextSave = useRef(false);
   const direction = useRef(1);
 
   const lessonSteps = useMemo<LessonStep[]>(() => {
@@ -233,7 +232,6 @@ export default function LessonPage() {
     }
 
     didInitStepRef.current = true;
-    skipNextSave.current = true;
     setCurrentStep(nextIndex);
     setDidInitStep(true);
   }, [isReview, lessonId, lessonSteps.length]);
@@ -241,10 +239,6 @@ export default function LessonPage() {
   // Save step position + selected answers (wallet-independent)
   useEffect(() => {
     if (!lessonId || !lessonSteps.length || !didInitStepRef.current) return;
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
-      return;
-    }
     const allSteps = JSON.parse(localStorage.getItem(LESSON_STEP_KEY) || "{}");
     allSteps[lessonId] = {
       stepIndex: currentStep,
