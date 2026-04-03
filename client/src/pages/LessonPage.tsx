@@ -551,52 +551,44 @@ export default function LessonPage() {
                     {activeStep.trophy && (
                       <motion.div
                         initial={{ scale: 0, opacity: 0, rotate: -30 }}
-                        animate={{ scale: [0, 1.2, 1], opacity: 1, rotate: 0 }}
+                        animate={{ scale: [0, 1.15, 1], opacity: 1, rotate: 0 }}
                         transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0, duration: 0.8 }}
-                        className="relative mt-4 sm:mt-6"
+                        className="relative mt-3 sm:mt-4"
                       >
                         <motion.img
                           src={`/nexura-${activeStep.trophy}.png`}
                           alt={`${activeStep.trophy} trophy`}
-                          className="w-28 h-28 sm:w-36 sm:h-36 object-contain relative z-10"
-                          animate={{ y: [0, -4, 0] }}
+                          className="w-20 h-20 sm:w-28 sm:h-28 object-contain relative z-10"
+                          animate={{ y: [0, -3, 0] }}
                           transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                         />
-                        {/* Rotating sun rays */}
+                        {/* Rotating sun rays — soft ethereal glow */}
                         <div
-                          className="absolute inset-[-15%] z-0 opacity-50 rounded-full"
+                          className="absolute inset-[-20%] z-0 rounded-full"
                           style={{
-                            background: `conic-gradient(from 0deg, transparent 0deg, #C0C0C0 10deg, transparent 20deg, transparent 45deg, #C0C0C0 55deg, transparent 65deg, transparent 90deg, #C0C0C0 100deg, transparent 110deg, transparent 135deg, #C0C0C0 145deg, transparent 155deg, transparent 180deg, #C0C0C0 190deg, transparent 200deg, transparent 225deg, #C0C0C0 235deg, transparent 245deg, transparent 270deg, #C0C0C0 280deg, transparent 290deg, transparent 315deg, #C0C0C0 325deg, transparent 335deg)`,
-                            animation: "spin 5s linear infinite",
-                            filter: "blur(4px)",
+                            background: `conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.5) 5deg, transparent 15deg, transparent 45deg, rgba(255,255,255,0.4) 50deg, transparent 60deg, transparent 90deg, rgba(255,255,255,0.5) 95deg, transparent 105deg, transparent 135deg, rgba(255,255,255,0.4) 140deg, transparent 150deg, transparent 180deg, rgba(255,255,255,0.5) 185deg, transparent 195deg, transparent 225deg, rgba(255,255,255,0.4) 230deg, transparent 240deg, transparent 270deg, rgba(255,255,255,0.5) 275deg, transparent 285deg, transparent 315deg, rgba(255,255,255,0.4) 320deg, transparent 330deg)`,
+                            animation: "spin 8s linear infinite",
+                            filter: "blur(8px)",
+                            opacity: 0.6,
                           }}
                         />
-                        {/* Soft glow underneath */}
+                        {/* Inner warm glow */}
                         <div
-                          className="absolute inset-[-15%] z-0 rounded-full"
+                          className="absolute inset-[-5%] z-0 rounded-full"
                           style={{
-                            background: "radial-gradient(circle, rgba(192,192,192,0.35) 0%, transparent 65%)",
-                            animation: "pulse 2s ease-in-out infinite",
-                          }}
-                        />
-                        {/* Shimmer overlay */}
-                        <div
-                          className="absolute inset-0 z-20 overflow-hidden rounded-full pointer-events-none"
-                          style={{
-                            background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%)",
-                            backgroundSize: "200% 100%",
-                            animation: "shimmer 2.5s ease-in-out infinite",
+                            background: "radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(139,62,254,0.1) 40%, transparent 70%)",
+                            animation: "pulse 3s ease-in-out infinite",
                           }}
                         />
                       </motion.div>
                     )}
-                    <div className="mt-6 sm:mt-8 space-y-2">
+                    <div className="mt-4 sm:mt-5 space-y-1.5">
                       {activeStep.header && (
                         <motion.p
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.5, duration: 0.4 }}
-                          className="text-base sm:text-lg font-bold leading-snug text-center"
+                          className="text-sm sm:text-base font-bold leading-snug text-center"
                         >
                           {activeStep.header}
                         </motion.p>
@@ -616,7 +608,7 @@ export default function LessonPage() {
 
                 /* Mini lesson */
                 ) : activeStep?.kind === "mini" ? (
-                  <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap py-2 text-center">
+                  <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap py-2 text-center">
                     {activeStep.text}
                   </p>
 
@@ -679,10 +671,10 @@ export default function LessonPage() {
                     <img
                       src="/nexura-gold.png"
                       alt="Gold Trophy"
-                      className="w-16 h-16 sm:w-24 sm:h-24 object-contain"
+                      className="w-14 h-14 sm:w-20 sm:h-20 object-contain"
                     />
-                    <h2 className="text-lg sm:text-xl font-extrabold text-white text-center">Congratulations</h2>
-                    <p className="text-xs sm:text-sm text-white/80 leading-relaxed max-w-[220px] sm:max-w-xs text-center">
+                    <h2 className="text-base sm:text-lg font-extrabold text-white text-center">Congratulations</h2>
+                    <p className="text-[11px] sm:text-xs text-white/80 leading-relaxed max-w-[200px] sm:max-w-[260px] text-center">
                       {allQuestionsDone
                         ? `You have mastered the basics of ${lesson?.title ?? "this lesson"}. Your XP rewards are ready to be claimed.`
                         : "Finish every question to unlock your XP reward."}
