@@ -677,12 +677,12 @@ export default function LessonPage() {
                       <motion.img
                         src="/nexura-gold.png"
                         alt="Gold Trophy"
-                        className="w-20 h-20 sm:w-28 sm:h-28 object-contain relative z-10"
-                        animate={{ y: [0, -3, 0] }}
+                        className="w-32 h-32 sm:w-40 sm:h-40 object-contain relative z-10 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]"
+                        animate={{ y: [0, -4, 0] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                       />
                       <div
-                        className="absolute inset-[-20%] z-0 rounded-full"
+                        className="absolute inset-[-25%] z-0 rounded-full"
                         style={{
                           background: `conic-gradient(from 0deg, transparent 0deg, rgba(255,215,0,0.4) 5deg, transparent 15deg, transparent 45deg, rgba(255,215,0,0.3) 50deg, transparent 60deg, transparent 90deg, rgba(255,215,0,0.4) 95deg, transparent 105deg, transparent 135deg, rgba(255,215,0,0.3) 140deg, transparent 150deg, transparent 180deg, rgba(255,215,0,0.4) 185deg, transparent 195deg, transparent 225deg, rgba(255,215,0,0.3) 230deg, transparent 240deg, transparent 270deg, rgba(255,215,0,0.4) 275deg, transparent 285deg, transparent 315deg, rgba(255,215,0,0.3) 320deg, transparent 330deg)`,
                           animation: "spin 8s linear infinite",
@@ -698,9 +698,9 @@ export default function LessonPage() {
                         }}
                       />
                     </motion.div>
-                    <div className="mt-6 sm:mt-8 space-y-1.5 text-center">
+                    <div className="mt-4 sm:mt-5 space-y-1.5 text-center">
                       <motion.h2
-                        className="text-base sm:text-lg font-extrabold text-white"
+                        className="text-xl sm:text-2xl font-extrabold text-white"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5, duration: 0.4 }}
@@ -708,7 +708,7 @@ export default function LessonPage() {
                         Congratulations!
                       </motion.h2>
                       <motion.p
-                        className="text-[10px] sm:text-[11px] text-white/70 leading-relaxed max-w-[200px] sm:max-w-[240px] mx-auto"
+                        className="text-[9px] sm:text-[10px] text-white/60 leading-relaxed max-w-[180px] sm:max-w-[220px] mx-auto"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6, duration: 0.4 }}
