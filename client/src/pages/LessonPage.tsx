@@ -81,14 +81,20 @@ export default function LessonPage() {
   const [miniLessons, setMiniLessons] = useState<MiniLesson[]>([]);
   const [questions, setQuestions] = useState<LessonQuestion[]>([]);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>(() => {
-    if (!lessonId) return {};
-    const allSteps = JSON.parse(localStorage.getItem(LESSON_STEP_KEY) || "{}");
-    return allSteps[lessonId]?.selectedAnswers || {};
+    try {
+      const id = lessonId || window.location.pathname.split("/learn/")[1]?.split("?")[0];
+      if (!id) return {};
+      const allSteps = JSON.parse(localStorage.getItem(LESSON_STEP_KEY) || "{}");
+      return allSteps[id]?.selectedAnswers || {};
+    } catch { return {}; }
   });
   const [currentStep, setCurrentStep] = useState(() => {
-    if (!lessonId || isReview) return 0;
-    const allSteps = JSON.parse(localStorage.getItem(LESSON_STEP_KEY) || "{}");
-    return Number(allSteps[lessonId]?.stepIndex || 0);
+    try {
+      const id = lessonId || window.location.pathname.split("/learn/")[1]?.split("?")[0];
+      if (!id || isReview) return 0;
+      const allSteps = JSON.parse(localStorage.getItem(LESSON_STEP_KEY) || "{}");
+      return Number(allSteps[id]?.stepIndex || 0);
+    } catch { return 0; }
   });
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
@@ -237,9 +243,10 @@ export default function LessonPage() {
 
   // Explicit save function — called directly from navigation and answer selection
   const saveProgress = (step: number, answers: Record<string, string>) => {
-    if (!lessonId) return;
+    const id = lessonId || window.location.pathname.split("/learn/")[1]?.split("?")[0];
+    if (!id) return;
     const allSteps = JSON.parse(localStorage.getItem(LESSON_STEP_KEY) || "{}");
-    allSteps[lessonId] = { stepIndex: step, selectedAnswers: answers };
+    allSteps[id] = { stepIndex: step, selectedAnswers: answers };
     localStorage.setItem(LESSON_STEP_KEY, JSON.stringify(allSteps));
   };
 
