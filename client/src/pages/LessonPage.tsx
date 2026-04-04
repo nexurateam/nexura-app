@@ -671,7 +671,7 @@ export default function LessonPage() {
 
                 /* Congratulations / Claim */
                 ) : (
-                  <div className="flex flex-col items-center justify-end w-full h-full pb-4">
+                  <div className="flex flex-col items-center justify-center w-full h-full gap-2">
                     <motion.div
                       className="relative"
                       initial={{ scale: 0, opacity: 0, rotate: -20 }}
@@ -681,12 +681,12 @@ export default function LessonPage() {
                       <motion.img
                         src="/nexura-gold.png"
                         alt="Gold Trophy"
-                        className="w-32 h-32 sm:w-40 sm:h-40 object-contain relative z-10 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]"
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(255,215,0,0.3)]"
                         animate={{ y: [0, -4, 0] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                       />
                       <div
-                        className="absolute inset-[-25%] z-0 rounded-full"
+                        className="absolute inset-[-15%] z-0 rounded-full"
                         style={{
                           background: `conic-gradient(from 0deg, transparent 0deg, rgba(255,215,0,0.4) 5deg, transparent 15deg, transparent 45deg, rgba(255,215,0,0.3) 50deg, transparent 60deg, transparent 90deg, rgba(255,215,0,0.4) 95deg, transparent 105deg, transparent 135deg, rgba(255,215,0,0.3) 140deg, transparent 150deg, transparent 180deg, rgba(255,215,0,0.4) 185deg, transparent 195deg, transparent 225deg, rgba(255,215,0,0.3) 230deg, transparent 240deg, transparent 270deg, rgba(255,215,0,0.4) 275deg, transparent 285deg, transparent 315deg, rgba(255,215,0,0.3) 320deg, transparent 330deg)`,
                           animation: "spin 8s linear infinite",
@@ -702,9 +702,9 @@ export default function LessonPage() {
                         }}
                       />
                     </motion.div>
-                    <div className="mt-4 sm:mt-5 space-y-1.5 text-center">
+                    <div className="mt-1 space-y-1 text-center">
                       <motion.h2
-                        className="text-xl sm:text-2xl font-extrabold text-white"
+                        className="text-sm sm:text-base font-extrabold text-white"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5, duration: 0.4 }}
@@ -712,7 +712,7 @@ export default function LessonPage() {
                         Congratulations!
                       </motion.h2>
                       <motion.p
-                        className="text-[9px] sm:text-[10px] text-white/60 leading-relaxed max-w-[180px] sm:max-w-[220px] mx-auto"
+                        className="text-[10px] sm:text-xs text-white/60 leading-relaxed max-w-[200px] sm:max-w-[240px] mx-auto"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6, duration: 0.4 }}
@@ -725,7 +725,7 @@ export default function LessonPage() {
                     <motion.button
                       onClick={() => void claimXp()}
                       disabled={!allQuestionsDone || claiming || lesson?.done}
-                      className={`mt-4 px-6 py-2 rounded-full font-bold text-xs text-white transition-all duration-200 ${
+                      className={`mt-2 px-5 py-1.5 rounded-full font-bold text-xs text-white transition-all duration-200 ${
                         !allQuestionsDone || lesson?.done
                           ? "bg-white/20 cursor-not-allowed opacity-60"
                           : "bg-[#5B1BA0] hover:bg-[#4a1585] active:scale-95 shadow-[0_0_24px_rgba(91,27,160,0.4)]"
