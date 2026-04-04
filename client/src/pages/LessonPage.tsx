@@ -260,7 +260,7 @@ export default function LessonPage() {
 
   useEffect(() => {
     if (!showXPModal && !(activeStep?.kind === "claim" && allQuestionsDone)) return;
-    if (confettiFired.current) return;
+    if (confettiFired.current || isReview) return;
     confettiFired.current = true;
     setShowConfetti(true);
     const timeout = window.setTimeout(() => setShowConfetti(false), 5000);
@@ -427,7 +427,7 @@ export default function LessonPage() {
         direction.current = 1;
         const nextStep = Math.min(currentStep + 1, lessonSteps.length - 1);
         setCurrentStep(nextStep);
-        // saveProgress already called by the answer onClick handler with fresh answers
+        saveProgress(nextStep, selectedAnswers);
       }
       return;
     }
@@ -451,11 +451,12 @@ export default function LessonPage() {
 
   const resetLessonView = () => {
     setShowXPModal(false);
+    confettiFired.current = false;
     setCurrentStep(0);
     setSelectedAnswers({});
     saveProgress(0, {});
     window.scrollTo({ top: 0, behavior: "smooth" });
-    void loadLesson();  // reload questions from server
+    void loadLesson();
   };
 
   if (loading) {
