@@ -256,7 +256,9 @@ export default function Learn() {
 
                       <div className="flex items-center justify-between">
                         {isCompleted ? (
-                          <img src="/xp-claimed.png" alt="XP Claimed" className="w-16 object-contain" />
+                          <div className="rounded-full border border-[#8B3EFE66] bg-[#8B3EFE33] px-3 py-1 text-[11px] font-semibold text-[#E7D8FF] shadow-[0_0_20px_rgba(139,62,254,0.18)]">
+                            {lesson.reward} XP Claimed
+                          </div>
                         ) : (
                             <div className="rounded-full border border-[#8B3EFE66] bg-[#8B3EFE33] px-3 py-1 text-[11px] font-semibold text-[#E7D8FF] shadow-[0_0_20px_rgba(139,62,254,0.18)]">
                             +{lesson.reward} XP
