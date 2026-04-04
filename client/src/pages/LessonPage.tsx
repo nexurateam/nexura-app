@@ -456,6 +456,7 @@ export default function LessonPage() {
   const resetLessonView = () => {
     setShowXPModal(false);
     setCurrentStep(0);
+    saveProgress(0, {});
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -687,19 +688,19 @@ export default function LessonPage() {
                   <div className="flex flex-col items-center justify-center w-full h-full gap-2">
                     <motion.div
                       className="relative"
-                      initial={{ scale: 0, opacity: 0, rotate: -20 }}
-                      animate={{ scale: [0, 1.15, 1], opacity: 1, rotate: 0 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 200, damping: 20 }}
                     >
                       <motion.img
                         src="/nexura-gold.png"
                         alt="Gold Trophy"
-                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(255,215,0,0.3)]"
-                        animate={{ y: [0, -4, 0] }}
+                        className="w-12 h-12 sm:w-14 sm:h-14 object-contain relative z-10"
+                        animate={{ y: [0, -2, 0] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                       />
                       <div
-                        className="absolute inset-[-15%] z-0 rounded-full"
+                        className="absolute inset-[-10%] z-0 rounded-full"
                         style={{
                           background: `conic-gradient(from 0deg, transparent 0deg, rgba(255,215,0,0.4) 5deg, transparent 15deg, transparent 45deg, rgba(255,215,0,0.3) 50deg, transparent 60deg, transparent 90deg, rgba(255,215,0,0.4) 95deg, transparent 105deg, transparent 135deg, rgba(255,215,0,0.3) 140deg, transparent 150deg, transparent 180deg, rgba(255,215,0,0.4) 185deg, transparent 195deg, transparent 225deg, rgba(255,215,0,0.3) 230deg, transparent 240deg, transparent 270deg, rgba(255,215,0,0.4) 275deg, transparent 285deg, transparent 315deg, rgba(255,215,0,0.3) 320deg, transparent 330deg)`,
                           animation: "spin 8s linear infinite",
