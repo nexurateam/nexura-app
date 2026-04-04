@@ -819,9 +819,6 @@ export default function LessonPage() {
           </div>
         </button>
 
-        {actionMessage ? (
-          <p className="text-sm text-center text-purple-200 px-2 leading-relaxed">{actionMessage}</p>
-        ) : null}
 
       </div>
 
