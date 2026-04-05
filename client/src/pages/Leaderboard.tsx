@@ -757,48 +757,69 @@ export default function Leaderboard() {
         )}
 
         {/* ---- MOBILE COMPACT LIST (< md) ---- */}
-        <div className="md:hidden divide-y divide-white/[0.06] rounded-2xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
+        <div className="md:hidden space-y-2">
           {list.map((entry, idx) => {
             if (idx < 3) return null;
             const name = entry?.display_name || entry?.username || "Anonymous";
             const isCurrentUser = entry?._id === currentUserId;
             const rank = idx + 1;
+            const quests = entry?.questsCompleted ?? 0;
+            const campaigns = entry?.campaignsCompleted ?? 0;
+            const borderColors = ["#FF69B4", "#8B3EFE", "#00E1A2", "#3498DB", "#FFB400", "#FF5F6D"];
+            const borderColor = borderColors[idx % borderColors.length];
             return (
               <div
                 key={entry._id}
-                className={`flex items-center gap-3 px-3 py-2.5 ${isCurrentUser ? "bg-[#f5c542]/[0.06]" : ""}`}
+                className="rounded-xl overflow-hidden"
+                style={{
+                  border: `1.5px solid ${borderColor}`,
+                  boxShadow: isCurrentUser
+                    ? "0 0 10px #f5c54266"
+                    : `0 0 6px ${borderColor}33`,
+                  background: isCurrentUser
+                    ? "linear-gradient(to right, rgba(245,197,66,0.06), rgba(0,0,0,0.2))"
+                    : "linear-gradient(to right, rgba(255,255,255,0.02), rgba(0,0,0,0.1))",
+                }}
               >
-                {/* Rank badge */}
-                <span
-                  className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-full text-xs font-bold ${
-                    isCurrentUser
-                      ? "bg-[#f5c542]/20 text-[#f5c542] border border-[#f5c542]/40"
-                      : "bg-white/[0.06] text-white/60 border border-white/[0.08]"
-                  }`}
-                >
-                  {rank}
-                </span>
-
-                {/* Avatar 24px */}
-                <Avatar className="w-6 h-6 shrink-0">
-                  {entry?.avatar ? (
-                    <AvatarImage src={entry.avatar} />
-                  ) : (
-                    <AvatarFallback className="bg-white/10 text-white text-[10px]">{name.charAt(0)}</AvatarFallback>
-                  )}
-                </Avatar>
-
-                {/* Name (truncated) */}
-                <span className={`flex-1 min-w-0 truncate text-sm font-medium ${isCurrentUser ? "text-[#f5c542]" : "text-white/90"}`}>
-                  {name}
-                </span>
-
-                {/* XP */}
-                <div className="flex items-center gap-1 shrink-0">
-                  <img src={xpIcon} alt="XP" className="w-4 h-4" />
-                  <span className={`text-sm font-bold tabular-nums ${isCurrentUser ? "text-[#f5c542]" : "text-white/70"}`}>
-                    {entry?.xp || 0}
+                <div className="flex items-center gap-2.5 px-3 py-2">
+                  {/* Rank badge */}
+                  <span
+                    className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-full text-[11px] font-bold ${
+                      isCurrentUser
+                        ? "bg-[#f5c542]/20 text-[#f5c542] border border-[#f5c542]/40"
+                        : "bg-white/[0.06] text-white/70 border border-white/[0.1]"
+                    }`}
+                  >
+                    {rank}
                   </span>
+
+                  {/* Avatar */}
+                  <Avatar className="w-7 h-7 shrink-0">
+                    {(entry?.profilePic || entry?.avatar) ? (
+                      <AvatarImage src={entry.profilePic || entry.avatar} />
+                    ) : (
+                      <AvatarFallback className="bg-white/10 text-white text-[10px]">{name.charAt(0)}</AvatarFallback>
+                    )}
+                  </Avatar>
+
+                  {/* Name + stats */}
+                  <div className="flex-1 min-w-0">
+                    <span className={`block truncate text-xs font-semibold ${isCurrentUser ? "text-[#f5c542]" : "text-white/90"}`}>
+                      {name}
+                    </span>
+                    <div className="flex gap-1.5 mt-0.5">
+                      <span className="text-[#8B3EFEE5] bg-[#8B3EFE22] px-1.5 py-0.5 rounded text-[8px] font-medium">{quests} quests</span>
+                      <span className="text-[#B65FC8E5] bg-[#B65FC822] px-1.5 py-0.5 rounded text-[8px] font-medium">{campaigns} campaigns</span>
+                    </div>
+                  </div>
+
+                  {/* XP */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <img src={xpIcon} alt="XP" className="w-4 h-4" />
+                    <span className={`text-sm font-bold tabular-nums ${isCurrentUser ? "text-[#f5c542]" : "text-white"}`}>
+                      {entry?.xp || 0}
+                    </span>
+                  </div>
                 </div>
               </div>
             );
