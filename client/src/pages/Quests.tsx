@@ -147,7 +147,7 @@ export default function Quests() {
       }
     }
 
-    setLocation(`/quests/${quest._id}`);
+    setLocation(`/quest/${quest._id}`);
   }
 
   const renderQuestCard = (quest: Quest, isActive: boolean = true, index: number = 0) => {
