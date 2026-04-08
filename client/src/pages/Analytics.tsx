@@ -46,7 +46,6 @@ export default function Analytics() {
   const [activeRange, setActiveRange] = useState<Range>("Last 24 Hrs");
   const [showRangeDropdown, setShowRangeDropdown] = useState(false);
   const [data, setData] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     apiRequest<{ analytics: AnalyticsData }>({
@@ -54,8 +53,7 @@ export default function Analytics() {
       endpoint: "/api/get-analytics",
     })
       .then((res) => setData(res.analytics))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {});
   }, []);
 
   const rangeDescriptions: Record<Range, string> = {
@@ -215,18 +213,6 @@ export default function Analytics() {
     if (num >= 1000) return `${(num / 1000).toFixed(num % 1000 === 0 ? 0 : 1)}k`;
     return num.toString();
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center font-geist">
-        <AnimatedBackground />
-        <div className="relative z-10 flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-          <span className="text-white/50 text-sm">Loading analytics...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden overflow-y-auto p-3 sm:p-6 relative pb-28 sm:pb-6 font-geist">
