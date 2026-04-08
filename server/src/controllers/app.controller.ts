@@ -567,15 +567,20 @@ export const getLeaderboard = async (req: GlobalRequest, res: GlobalResponse) =>
 
     let rank: number | null = null;
 
-    const me = await user.findById(req.id).lean().select("eventsWon questsCompleted campaignsCompleted");
+    const me = await user.findById(req.id).lean().select("eventsWon questsCompleted createdAt xp campaignsCompleted");
 
     if (!me) {
       rank = null;
     } else {
-      rank =
-        (await user.countDocuments(
+      rank = await user.countDocuments({
+        $or: [
           { xp: { $gt: me.xp } },
-        )) + 1;
+          {
+            xp: me.xp,
+            createdAt: { $lt: me.createdAt },
+          },
+        ],
+      });
     }
 
     res.status(OK).json({ message: "leaderboard info fetched", rank, me, leaderboardInfo: top500 });
