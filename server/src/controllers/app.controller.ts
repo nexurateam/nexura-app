@@ -560,7 +560,7 @@ export const getLeaderboard = async (req: GlobalRequest, res: GlobalResponse) =>
   try {
     const top500 = await user
       .find()
-      .sort({ xp: -1, trustClaimed: -1 })
+      .sort({ xp: -1 })
       .limit(500)
       .select("username xp profilePic _id level eventsWon lessonsCompleted questsCompleted campaignsCompleted")
       .lean();
