@@ -639,11 +639,11 @@ export default function LessonPage() {
 
         {/* Step card */}
         <div
-          className="rounded-3xl h-[320px] sm:h-[300px] flex flex-col overflow-hidden relative"
-          style={{ background: "linear-gradient(145deg, #8B3EFE, #4A1B8A)" }}
+          className={`rounded-3xl flex flex-col overflow-hidden relative ${activeStep?.kind === "video" ? "min-h-0" : "h-[320px] sm:h-[300px]"}`}
+          style={{ background: activeStep?.kind === "video" ? "#000" : "linear-gradient(145deg, #8B3EFE, #4A1B8A)" }}
         >
           {/* Content row: prev | content | next */}
-          <div className="flex items-center justify-center gap-1 sm:gap-3 px-1 sm:px-2 pt-3 sm:pt-4 pb-1" style={{ height: "calc(100% - 70px)" }}>
+          <div className={`flex items-center justify-center gap-1 sm:gap-3 px-1 sm:px-2 pt-3 sm:pt-4 pb-1 ${activeStep?.kind === "video" ? "" : ""}`} style={activeStep?.kind === "video" ? {} : { height: "calc(100% - 70px)" }}>
 
             {/* Prev button */}
             <button
@@ -739,8 +739,8 @@ export default function LessonPage() {
 
                 /* Video */
                 ) : activeStep?.kind === "video" ? (
-                  <div className="w-full py-2">
-                    <div className="relative w-full overflow-hidden rounded-xl" style={{ paddingBottom: "56.25%" }}>
+                  <div className="w-full">
+                    <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "16 / 9" }}>
                       <iframe
                         className="absolute inset-0 h-full w-full"
                         src={(() => {
