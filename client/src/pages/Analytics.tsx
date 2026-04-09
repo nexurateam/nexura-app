@@ -7,7 +7,6 @@ import { apiRequest } from "../lib/config";
 
 interface AnalyticsData {
   totalOnchainInteractions: number;
-  totalOnchainClaims: number;
   totalCampaigns: number;
   user: {
     totalUsers: number;
@@ -24,6 +23,9 @@ interface AnalyticsData {
     totalUsersYesterday: number;
   };
   totalReferrals: number;
+  lessonsCreated: number;
+  claimsCreated: number;
+  payments: number;
   totalQuests: number;
   totalQuestsCompleted: number;
   totalCampaignsCompleted: number;
@@ -101,13 +103,15 @@ export default function Analytics() {
     ? data.totalQuestsCompleted + data.totalCampaignsCompleted
     : 0;
 
-  const claimsCount = data?.totalOnchainClaims ?? 0;
-  const nexonsMintedCount = Math.max(0, totalTransactions - claimsCount - (data?.totalReferrals ?? 0));
+  const claimsCount = data?.claimsCreated ?? 0;
+  const paymentsCount = data?.payments ?? 0;
   const referralCount = data?.totalReferrals ?? 0;
-  const othersCount = Math.max(0, totalTransactions - claimsCount - nexonsMintedCount - referralCount);
+  const nexonsMintedCount = Math.max(0, totalTransactions - claimsCount - paymentsCount - referralCount);
+  const othersCount = Math.max(0, totalTransactions - claimsCount - paymentsCount - referralCount - nexonsMintedCount);
 
   const transactionsData = [
     { id: "Claims", value: claimsCount, color: "#00E1A2" },
+    { id: "Payments", value: paymentsCount, color: "#F5A623" },
     { id: "Nexons", value: nexonsMintedCount, color: "#B65FC8" },
     { id: "Referrals", value: referralCount, color: "#8A3FFD" },
     { id: "Others", value: othersCount, color: "#FFFFFF" },
@@ -591,7 +595,7 @@ export default function Analytics() {
       <img src="/intuition-icon.png" alt="Intuition Logo" className="w-6 h-6 object-contain" />
     </div>
     <div className="mt-4">
-      <span className="text-xl font-bold text-white">{formatNumber(data?.totalOnchainClaims ?? 0)}</span>
+      <span className="text-xl font-bold text-white">{formatNumber(data?.claimsCreated ?? 0)}</span>
     </div>
   </div>
 
@@ -602,7 +606,7 @@ export default function Analytics() {
       <img src="/intuition-icon.png" alt="Intuition Logo" className="w-6 h-6 object-contain" />
     </div>
     <div className="flex items-center gap-3 mt-4">
-      <span className="text-xl font-bold text-white">{formatNumber(data?.totalQuests ?? 0)}</span>
+      <span className="text-xl font-bold text-white">{formatNumber(data?.lessonsCreated ?? 0)}</span>
     </div>
   </div>
 </div>
