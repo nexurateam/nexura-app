@@ -94,7 +94,7 @@ export default function Analytics() {
     "All Time": 0,
   };
 
-  const totalTransactions = data?.totalOnchainInteractions ?? 0;
+  const onchainInteractions = data?.totalOnchainInteractions ?? 0;
   const totalJoined = data
     ? (data.totalQuestsCompleted + (data.totalCampaignsCompleted ?? 0) + (data.joinRatio ? Math.round((data.totalQuestsCompleted + data.totalCampaignsCompleted) / (data.joinRatio / 100)) : 0))
     : 0;
@@ -106,14 +106,14 @@ export default function Analytics() {
   const claimsCount = data?.claimsCreated ?? 0;
   const paymentsCount = data?.payments ?? 0;
   const referralCount = data?.totalReferrals ?? 0;
-  const nexonsMintedCount = Math.max(0, totalTransactions - claimsCount - paymentsCount - referralCount);
-  const othersCount = Math.max(0, totalTransactions - claimsCount - paymentsCount - referralCount - nexonsMintedCount);
+  const nexonsMintedCount = Math.max(0, onchainInteractions - claimsCount - paymentsCount - referralCount);
+  const othersCount = 0;
+  const totalTransactions = claimsCount + paymentsCount + nexonsMintedCount + othersCount;
 
   const transactionsData = [
     { id: "Claims", value: claimsCount, color: "#00E1A2" },
-    { id: "Payments", value: paymentsCount, color: "#F5A623" },
+    { id: "Payments", value: paymentsCount, color: "#8A3FFD" },
     { id: "Nexons", value: nexonsMintedCount, color: "#B65FC8" },
-    { id: "Referrals", value: referralCount, color: "#8A3FFD" },
     { id: "Others", value: othersCount, color: "#FFFFFF" },
   ];
 
