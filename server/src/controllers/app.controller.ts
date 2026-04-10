@@ -944,15 +944,18 @@ export const getAnalytics = async (req: GlobalRequest, res: GlobalResponse) => {
       return { day: dayName, date: dateLabel, count };
     });
 
-    // ── 24-hour buckets for the current day (index 0 = midnight, index 23 = current hour) ──
+    // ── Rolling 24-hour buckets (index 0 = 23 hours ago, index 23 = current hour) ──
+    const currentHourStart = new Date(now);
+    currentHourStart.setUTCMinutes(0, 0, 0);
     const todayMidnight = new Date(now);
     todayMidnight.setUTCHours(0, 0, 0, 0);
-    const usersByHour = Array.from({ length: 24 }, (_, h) => {
-      const hourStart = new Date(todayMidnight.getTime() + h * 60 * 60 * 1000);
+    const usersByHour = Array.from({ length: 24 }, (_, i) => {
+      const hourStart = new Date(currentHourStart.getTime() - (23 - i) * 60 * 60 * 1000);
       const hourEnd = new Date(hourStart.getTime() + 60 * 60 * 1000);
       const count = usersFound.filter((u) => u.createdAt >= hourStart && u.createdAt < hourEnd).length;
-      const label = `${String(h).padStart(2, "0")}:00`;
-      return { hour: h, label, count };
+      const hourOfDay = hourStart.getUTCHours();
+      const label = `${String(hourOfDay).padStart(2, "0")}:00`;
+      return { hour: hourOfDay, label, count };
     });
 
     const tomorrowName = DAY_NAMES[new Date(now.getTime() + 24 * 60 * 60 * 1000).getUTCDay()];

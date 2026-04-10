@@ -123,14 +123,15 @@ export default function Analytics() {
       return data.usersByHour.map((h) => h.count);
     }
     if (activeRange === "Last 7 days") {
-      // Last 7 entries of usersByDay
+      // Last 7 entries of usersByDay (6 days ago → today)
       return data.usersByDay.slice(-7).map((d) => d.count);
     }
     if (activeRange === "Last 30 days") {
       return data.usersByDay.map((d) => d.count);
     }
-    // All Time — cumulative from usersByDay
-    let cum = data.user.totalUsers - data.usersByDay.reduce((s, d) => s + d.count, 0);
+    // All Time — cumulative growth curve over the last 30 days
+    const totalSignups30d = data.usersByDay.reduce((s, d) => s + d.count, 0);
+    let cum = Math.max(0, data.user.totalUsers - totalSignups30d);
     return data.usersByDay.map((d) => {
       cum += d.count;
       return cum;
@@ -192,7 +193,7 @@ export default function Analytics() {
   const series = [{ name: "New Users", data: chartDataForRange() }];
 
   const options = {
-    chart: { id: "new-user-chart", background: "transparent", toolbar: { show: false }, zoom: { enabled: false } },
+    chart: { id: `new-user-chart-${activeRange}`, background: "transparent", toolbar: { show: false }, zoom: { enabled: false } },
     xaxis: {
       categories: chartCategoriesForRange(),
       labels: { style: { colors: "#ffffffaa" } },
@@ -370,6 +371,7 @@ export default function Analytics() {
 
   <div className="w-full h-full pt-14 sm:pt-16">
     <Chart
+      key={activeRange}
       options={{
         ...options,
         chart: { ...options.chart, toolbar: { show: false } },
