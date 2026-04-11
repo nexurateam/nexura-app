@@ -137,6 +137,19 @@ export default function LessonPage() {
   const isRedoing = useRef(false);
   const direction = useRef(1);
 
+  const [wrongLockUntil, setWrongLockUntil] = useState<number>(0);
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
+
+  useEffect(() => {
+    if (wrongLockUntil <= 0) return;
+    const id = setInterval(() => {
+      const now = Date.now();
+      setNowTick(now);
+      if (now >= wrongLockUntil) clearInterval(id);
+    }, 100);
+    return () => clearInterval(id);
+  }, [wrongLockUntil]);
+
   const lessonSteps = useMemo<LessonStep[]>(() => {
     type AnyItem = { kind: "mini"; entry: MiniLesson } | { kind: "question"; entry: LessonQuestion } | { kind: "video"; entry: VideoLesson };
     const combined: AnyItem[] = [
@@ -362,6 +375,10 @@ export default function LessonPage() {
         ? "correct"
         : "wrong"
       : null;
+
+  const lockoutRemainingMs = Math.max(0, wrongLockUntil - nowTick);
+  const lockoutRemainingSec = Math.ceil(lockoutRemainingMs / 1000);
+  const isAnswerLocked = lockoutRemainingMs > 0;
 
   const startLesson = async () => {
     if (!lessonId) return false;
@@ -781,21 +798,29 @@ export default function LessonPage() {
                         const isCorrect = isSelected && currentFeedback === "correct";
                         const isWrong = isSelected && currentFeedback === "wrong";
 
-                        const base = "flex items-center justify-between px-2 sm:px-2.5 py-1.5 rounded-md border transition-colors cursor-pointer";
+                        const base = "flex items-center justify-between px-2 sm:px-2.5 py-1.5 rounded-md border transition-colors";
+                        const cursorClass = isAnswerLocked ? "cursor-not-allowed" : "cursor-pointer";
                         const style = isCorrect
-                          ? `${base} bg-[#00E1A220] border-[#00E1A2CC]`
+                          ? `${base} ${cursorClass} bg-[#00E1A220] border-[#00E1A2CC]`
                           : isWrong
-                            ? `${base} bg-[#F43F5E20] border-[#F43F5E]`
-                            : `${base} bg-white/8 border-white/12 active:bg-white/15`;
+                            ? `${base} ${cursorClass} bg-[#F43F5E20] border-[#F43F5E]`
+                            : isAnswerLocked
+                              ? `${base} ${cursorClass} bg-white/4 border-white/8 opacity-40`
+                              : `${base} ${cursorClass} bg-white/8 border-white/12 active:bg-white/15`;
 
                         return (
                           <div
                             key={`${activeStep.question._id}-${option}`}
                             onClick={() => {
+                              if (isAnswerLocked) return;
                               const newAnswers = { ...selectedAnswers, [activeStep.question._id]: option };
                               setSelectedAnswers(newAnswers);
                               setActionMessage("");
                               saveProgress(currentStep, newAnswers);
+                              if (!isCorrectAnswer(activeStep.question, option)) {
+                                setWrongLockUntil(Date.now() + 5000);
+                                setNowTick(Date.now());
+                              }
                             }}
                             className={style}
                           >
@@ -815,6 +840,11 @@ export default function LessonPage() {
                       })}
                     </div>
 
+                    {isAnswerLocked && (
+                      <p className="text-center text-[11px] font-semibold text-[#F43F5E] mt-1">
+                        Wrong answer — try again in {lockoutRemainingSec}s
+                      </p>
+                    )}
                     <p className="text-center text-[11px] text-white/45 mt-1">
                       Question {questions.findIndex((e) => e._id === activeStep.question._id) + 1} of {questions.length}
                     </p>
