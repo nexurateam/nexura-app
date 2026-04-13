@@ -34,6 +34,7 @@ import { campaign, campaignCompleted } from "@/models/campaign.model";
 import { dailySignIn } from "@/models/dailySignIn.model";
 import { startOfDayUTC, updateLevel, getAmountPaid } from "@/utils/utils";
 import { lesson, lessonCompleted } from "@/models/lesson.model";
+import { success } from "zod";
 
 const client = new GraphQLClient(GRAPHQL_API_URL);
 
@@ -167,7 +168,7 @@ export const claimDepositXp = async (req: GlobalRequest, res: GlobalResponse) =>
     const exactDate = date.toISOString().split("T")[0];
 
     if (trustUser.dailyTrustXpDate === exactDate) {
-      res.status(OK).json({ message: "xp for claim already made today" });
+      res.status(OK).json({ message: "xp for claim already made today", success: true });
       return;
     }
 
@@ -176,10 +177,10 @@ export const claimDepositXp = async (req: GlobalRequest, res: GlobalResponse) =>
 
     await trustUser.save();
 
-    res.status(OK).json({ message: "xp claim successful" });
+    res.status(OK).json({ message: "xp claim successful", success: true });
   } catch (error) {
     logger.error(error);
-    res.status(INTERNAL_SERVER_ERROR).json({ error: "error adding claim xp" });
+    res.status(OK).json({ error: "error adding claim xp" });
   }
 }
 
@@ -818,8 +819,9 @@ export const updateClaims = async (req: GlobalRequest, res: GlobalResponse) => {
       return;
     }
 
-     
+    await user.updateOne({ _id: id }, { $inc: { noOfClaims: 1 } });
 
+    res.status(OK).json({ message: "user claims updated successfully" });
   } catch (error) {
     logger.error(error);
     res.status(INTERNAL_SERVER_ERROR).json({ error: "error updating user claims" });
@@ -831,7 +833,14 @@ export const getAnalytics = async (req: GlobalRequest, res: GlobalResponse) => {
     const usersFound = await user.find().select("updatedAt createdAt refRewardClaimed badges status xp").lean();
     const totalReferrals = await referredUsers.countDocuments();
 
-    const totalCampaigns = await campaign.countDocuments();
+    const totalCampaigns = await campaign.countDocuments({
+      $or: [
+        { status: { $eq: "Ended" } },
+        {
+          status: { $eq: "Active" }
+        },
+      ],
+    });
 
     const totalQuests = await quest.countDocuments({ category: "weekly" });
 
@@ -863,7 +872,16 @@ export const getAnalytics = async (req: GlobalRequest, res: GlobalResponse) => {
 
     const totalUsers = usersFound.length;
 
-    const claimsCreated = 0;
+    const claimsAggregateResult = await user.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalClaims: { $sum: "$noOfClaims" },
+        },
+      },
+    ]);
+
+    const claimsBought = claimsAggregateResult[0]?.totalClaims ?? 0;
 
     const payments = (await campaign.countDocuments({
       project_name: { $ne: "Nexura" },
@@ -1004,7 +1022,7 @@ export const getAnalytics = async (req: GlobalRequest, res: GlobalResponse) => {
         },
         totalReferrals,
         lessonsCreated,
-        claimsCreated,
+        claimsBought,
         payments,
         totalQuests,
         totalQuestsCompleted,

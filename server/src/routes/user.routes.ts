@@ -7,7 +7,8 @@ import {
 	claimReferreralReward,
 	updateBadge,
 	performDailySignIn,
-	setApproved
+	setApproved,
+	updateClaims
 } from "@/controllers/app.controller";
 import { logout } from "@/controllers/auth.controller";
 import { upload } from "@/config/multer";
@@ -19,6 +20,7 @@ router
 	.post("/claim-referral-reward", claimReferreralReward)
   .patch("/update-badge", updateBadge)
 	.post("/claim-deposit-xp", claimDepositXp)
+	.post("/update-claims", updateClaims)
 	.post("/set-approved", setApproved)
 	.get("/referral-info", referralInfo)
 	.post("/logout", logout)

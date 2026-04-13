@@ -412,6 +412,8 @@ export default function ClaimDetails() {
       // -------------------- Execute transaction --------------------
       if (isBuy) {
         transactionHash = await buyShares({ buyAmount, termId: termId as Address, curveId, isApproved: user.isApproved});
+
+        await apiRequestV2("POST", "/api/user/update-claims", { transactionHash });
       } else {
         await sellShares(sellAmount, termId as Address, curveId);
       }
@@ -451,7 +453,7 @@ export default function ClaimDetails() {
       console.error(err);
       toast({
         title: "Error",
-        description: `Failed ${isBuy ? "buying" : "selling"} shares`,
+        description: `Failed to ${isBuy ? "buy" : "sell"} shares`,
         variant: "destructive",
       });
     } finally {
