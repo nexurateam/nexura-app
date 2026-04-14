@@ -341,8 +341,12 @@ export default function ReferralsPage() {
             <div className="flex justify-center pt-1">
               <button
                 onClick={handleClaim}
-                disabled={!canClaimCurrent || allTiersClaimed}
-                className="border border-[#8a3ffc] rounded-[33px] w-[217px] h-[30px] text-[14px] font-bold text-white leading-[18px] hover:bg-[#8a3ffc]/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={!canClaimCurrent}
+                className={`rounded-[33px] w-[217px] h-[30px] text-[14px] font-bold leading-[18px] transition-colors ${
+                  canClaimCurrent
+                    ? "bg-[#8a3ffc] text-white hover:bg-[#7a2fec] cursor-pointer"
+                    : "bg-white/10 text-white/30 cursor-not-allowed"
+                }`}
               >
                 {allTiersClaimed ? "All Claimed" : canClaimCurrent ? `Claim ${milestone.label}` : "Claim Reward"}
               </button>
