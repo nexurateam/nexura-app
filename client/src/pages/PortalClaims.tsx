@@ -120,13 +120,18 @@ export default function PortalClaims() {
 
   // Returns true if claim matches search
   const claimMatchesSearch = (claim: Claim, term: string) => {
-    const lower = term.toLowerCase();
-    return (
-      claim.term.triple.subject.label.toLowerCase().includes(lower) ||
-      claim.term.triple.predicate.label.toLowerCase().includes(lower) ||
-      claim.term.triple.object.label.toLowerCase().includes(lower)
-    );
-  };
+  const lower = term.toLowerCase();
+
+  const subject = claim?.term?.triple?.subject?.label ?? "";
+  const predicate = claim?.term?.triple?.predicate?.label ?? "";
+  const object = claim?.term?.triple?.object?.label ?? "";
+
+  return (
+    subject.toLowerCase().includes(lower) ||
+    predicate.toLowerCase().includes(lower) ||
+    object.toLowerCase().includes(lower)
+  );
+};
 
   const highlightMatch = (text: string, term: string) => {
     if (!term) return text;
@@ -148,28 +153,34 @@ const isFetchingRef = useRef(false);
 const loadMore = async () => {
   if (isFetchingRef.current || !hasMore) return;
 
+  // 🔥 HARD LOCK FIRST (before async gap)
   isFetchingRef.current = true;
   setLoading(true);
 
   try {
-    const searchQuery = "";
+    const currentOffset = offset;
 
     const { claims } = await apiRequestV2(
       "GET",
-      `/api/get-claims?filter=${sortOption}&offset=${offset}`
+      `/api/get-claims?filter=${sortOption}&offset=${currentOffset}`
     );
 
-    if (!claims || claims.length === 0) {
+    if (!Array.isArray(claims) || claims.length === 0) {
       setHasMore(false);
       return;
     }
 
-setVisibleClaims(prev => [...prev, ...claims]);
+    const isValidClaim = (claim: Claim) =>
+      claim?.term?.triple?.subject?.label &&
+      claim?.term?.triple?.predicate?.label &&
+      claim?.term?.triple?.object?.label;
 
-    // move offset forward correctly
+    const validClaims = claims.filter(isValidClaim);
+
+    setVisibleClaims(prev => [...prev, ...validClaims]);
+
     setOffset(prev => prev + claims.length);
 
-    // stop if less than LIMIT
     if (claims.length < LIMIT) {
       setHasMore(false);
     }
@@ -178,7 +189,11 @@ setVisibleClaims(prev => [...prev, ...claims]);
     console.error("Failed to load claims:", err);
   } finally {
     setLoading(false);
-    isFetchingRef.current = false;
+
+    // 🔥 delayed unlock (important)
+    setTimeout(() => {
+      isFetchingRef.current = false;
+    }, 50);
   }
 };
 
@@ -346,8 +361,6 @@ useEffect(() => {
             return
           };
         }
-
-        await apiRequestV2("POST", "/api/user/update-claims", { transactionHash });
       } else {
         transactionHash = await sellShares(transactionAmount, addressTermId, isToggled ? 2n : 1n);
       }
