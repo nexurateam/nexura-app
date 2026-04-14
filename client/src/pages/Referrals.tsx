@@ -21,13 +21,12 @@ const MILESTONES = [
   { tier: 3, target: 30, reward: 2500, label: "Milestone 3" },
 ];
 const TOTAL_XP = 6000;
-const MAX_REFERRALS = 30;
 
 export default function ReferralsPage() {
-  const [rewardClaimed, setRewardClaimed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [totalReferrals, setTotalReferrals] = useState(0);
   const [activeUsers, setActiveUsers] = useState(0);
+  const [claimedTier, setClaimedTier] = useState(0);
   const { user } = useAuth();
   const { toast } = useToast();
   const [referralData, setReferralData] = useState<Referral[]>([]);
@@ -35,25 +34,27 @@ export default function ReferralsPage() {
 
   useEffect(() => {
     (async () => {
-      const { usersReferred, refRewardClaimed } = await apiRequestV2("GET", "/api/user/referral-info");
+      const { usersReferred } = await apiRequestV2("GET", "/api/user/referral-info");
       const active = usersReferred.filter((u: { status: string }) => u.status === "Active").length;
       setReferralData(usersReferred);
-      setRewardClaimed(refRewardClaimed);
       setTotalReferrals(usersReferred.length);
       setActiveUsers(active);
     })();
   }, []);
 
+  useEffect(() => {
+    if (user?.tier != null) setClaimedTier(user.tier);
+  }, [user]);
+
   const referralLink = `${url}/ref/${user ? user.referral.code : "referral-noobmaster"}`;
 
-  const currentMilestoneIdx = MILESTONES.findIndex(m => activeUsers < m.target);
-  const allMilestonesComplete = currentMilestoneIdx === -1;
-  const milestone = allMilestonesComplete ? MILESTONES[MILESTONES.length - 1] : MILESTONES[currentMilestoneIdx];
-  const prevTarget = currentMilestoneIdx > 0 ? MILESTONES[currentMilestoneIdx - 1].target : 0;
-  const progressInMilestone = allMilestonesComplete ? 10 : Math.min(activeUsers - prevTarget, 10);
+  const allTiersClaimed = claimedTier >= 3;
+  const milestone = MILESTONES[Math.min(claimedTier, MILESTONES.length - 1)];
+  const prevTarget = claimedTier > 0 ? MILESTONES[claimedTier - 1].target : 0;
+  const progressInMilestone = allTiersClaimed ? 10 : Math.min(Math.max(activeUsers - prevTarget, 0), 10);
   const progressPercent = (progressInMilestone / 10) * 100;
-  const xpEarned = MILESTONES.reduce((sum, m) => activeUsers >= m.target ? sum + m.reward : sum, 0);
-  const canClaimCurrent = !allMilestonesComplete && activeUsers >= milestone.target;
+  const xpEarned = MILESTONES.slice(0, claimedTier).reduce((sum, m) => sum + m.reward, 0);
+  const canClaimCurrent = !allTiersClaimed && activeUsers >= milestone.target;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(referralLink);
@@ -67,11 +68,12 @@ export default function ReferralsPage() {
   };
 
   const handleClaim = async () => {
+    const nextTier = claimedTier + 1;
     try {
       await claimReferralReward(user?._id || "");
-      await apiRequestV2("POST", "/api/user/claim-referral-reward");
-      setRewardClaimed(true);
-      toast({ title: "Success", description: "Referral Reward Claimed" });
+      await apiRequestV2("POST", "/api/user/claim-referral-reward", { tier: nextTier });
+      setClaimedTier(nextTier);
+      toast({ title: "Success", description: `Milestone ${nextTier} reward claimed! +${MILESTONES[claimedTier].reward.toLocaleString()} XP` });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Something went wrong";
       toast({ title: "Error", description: message, variant: "destructive" });
@@ -314,11 +316,11 @@ export default function ReferralsPage() {
               </div>
             </div>
             <p className="text-[14px] sm:text-[18px] font-medium text-[#a3adc2] leading-[23px]">
-              {allMilestonesComplete ? (
+              {allTiersClaimed ? (
                 <span className="font-bold text-[#8a3ffc]">{TOTAL_XP.toLocaleString()} XP Earned</span>
               ) : (
                 <>
-                  Next Reward:{" "}
+                  {milestone.label} — Next Reward:{" "}
                   <span className="font-bold text-[#8a3ffc]">
                     +{milestone.reward.toLocaleString()} XP
                   </span>
@@ -332,17 +334,17 @@ export default function ReferralsPage() {
               />
             </div>
             <p className="text-[13px] sm:text-[14px] font-normal text-[#a3adc2] leading-[18px]">
-              {allMilestonesComplete
+              {allTiersClaimed
                 ? "You've completed all referral milestones. Thank you!"
-                : `Refer ${10 - progressInMilestone} more friends who complete a quest or campaign to unlock remaining bonus`}
+                : `Refer ${milestone.target - activeUsers > 0 ? milestone.target - activeUsers : 0} more active friends to unlock ${milestone.label}`}
             </p>
             <div className="flex justify-center pt-1">
               <button
                 onClick={handleClaim}
-                disabled={!canClaimCurrent || rewardClaimed}
+                disabled={!canClaimCurrent || allTiersClaimed}
                 className="border border-[#8a3ffc] rounded-[33px] w-[217px] h-[30px] text-[14px] font-bold text-white leading-[18px] hover:bg-[#8a3ffc]/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {allMilestonesComplete && rewardClaimed ? "All Claimed" : rewardClaimed ? "Claimed" : "Claim Reward"}
+                {allTiersClaimed ? "All Claimed" : canClaimCurrent ? `Claim ${milestone.label}` : "Claim Reward"}
               </button>
             </div>
           </div>
