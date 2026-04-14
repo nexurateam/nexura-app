@@ -340,7 +340,7 @@ export default function ReferralsPage() {
           {/* Important Rule */}
           <div className="glass glass-hover rounded-2xl h-[222px] flex-1 relative overflow-hidden">
             <div className="absolute left-[12px] top-[25px] flex items-center gap-[5px]">
-              <img src="/referral-icons/info-icon.png" alt="" className="w-[40px] h-[40px]" />
+              <img src="/referral-icons/info-icon.svg" alt="" className="w-[40px] h-[40px]" />
               <span className="text-[20px] font-semibold text-white leading-[18.2px]">
                 Important Rule
               </span>
@@ -351,11 +351,6 @@ export default function ReferralsPage() {
                 complete their first quest or campaign
               </span>{" "}
               on the platform
-            </p>
-            <p className="absolute left-[57px] top-[148px] text-[16px] font-medium text-[#a3adc2] leading-[23px] right-[20px]">
-              You can refer up to{" "}
-              <span className="font-bold text-white/85">{MAX_REFERRALS} people</span>{" "}
-              <span className="font-semibold">max</span> and only active referrals qualify for rewards.
             </p>
           </div>
         </div>
