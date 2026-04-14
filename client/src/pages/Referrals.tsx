@@ -81,20 +81,21 @@ export default function ReferralsPage() {
   const displayedReferrals = showAll ? referralData : referralData.slice(0, 7);
 
   return (
-    <div
-      className="min-h-screen w-full bg-black text-white relative overflow-x-hidden"
-      style={{ fontFamily: "'Geist', sans-serif" }}
-    >
+    <div className="min-h-screen bg-black text-white p-6 relative overflow-x-hidden">
       <AnimatedBackground />
 
-      <div className="relative z-10 w-full max-w-[811px] mx-auto px-4 pt-8 pb-16 space-y-10">
+      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 relative z-10">
 
         {/* HEADER */}
-        <div>
-          <h1 className="text-[40px] font-semibold leading-[33.2px] text-white">
+        <div className="space-y-1 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+            <span className="text-purple-400 text-xs font-semibold uppercase tracking-widest">Referrals</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-white via-purple-200 to-purple-400 bg-clip-text text-transparent">
             Referrals
           </h1>
-          <p className="text-[18px] text-[#a3adc2] mt-5 leading-[28px] text-justify">
+          <p className="text-sm text-white/50 mt-1">
             Invite your friends to Nexura and you can earn up to {TOTAL_XP.toLocaleString()} XP
           </p>
         </div>
@@ -156,17 +157,18 @@ export default function ReferralsPage() {
         </div>
 
         {/* SHARE REFERRAL LINK */}
-        <div className="space-y-6">
-          <div className="w-full max-w-[578px]">
-            <h2 className="text-[30px] font-semibold text-white leading-[18.2px]">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex items-center gap-4">
+            <h2 className="whitespace-nowrap text-lg sm:text-2xl font-semibold text-white">
               Share your referral link
             </h2>
-            <p className="text-[14px] font-normal text-[#a3adc2] text-center leading-[23px] mt-6">
-              You can share your referral link by copying and sending it or sharing it on your social media
-            </p>
+            <div className="h-[1px] flex-1 bg-[#FFFFFF33]" />
           </div>
+          <p className="text-sm text-white/50 leading-relaxed">
+            You can share your referral link by copying and sending it or sharing it on your social media
+          </p>
           <div className="flex items-center gap-4">
-            <div className="flex items-center justify-between bg-[rgba(201,170,255,0.2)] rounded-[26px] h-[57px] flex-1 px-[27px]">
+            <div className="flex items-center justify-between glass rounded-2xl h-[57px] flex-1 px-[27px]">
               <span className="text-[14px] font-semibold text-white/60 truncate">
                 {referralLink}
               </span>
@@ -179,7 +181,7 @@ export default function ReferralsPage() {
             </div>
             <button
               onClick={handleShareX}
-              className="w-[57px] h-[57px] rounded-full bg-[rgba(201,170,255,0.2)] flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity"
+              className="w-[57px] h-[57px] rounded-full glass flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -191,7 +193,7 @@ export default function ReferralsPage() {
         {/* STAT CARDS */}
         <div className="flex flex-col sm:flex-row gap-5">
           {/* Total Referrals */}
-          <div className="bg-[rgba(201,170,255,0.2)] rounded-[26px] h-[108px] sm:w-[257px] w-full relative overflow-hidden">
+          <div className="glass glass-hover rounded-2xl h-[108px] flex-1 relative overflow-hidden">
             <p className="absolute left-[30px] top-[18px] text-[18px] font-medium text-[#a3adc2] leading-[23px]">
               Total Referrals
             </p>
@@ -201,12 +203,12 @@ export default function ReferralsPage() {
             <img
               src="/referral-icons/referral-icon.png"
               alt=""
-              className="absolute top-1/2 -translate-y-1/2 w-[60px] h-[60px] object-cover right-[27px] sm:left-[170px] sm:right-auto"
+              className="absolute top-1/2 -translate-y-1/2 w-[60px] h-[60px] object-cover right-[27px]"
             />
           </div>
 
           {/* Active */}
-          <div className="bg-[rgba(201,170,255,0.2)] rounded-[26px] h-[108px] sm:w-[257px] w-full relative overflow-hidden">
+          <div className="glass glass-hover rounded-2xl h-[108px] flex-1 relative overflow-hidden">
             <p className="absolute left-[30px] top-[18px] text-[18px] font-medium text-[#a3adc2] leading-[23px]">
               Active
             </p>
@@ -216,12 +218,12 @@ export default function ReferralsPage() {
             <img
               src="/referral-icons/active-icon.png"
               alt=""
-              className="absolute top-1/2 -translate-y-1/2 w-[60px] h-[60px] object-cover right-[27px] sm:left-[170px] sm:right-auto"
+              className="absolute top-1/2 -translate-y-1/2 w-[60px] h-[60px] object-cover right-[27px]"
             />
           </div>
 
           {/* XP Earned */}
-          <div className="bg-[rgba(201,170,255,0.2)] rounded-[26px] h-[108px] sm:w-[257px] w-full relative overflow-hidden">
+          <div className="glass glass-hover rounded-2xl h-[108px] flex-1 relative overflow-hidden">
             <p className="absolute left-[30px] top-[18px] text-[18px] font-medium text-[#a3adc2] leading-[23px]">
               XP Earned
             </p>
@@ -229,15 +231,15 @@ export default function ReferralsPage() {
               {xpEarned.toLocaleString()}
             </p>
             <img
-              src="/referral-icons/reward-icon.png"
+              src="/nexura-xp.png"
               alt=""
-              className="absolute top-1/2 -translate-y-1/2 w-[60px] h-[60px] object-cover right-[27px] sm:left-[172px] sm:right-auto"
+              className="absolute top-1/2 -translate-y-1/2 w-[60px] h-[60px] object-contain right-[27px]"
             />
           </div>
         </div>
 
         {/* REFERRAL HISTORY */}
-        <div className="bg-[rgba(201,170,255,0.2)] rounded-[26px] overflow-hidden w-full">
+        <div className="glass rounded-2xl overflow-hidden w-full">
           <div className="flex items-center justify-between px-[23px] py-5">
             <h3 className="text-[20px] font-semibold text-white leading-[18.2px]">
               Referral History
@@ -294,7 +296,7 @@ export default function ReferralsPage() {
         {/* BOTTOM CARDS */}
         <div className="flex flex-col lg:flex-row gap-5">
           {/* Milestone Progress */}
-          <div className="bg-[rgba(201,170,255,0.2)] rounded-[26px] h-[222px] flex-1 relative overflow-hidden">
+          <div className="glass glass-hover rounded-2xl h-[222px] flex-1 relative overflow-hidden">
             <h3 className="absolute left-[26px] top-[31px] text-[20px] font-semibold text-white leading-[18.2px]">
               Milestone Progress
             </h3>
@@ -336,7 +338,7 @@ export default function ReferralsPage() {
           </div>
 
           {/* Important Rule */}
-          <div className="bg-[rgba(201,170,255,0.2)] rounded-[26px] h-[222px] flex-1 relative overflow-hidden">
+          <div className="glass glass-hover rounded-2xl h-[222px] flex-1 relative overflow-hidden">
             <div className="absolute left-[12px] top-[25px] flex items-center gap-[5px]">
               <img src="/referral-icons/info-icon.png" alt="" className="w-[40px] h-[40px]" />
               <span className="text-[20px] font-semibold text-white leading-[18.2px]">
