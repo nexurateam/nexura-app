@@ -347,7 +347,7 @@ export default function ReferralsPage() {
                 className={`rounded-[33px] w-[217px] h-[30px] text-[14px] font-bold leading-[18px] transition-colors border ${
                   canClaimCurrent
                     ? "bg-transparent text-white border-[#8a3ffc] hover:bg-[#8a3ffc]/15 cursor-pointer"
-                    : "bg-transparent text-white/30 border-[#8a3ffc]/30 cursor-not-allowed"
+                    : "bg-transparent text-white/30 border-[#8a3ffc] cursor-not-allowed"
                 }`}
               >
                 {allTiersClaimed ? "All Claimed" : "Claim Reward"}
