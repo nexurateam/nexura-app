@@ -915,9 +915,56 @@ export const getAnalytics = async (req: GlobalRequest, res: GlobalResponse) => {
       return sum + (u.badges?.length ?? 0);
     }, 0);
 
-    const totalTrustDistributed = (totalCampaignsCompleted * 16) + (referralRewardsClaimed * 16.2); // fix this later
+    const rewardCampaignsTrust = await campaign.aggregate([
+      {
+        $match: {
+          $or: [
+            { "reward.pool": { $gt: 0 } },
+            { totalTrustAvailable: { $gt: 0 } },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalTrustDistributed: { $sum: "$trustClaimed" },
+        },
+      },
+    ]);
 
-    const totalOnchainInteractions = referralRewardsClaimed + nexonsMinted;
+    const totalTrustDistributed = rewardCampaignsTrust[0]?.totalTrustDistributed ?? 0;
+
+    const rewardCampaignClaimInteractions = await campaignCompleted.aggregate([
+      {
+        $match: {
+          campaignCompleted: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "campaigns",
+          localField: "campaign",
+          foreignField: "_id",
+          as: "campaign",
+        },
+      },
+      {
+        $unwind: "$campaign",
+      },
+      {
+        $match: {
+          $or: [
+            { "campaign.reward.pool": { $gt: 0 } },
+            { "campaign.totalTrustAvailable": { $gt: 0 } },
+          ],
+        },
+      },
+      {
+        $count: "count",
+      },
+    ]);
+
+    const totalOnchainInteractions = rewardCampaignClaimInteractions[0]?.count ?? 0;
 
     const users7d = usersFound.filter((u) => {
 
