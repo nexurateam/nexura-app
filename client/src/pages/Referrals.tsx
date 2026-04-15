@@ -350,7 +350,7 @@ export default function ReferralsPage() {
                     : "bg-transparent text-white/30 border-[#b07aff]/30 cursor-not-allowed"
                 }`}
               >
-                {allTiersClaimed ? "All Claimed" : canClaimCurrent ? "Claim Reward" : "Claim Reward"}
+                {allTiersClaimed ? "All Claimed" : "Claim Reward"}
               </button>
             </div>
           </div>
