@@ -1531,7 +1531,7 @@ export const searchTriple = async (req: GlobalRequest, res: GlobalResponse) => {
       userPositionAddress: userToFetch?.address ?? "...",
     });
 
-    res.status(OK).json(response.triple_term);
+    res.status(OK).json(response.triple_terms);
   } catch (error) {
     logger.error(error);
     res
