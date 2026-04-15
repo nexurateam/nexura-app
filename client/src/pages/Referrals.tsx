@@ -103,19 +103,19 @@ export default function ReferralsPage() {
         </div>
 
         {/* 3 STEPS */}
-        <div className="flex flex-col sm:flex-row justify-between relative items-start gap-4 sm:gap-0">
+        <div className="flex flex-col sm:flex-row justify-center relative items-start gap-4 sm:gap-12">
           {/* Arc connectors */}
           <img
             src="/referral-icons/arc-right.png"
             alt=""
             className="absolute hidden sm:block pointer-events-none"
-            style={{ top: 22, left: '19%', width: '17%', transform: 'scaleX(-1)' }}
+            style={{ top: 22, left: '25%', width: '14%', transform: 'scaleX(-1)' }}
           />
           <img
             src="/referral-icons/arc-left.png"
             alt=""
             className="absolute hidden sm:block pointer-events-none"
-            style={{ top: 22, left: '57%', width: '17%', transform: 'rotate(180deg)' }}
+            style={{ top: 22, left: '56%', width: '14%', transform: 'rotate(180deg)' }}
           />
 
           {/* Step 1: Send an invitation */}
@@ -305,16 +305,9 @@ export default function ReferralsPage() {
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
           {/* Milestone Progress */}
           <div className="glass glass-hover rounded-2xl flex-1 overflow-hidden p-4 sm:p-[26px] space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-[14px] sm:text-[20px] font-semibold text-white leading-[18.2px]">
-                Milestone Progress
-              </h3>
-              <div className="bg-white/20 rounded-[6px] px-2 h-[26px] flex items-center justify-center">
-                <span className="text-[14px] sm:text-[16px] font-semibold text-white/85 leading-[23px]">
-                  {progressInMilestone}/10
-                </span>
-              </div>
-            </div>
+            <h3 className="text-[14px] sm:text-[20px] font-semibold text-white leading-[18.2px]">
+              Milestone Progress
+            </h3>
             <p className="text-[14px] sm:text-[18px] font-medium text-[#a3adc2] leading-[23px]">
               {allTiersClaimed ? (
                 <span className="font-bold text-[#8a3ffc]">{TOTAL_XP.toLocaleString()} XP Earned</span>
@@ -327,11 +320,20 @@ export default function ReferralsPage() {
                 </>
               )}
             </p>
-            <div className="h-[20px] bg-white/[0.23] rounded-[6px] overflow-hidden">
+            <div className="mt-2">
+              <div className="flex items-center justify-end mb-1.5">
+                <div className="bg-white/20 rounded-[6px] px-2 h-[22px] flex items-center justify-center">
+                  <span className="text-[13px] sm:text-[14px] font-semibold text-white/85 leading-[18px]">
+                    {progressInMilestone}/10
+                  </span>
+                </div>
+              </div>
+              <div className="h-[20px] bg-white/[0.23] rounded-[6px] overflow-hidden">
               <div
                 className="h-full bg-[#8a3ffc] rounded-r-[6px] transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
               />
+              </div>
             </div>
             <p className="text-[13px] sm:text-[14px] font-normal text-[#a3adc2] leading-[18px]">
               {allTiersClaimed
@@ -342,10 +344,10 @@ export default function ReferralsPage() {
               <button
                 onClick={handleClaim}
                 disabled={!canClaimCurrent}
-                className={`rounded-[33px] w-[217px] h-[30px] text-[14px] font-bold leading-[18px] transition-colors ${
+                className={`rounded-[33px] w-[217px] h-[30px] text-[14px] font-bold leading-[18px] transition-colors border ${
                   canClaimCurrent
-                    ? "bg-[#8a3ffc] text-white hover:bg-[#7a2fec] cursor-pointer"
-                    : "bg-white/10 text-white/30 cursor-not-allowed"
+                    ? "bg-transparent text-white border-[#b07aff] hover:bg-[#8a3ffc]/15 cursor-pointer"
+                    : "bg-transparent text-white/30 border-[#b07aff]/30 cursor-not-allowed"
                 }`}
               >
                 {allTiersClaimed ? "All Claimed" : canClaimCurrent ? `Claim ${milestone.label}` : "Claim Reward"}
