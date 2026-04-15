@@ -70,7 +70,7 @@ export default function ReferralsPage() {
   const handleClaim = async () => {
     const nextTier = claimedTier + 1;
     try {
-      await claimReferralReward(user?._id || "");
+      // await claimReferralReward(user?._id || "");
       await apiRequestV2("POST", "/api/user/claim-referral-reward", { tier: nextTier });
       setClaimedTier(nextTier);
       toast({ title: "Success", description: `Milestone ${nextTier} reward claimed! +${MILESTONES[claimedTier].reward.toLocaleString()} XP` });

@@ -1154,7 +1154,7 @@ export const claimReferreralReward = async (req: GlobalRequest, res: GlobalRespo
     }
 
     referrer.xp += xpByTier;
-    referrer.tier++;
+    referrer.tier = tier;
 
     if (tier === 3) {
       referrer.refRewardClaimed = true;
