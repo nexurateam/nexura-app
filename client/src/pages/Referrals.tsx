@@ -86,7 +86,7 @@ export default function ReferralsPage() {
     <div className="min-h-screen w-full bg-black text-white p-3 sm:p-6 relative overflow-hidden">
       <AnimatedBackground />
 
-      <div className="w-full max-w-6xl mx-auto space-y-5 sm:space-y-8 relative z-10">
+      <div className="w-full max-w-5xl mx-auto space-y-5 sm:space-y-8 relative z-10">
 
         {/* HEADER */}
         <div className="space-y-1 mb-6">
@@ -346,8 +346,8 @@ export default function ReferralsPage() {
                 disabled={!canClaimCurrent}
                 className={`rounded-[33px] w-[217px] h-[30px] text-[14px] font-bold leading-[18px] transition-colors border ${
                   canClaimCurrent
-                    ? "bg-transparent text-white border-[#b07aff] hover:bg-[#8a3ffc]/15 cursor-pointer"
-                    : "bg-transparent text-white/30 border-[#b07aff]/30 cursor-not-allowed"
+                    ? "bg-transparent text-white border-[#8a3ffc] hover:bg-[#8a3ffc]/15 cursor-pointer"
+                    : "bg-transparent text-white/30 border-[#8a3ffc]/30 cursor-not-allowed"
                 }`}
               >
                 {allTiersClaimed ? "All Claimed" : "Claim Reward"}
