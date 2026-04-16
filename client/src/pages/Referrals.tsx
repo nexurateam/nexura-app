@@ -106,32 +106,30 @@ export default function ReferralsPage() {
 
         {/* 3 STEPS */}
         <div className="flex flex-col sm:flex-row justify-center relative items-start gap-4 sm:gap-28">
-          {/* Wave arc connectors */}
+          {/* Wave arc connectors — geometry: step=207px, gap=112px, icon=100px centered in step → gap-between-icons=219px, arc1 center offset from container center = -159.5px, arc2 = +159.5px */}
           <svg
             className="absolute hidden sm:block pointer-events-none"
-            style={{ top: 6, left: '24%', width: '16%', height: 60 }}
-            viewBox="0 0 100 60"
-            preserveAspectRatio="none"
+            style={{ top: 30, left: 'calc(50% - 269px)', width: 219, height: 40, opacity: 0.5 }}
+            viewBox="0 0 219 40"
             fill="none"
           >
             <path
-              d="M 2 40 Q 50 -8 98 40"
+              d="M 0 20 Q 109.5 0 219 20"
               stroke="#8a3ffc"
-              strokeWidth="6"
+              strokeWidth="2"
               strokeLinecap="round"
             />
           </svg>
           <svg
             className="absolute hidden sm:block pointer-events-none"
-            style={{ top: 36, left: '56%', width: '16%', height: 60 }}
-            viewBox="0 0 100 60"
-            preserveAspectRatio="none"
+            style={{ top: 30, left: 'calc(50% + 50px)', width: 219, height: 40, opacity: 0.5 }}
+            viewBox="0 0 219 40"
             fill="none"
           >
             <path
-              d="M 2 20 Q 50 68 98 20"
+              d="M 0 20 Q 109.5 40 219 20"
               stroke="#8a3ffc"
-              strokeWidth="6"
+              strokeWidth="2"
               strokeLinecap="round"
             />
           </svg>
