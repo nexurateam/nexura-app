@@ -337,25 +337,26 @@ const formatNumber = (num: number) => {
     text-white
   "
   style={{
-    background: "rgba(18, 8, 35, 0.55)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
+    background: "#170F1F",
+    border: "1px solid rgba(131, 58, 253, 0.18)",
 
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
+    backdropFilter: "blur(8px)",
+    WebkitBackdropFilter: "blur(8px)",
 
-    boxShadow: "inset 0 0 18px rgba(131, 58, 253, 0.10)",
+    boxShadow: "inset 0 0 22px rgba(131, 58, 253, 0.12)",
   }}
 >
     <div
-    className="absolute w-52 h-52 rounded-full"
+    className="absolute w-56 h-56 rounded-full"
     style={{
       background: "#833AFD",
-      top: "-70px",
-      right: "-70px",
-      filter: "blur(70px)",
-      opacity: 0.4,
+      top: "-80px",
+      right: "-80px",
+      filter: "blur(65px)",
+      opacity: 0.5,
     }}
   />
+  
       <div className="absolute -right-10 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full bg-[#8B3EFE]/20 blur-3xl sm:hidden" />
 
       <img
@@ -690,26 +691,27 @@ const formatNumber = (num: number) => {
 
 {/* Bottom Right Cards */}
 <div className="col-span-12 sm:col-span-3 grid grid-cols-2 gap-4">
-  {/* Claims Created */}
+{/* Claims Created */}
 <div
-  className="bg-[#120823] rounded-3xl p-4 flex flex-col justify-between border col-span-1 relative overflow-hidden text-white"
+  className="rounded-3xl p-4 flex flex-col justify-between border col-span-1 relative overflow-hidden text-white"
   style={{
-    borderColor: "rgba(255, 255, 255, 0.12)",
+    background: "#170F1F",
+    border: "1px solid rgba(131, 58, 253, 0.22)",
 
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
+    backdropFilter: "blur(8px)",
+    WebkitBackdropFilter: "blur(8px)",
 
-    boxShadow: "inset 0 0 20px rgba(131, 58, 253, 0.12)",
+    boxShadow: "inset 0 0 18px rgba(131, 58, 253, 0.10)",
   }}
 >
     <div
     className="absolute w-52 h-52 rounded-full"
     style={{
       background: "#833AFD",
-      top: "-60px",
-      right: "-60px",
-      filter: "blur(70px)",
-      opacity: 0.45,
+      top: "-70px",
+      right: "-70px",
+      filter: "blur(65px)",
+      opacity: 0.4,
     }}
   />
   {/* Content */}
@@ -724,26 +726,26 @@ const formatNumber = (num: number) => {
 
   {/* Lessons Created */}
 
-  <div
-  className="bg-[#120823] rounded-3xl p-4 flex flex-col justify-between border col-span-1 relative overflow-hidden text-white"
+<div
+  className="rounded-3xl p-4 flex flex-col justify-between border col-span-1 relative overflow-hidden text-white"
   style={{
-    borderColor: "rgba(255, 255, 255, 0.12)",
+    background: "#170F1F",
+    border: "1px solid rgba(131, 58, 253, 0.22)",
 
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
+    backdropFilter: "blur(8px)",
+    WebkitBackdropFilter: "blur(8px)",
 
-    boxShadow: "inset 0 0 20px rgba(131, 58, 253, 0.12)",
+    boxShadow: "inset 0 0 18px rgba(131, 58, 253, 0.10)",
   }}
 >
-
   <div
     className="absolute w-52 h-52 rounded-full"
     style={{
       background: "#833AFD",
-      top: "-60px",
-      right: "-60px",
-      filter: "blur(70px)",
-      opacity: 0.45,
+      top: "-70px",
+      right: "-70px",
+      filter: "blur(65px)",
+      opacity: 0.4,
     }}
   />
 
