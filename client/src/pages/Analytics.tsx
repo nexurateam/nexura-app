@@ -325,18 +325,56 @@ const formatNumber = (num: number) => {
  <div className="mt-12 flex flex-col sm:flex-row gap-2 sm:gap-4 w-full">
   {cards.map((card, idx) => (
     <div
-      key={idx}
-      className="
-        relative overflow-hidden
-        w-full sm:flex-1
-        rounded-3xl
-        border border-gray-700
-        bg-[#170F1F]
-        p-4
-        flex flex-col justify-between
-        mt-2 sm:mt-4
-      "
-    >
+  key={idx}
+  className="
+    relative overflow-hidden
+    w-full sm:flex-1
+    rounded-3xl
+    border
+    p-4
+    flex flex-col justify-between
+    mt-2 sm:mt-4
+  "
+  style={{
+    background: "rgba(18, 8, 35, 0.55)",
+    border: "1px solid rgba(255, 255, 255, 0.14)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    boxShadow: "inset 0 1px 2px rgba(255,255,255,0.12)",
+  }}
+>
+  {/* Top Right Light */}
+  <div
+    className="absolute w-44 h-44 rounded-full"
+    style={{
+      background: "#833AFD",
+      top: "-60px",
+      right: "-60px",
+      filter: "blur(100px)",
+      opacity: 0.45,
+    }}
+  />
+
+  {/* Bottom Left Light */}
+  <div
+    className="absolute w-44 h-44 rounded-full"
+    style={{
+      background: "#833AFD",
+      bottom: "-60px",
+      left: "-60px",
+      filter: "blur(100px)",
+      opacity: 0.45,
+    }}
+  />
+
+  {/* Dark Center Focus */}
+  <div
+    className="absolute inset-0 pointer-events-none"
+    style={{
+      background:
+        "radial-gradient(circle at center, rgba(5, 2, 15, 0.6) 0%, rgba(5, 2, 15, 0.35) 50%, transparent 85%)",
+    }}
+  />
       <div className="absolute -right-10 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full bg-[#8B3EFE]/20 blur-3xl sm:hidden" />
 
       <img
@@ -538,15 +576,58 @@ const formatNumber = (num: number) => {
 
    {/* Middle Card — On-Chain Activity */}
 <div
-  className="col-span-12 sm:col-span-5 row-span-2 p-3 sm:p-2 rounded-3xl flex flex-col border"
- style={{
-  background: "rgba(88, 45, 140, 0.20)",
-  border: "1px solid rgba(180, 140, 255, 0.25)",
-  backdropFilter: "blur(14px)",
-  WebkitBackdropFilter: "blur(14px)",
-  boxShadow: "inset 0 0 40px rgba(168, 85, 247, 0.08)",
-}}
+  className="col-span-12 sm:col-span-5 row-span-2 p-3 sm:p-2 rounded-3xl flex flex-col border relative overflow-hidden"
+  style={{
+    background: "rgba(18, 8, 35, 0.62)", // darker glass base
+    border: "1px solid rgba(255, 255, 255, 0.14)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    boxShadow: "inset 0 1px 2px rgba(255,255,255,0.18), inset 0 0 40px rgba(168, 85, 247, 0.08)",
+  }}
 >
+  {/* Top Right Light */}
+  <div
+    className="absolute w-56 h-56 rounded-full"
+    style={{
+      background: "#833AFD",
+      top: "-80px",
+      right: "-80px",
+      filter: "blur(110px)",
+      opacity: 0.55,
+    }}
+  />
+
+  {/* Bottom Left Light */}
+  <div
+    className="absolute w-56 h-56 rounded-full"
+    style={{
+      background: "#833AFD",
+      bottom: "-80px",
+      left: "-80px",
+      filter: "blur(110px)",
+      opacity: 0.55,
+    }}
+  />
+
+  {/* Dark Middle Focus */}
+  <div
+    className="absolute inset-0 pointer-events-none"
+    style={{
+      background:
+        "radial-gradient(circle at center, rgba(5, 2, 15, 0.7) 0%, rgba(5, 2, 15, 0.45) 40%, rgba(5, 2, 15, 0.2) 70%, transparent 90%)",
+    }}
+  />
+
+  {/* Soft Shine Layer */}
+  <div
+    className="absolute inset-0 pointer-events-none rounded-3xl"
+    style={{
+      background:
+        "linear-gradient(120deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015) 40%, transparent 70%)",
+    }}
+  />
+
+  {/* Content */}
   <span className="text-xs font-semibold uppercase text-white/90 text-center">On-Chain Activity</span>
   <p className="text-center text-[11px] sm:text-[12px] text-white/70 mt-2">
     Overview of transaction distribution across all on-chain activities
@@ -606,12 +687,55 @@ const formatNumber = (num: number) => {
 <div
   className="col-span-12 sm:col-span-3 rounded-3xl p-4 flex flex-col justify-between border relative overflow-hidden"
   style={{
-    background: "rgba(88, 45, 140, 0.18)", // purple glass base
-    border: "1px solid rgba(180, 140, 255, 0.25)",
-    backdropFilter: "blur(14px)",
-    WebkitBackdropFilter: "blur(14px)",
+    background: "rgba(18, 8, 35, 0.6)", // darker base
+    border: "1px solid rgba(255, 255, 255, 0.14)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    boxShadow: "inset 0 1px 2px rgba(255,255,255,0.18)",
   }}
 >
+  {/* Top Right Light */}
+  <div
+    className="absolute w-44 h-44 rounded-full"
+    style={{
+      background: "#833AFD",
+      top: "-50px",
+      right: "-50px",
+      filter: "blur(100px)",
+      opacity: 0.55,
+    }}
+  />
+
+  {/* Bottom Left Light */}
+  <div
+    className="absolute w-44 h-44 rounded-full"
+    style={{
+      background: "#833AFD",
+      bottom: "-50px",
+      left: "-50px",
+      filter: "blur(100px)",
+      opacity: 0.55,
+    }}
+  />
+
+  {/* Dark Middle (stronger, centered) */}
+  <div
+    className="absolute inset-0 pointer-events-none"
+    style={{
+      background:
+        "radial-gradient(circle at center, rgba(5, 2, 15, 0.65) 0%, rgba(5, 2, 15, 0.4) 40%, rgba(5, 2, 15, 0.15) 70%, transparent 90%)",
+    }}
+  />
+
+  {/* Subtle glass shine */}
+  <div
+    className="absolute inset-0 pointer-events-none rounded-3xl"
+    style={{
+      background:
+        "linear-gradient(120deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015) 40%, transparent 70%)",
+    }}
+  />
+
   {/* Purple glow layer */}
   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/15 via-violet-500/5 to-transparent pointer-events-none" />
 
@@ -656,9 +780,51 @@ const formatNumber = (num: number) => {
 {/* Bottom Right Cards */}
 <div className="col-span-12 sm:col-span-3 grid grid-cols-2 gap-4">
   {/* Claims Created */}
-  <div className="bg-[#170F1F] rounded-3xl p-4 flex flex-col justify-between border col-span-1" style={{ borderColor: "#D4BBFF66" }}>
+<div
+  className="bg-[#120823] rounded-3xl p-4 flex flex-col justify-between border col-span-1 relative overflow-hidden"
+  style={{
+    borderColor: "rgba(255, 255, 255, 0.14)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    boxShadow: "inset 0 1px 2px rgba(255,255,255,0.15)",
+  }}
+>
+  {/* Top Right Light */}
+  <div
+    className="absolute w-44 h-44 rounded-full"
+    style={{
+      background: "#833AFD",
+      top: "-50px",
+      right: "-50px",
+      filter: "blur(100px)",
+      opacity: 0.5,
+    }}
+  />
+
+  {/* Bottom Left Light */}
+  <div
+    className="absolute w-44 h-44 rounded-full"
+    style={{
+      background: "#833AFD",
+      bottom: "-50px",
+      left: "-50px",
+      filter: "blur(100px)",
+      opacity: 0.5,
+    }}
+  />
+
+  {/* Dark Center Focus */}
+  <div
+    className="absolute inset-0 pointer-events-none"
+    style={{
+      background:
+        "radial-gradient(circle at center, rgba(5, 2, 15, 0.65) 0%, rgba(5, 2, 15, 0.4) 45%, rgba(5, 2, 15, 0.15) 75%, transparent 90%)",
+    }}
+  />
+
+  {/* Content */}
     <div className="flex items-center justify-between">
-      <span className="text-xs font-semibold uppercase text-white/70">TOTAL CLAIMS CREATED</span>
+      <span className="text-xs font-semibold uppercase text-white">TOTAL CLAIMS CREATED</span>
       <img src="/intuition-icon.png" alt="Intuition Logo" className="w-6 h-6 object-contain" />
     </div>
     <div className="mt-4">
@@ -667,9 +833,51 @@ const formatNumber = (num: number) => {
   </div>
 
   {/* Lessons Created */}
-  <div className="bg-[#170F1F] rounded-3xl p-4 flex flex-col justify-between border col-span-1" style={{ borderColor: "#D4BBFF66" }}>
+<div
+  className="bg-[#120823] rounded-3xl p-4 flex flex-col justify-between border col-span-1 relative overflow-hidden"
+  style={{
+    borderColor: "rgba(255, 255, 255, 0.14)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    boxShadow: "inset 0 1px 2px rgba(255,255,255,0.15)",
+  }}
+>
+  {/* Top Right Light */}
+  <div
+    className="absolute w-44 h-44 rounded-full"
+    style={{
+      background: "#833AFD",
+      top: "-50px",
+      right: "-50px",
+      filter: "blur(100px)",
+      opacity: 0.5,
+    }}
+  />
+
+  {/* Bottom Left Light */}
+  <div
+    className="absolute w-44 h-44 rounded-full"
+    style={{
+      background: "#833AFD",
+      bottom: "-50px",
+      left: "-50px",
+      filter: "blur(100px)",
+      opacity: 0.5,
+    }}
+  />
+
+  {/* Dark Center Focus */}
+  <div
+    className="absolute inset-0 pointer-events-none"
+    style={{
+      background:
+        "radial-gradient(circle at center, rgba(5, 2, 15, 0.65) 0%, rgba(5, 2, 15, 0.4) 45%, rgba(5, 2, 15, 0.15) 75%, transparent 90%)",
+    }}
+  />
+
+  {/* Content */}
     <div className="flex items-center justify-between">
-      <span className="text-xs font-semibold uppercase text-white/70">TOTAL LESSONS CREATED</span>
+      <span className="text-xs font-semibold uppercase text-white">TOTAL LESSONS CREATED</span>
       <img src="/intuition-icon.png" alt="Intuition Logo" className="w-6 h-6 object-contain" />
     </div>
     <div className="flex items-center gap-3 mt-4">

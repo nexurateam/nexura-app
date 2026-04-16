@@ -38,6 +38,7 @@ export default function PortalClaims() {
   const [sortOption, setSortOption] = useState('{"total_market_cap":"desc"}');
   const [sortDirection, setSortDirection] = useState("desc");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<Claim[]>([]);
   const [termId, setTermId] = useState("");
   const [activeTab, setActiveTab] = useState<"deposit" | "redeem">("deposit");
   const [isToggled, setIsToggled] = useState(false);
@@ -104,34 +105,31 @@ export default function PortalClaims() {
     })();
   }, [user?.address]);
 
-  useEffect(() => {
-  if (!searchTerm) {
-    setSortedClaims(sortClaims(visibleClaims, sortOption));
-    return;
-  }
+  
+useEffect(() => {
+  const run = async () => {
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
-  const filtered = visibleClaims.filter(claim =>
-    claimMatchesSearch(claim, searchTerm)
-  );
+    try {
+      const res = await apiRequestV2(
+        "POST",
+        `/api/search-for-claim`,
+        { keyword: searchTerm }
+      );
 
-  setSortedClaims(sortClaims(filtered, sortOption));
+      setSearchResults(res.claims || []);
+    } catch (err) {
+      console.error("Search failed:", err);
+      setSearchResults([]);
+    }
+  };
 
-}, [visibleClaims, searchTerm, sortOption]);
-
-  // Returns true if claim matches search
-  const claimMatchesSearch = (claim: Claim, term: string) => {
-  const lower = term.toLowerCase();
-
-  const subject = claim?.term?.triple?.subject?.label ?? "";
-  const predicate = claim?.term?.triple?.predicate?.label ?? "";
-  const object = claim?.term?.triple?.object?.label ?? "";
-
-  return (
-    subject.toLowerCase().includes(lower) ||
-    predicate.toLowerCase().includes(lower) ||
-    object.toLowerCase().includes(lower)
-  );
-};
+  const t = setTimeout(run, 300);
+  return () => clearTimeout(t);
+}, [searchTerm]);
 
   const highlightMatch = (text: string, term: string) => {
     if (!term) return text;
@@ -155,7 +153,7 @@ const isSearching = searchTerm.trim().length > 0;
 const requestLockRef = useRef(false);
 
 const loadMore = async () => {
-  if (requestLockRef.current) return;
+  if (requestLockRef.current || isSearching) return;
   if (!hasMore) return;
 
   requestLockRef.current = true;
@@ -167,26 +165,16 @@ const loadMore = async () => {
       `/api/get-claims?filter=${sortOption}&offset=${offsetRef.current}`
     );
 
-    if (!claims || claims.length === 0) {
+    if (!claims?.length) {
       setHasMore(false);
       return;
     }
 
-    const isValidClaim = (claim: Claim) =>
-      claim?.term?.triple?.subject?.label &&
-      claim?.term?.triple?.predicate?.label &&
-      claim?.term?.triple?.object?.label;
-
-    setVisibleClaims(prev => [
-      ...prev,
-      ...claims.filter(isValidClaim),
-    ]);
+    setVisibleClaims(prev => [...prev, ...claims]);
 
     offsetRef.current += claims.length;
 
-    if (claims.length < LIMIT) {
-      setHasMore(false);
-    }
+    if (claims.length < LIMIT) setHasMore(false);
 
   } catch (err) {
     console.error(err);
@@ -196,6 +184,10 @@ const loadMore = async () => {
   }
 };
 
+useEffect(() => {
+  const source = isSearching ? searchResults : visibleClaims;
+  setSortedClaims(sortClaims(source, sortOption));
+}, [visibleClaims, searchResults, sortOption, isSearching]);
 
 // Call whenever user changes
 useEffect(() => {
@@ -221,6 +213,7 @@ useEffect(() => {
 const observerRef = useRef<HTMLDivElement | null>(null);
 
 useEffect(() => {
+  if (isSearching) return;
   if (!hasMore) return;
 
   const el = observerRef.current;
@@ -235,17 +228,7 @@ useEffect(() => {
   observer.observe(el);
 
   return () => observer.disconnect();
-}, [hasMore]);
-
-useEffect(() => {
-  if (!searchTerm.trim()) return;
-
-  offsetRef.current = 0;
-  setVisibleClaims([]);
-  setHasMore(true);
-
-  loadMore(); 
-}, [searchTerm]);
+}, [hasMore, isSearching]);
 
   const formatTrust = (shares: bigint, decimals = 18, precision = 4) => {
     const divisor = 10n ** BigInt(decimals);
