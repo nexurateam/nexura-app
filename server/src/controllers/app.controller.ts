@@ -1331,6 +1331,15 @@ export const performDailySignIn = async (req: GlobalRequest, res: GlobalResponse
   }
 };
 
+export const claimsCreated = async (req: GlobalRequest, res: GlobalResponse) =>{
+  try {
+    
+  } catch (error) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error updating claims created" });
+  }
+}
+
 export const searchTriple = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
     const { keyword } = req.body;
@@ -1469,7 +1478,130 @@ export const searchTriple = async (req: GlobalRequest, res: GlobalResponse) => {
             }
           }
         }
-      }`;
+      }
+          
+      fragment CachedImageFields on cached_images_cached_image {
+        url
+        safe
+      }
+
+      fragment AtomValueLight on atom_values {
+        person {
+          name
+          image
+          cached_image {
+            ...CachedImageFields
+          }
+          url
+        }
+        thing {
+          name
+          image
+          cached_image {
+            ...CachedImageFields
+          }
+          url
+        }
+        organization {
+          name
+          image
+          url
+        }
+        account {
+          id
+          label
+          image
+          cached_image {
+            ...CachedImageFields
+          }
+        }
+      }
+
+      fragment AtomValue on atom_values {
+        ...AtomValueLight
+        json_object {
+          description: data(path: "description")
+        }
+      }
+
+      fragment TermElement on terms {
+        id
+        type
+        atom {
+          term_id
+          data
+          image
+          cached_image {
+            ...CachedImageFields
+          }
+          label
+          emoji
+          type
+          wallet_id
+          value {
+            ...AtomValueLight
+          }
+        }
+        triple {
+          term_id
+          subject {
+            label
+          }
+          predicate {
+            label
+          }
+          object {
+            label
+          }
+        }
+      }
+
+      fragment TermElementFull on terms {
+        id
+        type
+        atom {
+          term_id
+          data
+          image
+          cached_image {
+            ...CachedImageFields
+          }
+          label
+          emoji
+          type
+          wallet_id
+          value {
+            ...AtomValue
+          }
+          creator {
+            ...AccountMetadata
+          }
+        }
+        triple {
+          term_id
+          subject {
+            label
+          }
+          predicate {
+            label
+          }
+          object {
+            label
+          }
+        }
+      }
+
+      fragment AccountMetadata on accounts {
+        label
+        image
+        cached_image {
+          ...CachedImageFields
+        }
+        id
+        atom_id
+        type
+      }
+    `;
 
     const response = await client.request(query, {
       where: {
