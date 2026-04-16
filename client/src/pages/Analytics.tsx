@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import Chart from "react-apexcharts";
-import AnimatedBackground from "../components/AnimatedBackground";
+import AnalyticsBackground from "../components/AnalyticsBackground";
 import { ResponsivePie } from "@nivo/pie";
 import { ChevronDown } from "lucide-react";
 import { apiRequest } from "../lib/config";
@@ -178,11 +178,11 @@ const formatNumber = (num: number) => {
   {
     title: "Total Users",
     value: data?.user.totalUsers ?? 0,
-    rate: pctChange(
-      data?.user.totalUsers ?? 0,
-      data?.user.totalUsersYesterday ?? 0
-    ),
-    description: "day-over-day growth",
+    // rate: pctChange(
+    //   data?.user.totalUsers ?? 0,
+    //   data?.user.totalUsersYesterday ?? 0
+    // ),
+    description: "total users",
     icon: "referrals.png",
     fullNumber: true,
   },
@@ -253,7 +253,7 @@ const formatNumber = (num: number) => {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden overflow-y-auto p-3 sm:p-6 relative pb-28 sm:pb-6 font-geist">
-      <AnimatedBackground />
+      <AnalyticsBackground />
 
        <div className="max-w-6xl mx-auto relative z-10 space-y-2">
          {/* Header */}
@@ -356,7 +356,7 @@ const formatNumber = (num: number) => {
       opacity: 0.5,
     }}
   />
-  
+
       <div className="absolute -right-10 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full bg-[#8B3EFE]/20 blur-3xl sm:hidden" />
 
       <img
@@ -548,7 +548,7 @@ const formatNumber = (num: number) => {
   style={{
     background: "#170F1F",
     border: "1px solid rgba(131, 58, 253, 0.25)",
-
+    color: "#fff",
     backdropFilter: "blur(8px)",
     WebkitBackdropFilter: "blur(8px)",
 
@@ -561,6 +561,7 @@ const formatNumber = (num: number) => {
   className="absolute w-[280px] h-[280px] rounded-full"
   style={{
     background: "#833AFD",
+    color: "#fff",
     top: "-100px",
     right: "-100px",
     filter: "blur(75px)",
@@ -569,8 +570,8 @@ const formatNumber = (num: number) => {
 />
 
   {/* Content */}
-  <span className="text-xs font-semibold uppercase text-white/90 text-center">On-Chain Activity</span>
-  <p className="text-center text-[11px] sm:text-[12px] text-white/70 mt-2">
+  <span className="text-xs font-semibold uppercase text-white text-center">On-Chain Activity</span>
+  <p className="text-center text-[11px] sm:text-[12px] text-white mt-2">
     Overview of transaction distribution across all on-chain activities
   </p>
 
@@ -602,20 +603,20 @@ const formatNumber = (num: number) => {
       <div className="w-full sm:ml-2 sm:pr-2 flex flex-col sm:justify-center sm:items-center">
         <div className="text-center sm:text-center mb-3 sm:mb-4">
           <div className="text-xl sm:text-2xl font-bold text-white">{totalTransactions}</div>
-          <div className="text-[10px] sm:text-[0.7rem] font-semibold text-white/30 uppercase">Transactions</div>
+          <div className="text-[10px] sm:text-[0.7rem] font-semibold text-white uppercase">Transactions</div>
         </div>
 
         <div
           className="flex flex-col gap-2 p-4 rounded-[1.5rem] border w-full sm:w-[220px]"
-          style={{ borderColor: "rgba(212,187,255,0.3)", backgroundColor: "transparent" }}
+          style={{ borderColor: "rgba(212,187,255,0.3)", backgroundColor: "#261F2E" }}
         >
           {transactionsData.map((t) => (
             <div key={t.id} className="flex justify-between items-center">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="w-3 h-3 rounded-full border border-white shrink-0" style={{ backgroundColor: t.color }} />
-                <span className="text-[10px] sm:text-[0.7rem] font-semibold text-white/80 uppercase truncate">{t.id}</span>
+                <span className="text-[10px] sm:text-[0.7rem] font-semibold text-white capitalize truncate">{t.id}</span>
               </div>
-              <span className="text-[10px] sm:text-[0.7rem] font-bold text-white/80 ml-2">{t.value}</span>
+              <span className="text-[10px] sm:text-[0.7rem] font-bold text-white ml-2">{t.value}</span>
             </div>
           ))}
         </div>
@@ -670,7 +671,7 @@ const formatNumber = (num: number) => {
 
   {/* Title */}
   <div className="relative z-10">
-    <span className="text-xs font-semibold uppercase text-white/80 tracking-wider">
+    <span className="text-xs font-semibold uppercase text-white tracking-wider">
       TOTAL TRUST DISTRIBUTED
     </span>
   </div>
@@ -697,7 +698,7 @@ const formatNumber = (num: number) => {
   style={{
     background: "#170F1F",
     border: "1px solid rgba(131, 58, 253, 0.22)",
-
+    color: "#fff",
     backdropFilter: "blur(8px)",
     WebkitBackdropFilter: "blur(8px)",
 
@@ -708,6 +709,7 @@ const formatNumber = (num: number) => {
     className="absolute w-52 h-52 rounded-full"
     style={{
       background: "#833AFD",
+      color: "#fff",
       top: "-70px",
       right: "-70px",
       filter: "blur(65px)",
@@ -717,7 +719,7 @@ const formatNumber = (num: number) => {
   {/* Content */}
     <div className="flex items-center justify-between">
       <span className="text-xs font-semibold uppercase text-white">TOTAL CLAIMS CREATED</span>
-      <img src="/intuition-icon.png" alt="Intuition Logo" className="w-6 h-6 object-contain" />
+      <img src="/nexxx.png" alt="Intuition Logo" className="w-6 h-6 object-contain" />
     </div>
     <div className="mt-4">
       <span className="text-xl font-bold text-white">{formatNumber(data?.claimsCreated ?? 0)}</span>
@@ -752,7 +754,7 @@ const formatNumber = (num: number) => {
   {/* Content */}
     <div className="flex items-center justify-between">
       <span className="text-xs font-semibold uppercase text-white">TOTAL LESSONS CREATED</span>
-      <img src="/intuition-icon.png" alt="Intuition Logo" className="w-6 h-6 object-contain" />
+      <img src="/learn-iconn.png" alt="Intuition Logo" className="w-6 h-6 object-contain" />
     </div>
     <div className="flex items-center gap-3 mt-4">
       <span className="text-xl font-bold text-white">{formatNumber(data?.lessonsCreated ?? 0)}</span>
