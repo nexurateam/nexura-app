@@ -114,7 +114,7 @@ export default function ReferralsPage() {
             fill="none"
           >
             <path
-              d="M 0 40 Q 79.5 -20 159 40"
+              d="M 0 40 Q 79.5 -10 159 40"
               stroke="#8a3ffc"
               strokeWidth="2"
               strokeLinecap="round"
@@ -127,7 +127,7 @@ export default function ReferralsPage() {
             fill="none"
           >
             <path
-              d="M 0 40 Q 79.5 100 159 40"
+              d="M 0 40 Q 79.5 90 159 40"
               stroke="#8a3ffc"
               strokeWidth="2"
               strokeLinecap="round"
