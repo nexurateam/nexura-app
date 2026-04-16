@@ -1676,7 +1676,7 @@ export const claimReferreralReward = async (req: GlobalRequest, res: GlobalRespo
 
     const activeUsersByTier = tier === 1 ? 10 : tier === 2 ? 20 : 30;
 
-    const xpByTier = tier === 1 ? 1500 : tier === 2 ? 2000 : 2500;
+    const xpByTier = tier === 1 ? 2000 : tier === 2 ? 3000 : 5000;
 
     if (referrer.refRewardClaimed) {
       res.status(BAD_REQUEST).json({ error: "referrer reward claimed" });
@@ -1703,9 +1703,9 @@ export const claimReferreralReward = async (req: GlobalRequest, res: GlobalRespo
     }
 
     if (referrer.tier === 0 && tier === 2) {
-      referrer.xp += 3500;
+      referrer.xp += 5000;
     } else if (referrer.tier === 0 && tier === 3) {
-      referrer.xp += 6000;
+      referrer.xp += 10000;
     } else {
       referrer.xp += xpByTier;
     }
