@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Chart from "react-apexcharts";
 import AnalyticsBackground from "../components/AnalyticsBackground";
 import { ResponsivePie } from "@nivo/pie";
@@ -182,7 +182,7 @@ const formatNumber = (num: number) => {
     //   data?.user.totalUsers ?? 0,
     //   data?.user.totalUsersYesterday ?? 0
     // ),
-    description: "total users",
+    // description: "total users",
     icon: "referrals.png",
     fullNumber: true,
   },
@@ -214,7 +214,7 @@ const formatNumber = (num: number) => {
       title: "Quests Created",
       value: data?.totalQuests ?? 0,
       rate: null,
-      description: "total quests",
+      description: "Total Quests",
       icon: "quest-iconx.png",
       fullNumber: false,
     },
@@ -222,7 +222,7 @@ const formatNumber = (num: number) => {
       title: "Campaigns Created",
       value: data?.totalCampaigns ?? 0,
       rate: null,
-      description: "total campaigns",
+      description: "Total Campaigns",
       icon: "campaign_icon.png",
       fullNumber: false,
     },
