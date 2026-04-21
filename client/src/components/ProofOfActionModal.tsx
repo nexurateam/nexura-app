@@ -120,7 +120,7 @@ export default function ProofOfActionModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         hideClose
-        className="p-0 border-0 bg-transparent shadow-none w-[calc(100vw-32px)] max-w-[897px] sm:w-[897px]"
+        className="p-0 border-0 bg-transparent shadow-none w-[calc(100vw-32px)] max-w-[897px] sm:w-[897px] !duration-500 data-[state=open]:!zoom-in-90 data-[state=open]:!slide-in-from-bottom-8 data-[state=closed]:!zoom-out-95 data-[state=closed]:!slide-out-to-bottom-4"
       >
         <div
           className="relative overflow-hidden rounded-[28px] sm:rounded-[40px]"
@@ -131,7 +131,6 @@ export default function ProofOfActionModal({
               linear-gradient(135deg, #0a0514 0%, #05020d 100%)
             `,
             border: "1px solid rgba(255, 255, 255, 0.12)",
-            minHeight: "487px",
           }}
         >
           <button
@@ -143,47 +142,68 @@ export default function ProofOfActionModal({
             <X className="w-[22px] h-[22px]" strokeWidth={1.5} />
           </button>
 
-          <div className="px-[34px] pt-[40px] pb-[40px]">
-            <h2 className="text-[#e0e2ea] font-bold text-[24px] sm:text-[30px] leading-[48px] tracking-[-1.2px]">
+          <div className="px-[34px] pt-[26px] pb-[26px]">
+            <h2
+              className="text-[#e0e2ea] font-bold text-[24px] sm:text-[30px] leading-[40px] tracking-[-1.2px] animate-in fade-in slide-in-from-left-4 duration-500"
+              style={{ animationDelay: "80ms", animationFillMode: "both" }}
+            >
               Proof of Action
             </h2>
 
-            <p className="text-[#cdc2d8] text-[14px] sm:text-[16px] font-medium leading-[26px] mt-2 max-w-[501px]">
+            <p
+              className="text-[#cdc2d8] text-[14px] sm:text-[15px] font-medium leading-[22px] mt-1.5 max-w-[501px] animate-in fade-in slide-in-from-left-4 duration-500"
+              style={{ animationDelay: "140ms", animationFillMode: "both" }}
+            >
               Create a structured claim using semantic triples to prove task completion. The system validates your claim after staking. Only valid claims unlock XP rewards.
             </p>
 
-            <div className="mt-8 flex flex-col lg:flex-row gap-6 lg:gap-[71px]">
-              <div className="flex-1 min-w-0 space-y-5">
-                <TripleField
-                  label="SUBJECT"
-                  labelColor="#8b3efe"
-                  borderColor="#8b3efe"
-                  infoIcon={infoSubjectImg}
-                  avatarType="image"
-                  avatarSrc={subjectAvatarImg}
-                  value={SUBJECT}
-                />
-                <TripleField
-                  label="PREDICATE"
-                  labelColor="#b65fc8"
-                  borderColor="#b65fc8"
-                  infoIcon={infoPredicateImg}
-                  avatarType="check"
-                  avatarSrc={predicateCheckImg}
-                  value={predicateLabel}
-                />
-                <TripleField
-                  label="OBJECT"
-                  labelColor="#00e1a2"
-                  borderColor="#00e1a2"
-                  infoIcon={infoObjectImg}
-                  avatarType="icon"
-                  avatarSrc={objectIcon}
-                  value={objectLabel}
-                />
+            <div className="mt-5 flex flex-col lg:flex-row gap-5 lg:gap-[56px] lg:items-stretch">
+              <div className="flex-1 min-w-0 space-y-4">
+                <div
+                  className="animate-in fade-in slide-in-from-left-4 duration-500"
+                  style={{ animationDelay: "220ms", animationFillMode: "both" }}
+                >
+                  <TripleField
+                    label="SUBJECT"
+                    labelColor="#8b3efe"
+                    borderColor="#8b3efe"
+                    infoIcon={infoSubjectImg}
+                    avatarType="image"
+                    avatarSrc={subjectAvatarImg}
+                    value={SUBJECT}
+                  />
+                </div>
+                <div
+                  className="animate-in fade-in slide-in-from-left-4 duration-500"
+                  style={{ animationDelay: "300ms", animationFillMode: "both" }}
+                >
+                  <TripleField
+                    label="PREDICATE"
+                    labelColor="#b65fc8"
+                    borderColor="#b65fc8"
+                    infoIcon={infoPredicateImg}
+                    avatarType="check"
+                    avatarSrc={predicateCheckImg}
+                    value={predicateLabel}
+                  />
+                </div>
+                <div
+                  className="animate-in fade-in slide-in-from-left-4 duration-500"
+                  style={{ animationDelay: "380ms", animationFillMode: "both" }}
+                >
+                  <TripleField
+                    label="OBJECT"
+                    labelColor="#00e1a2"
+                    borderColor="#00e1a2"
+                    infoIcon={infoObjectImg}
+                    avatarType="icon"
+                    avatarSrc={objectIcon}
+                    value={objectLabel}
+                  />
+                </div>
 
                 {error && (
-                  <div className="flex items-start gap-2 rounded-[14px] border border-red-500/40 bg-red-500/10 px-3 py-2">
+                  <div className="flex items-start gap-2 rounded-[14px] border border-red-500/40 bg-red-500/10 px-3 py-2 animate-in fade-in zoom-in-95 duration-300">
                     <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                     <p className="text-[12px] text-red-300 leading-snug break-words">
                       {error}
@@ -192,8 +212,11 @@ export default function ProofOfActionModal({
                 )}
               </div>
 
-              <div className="w-full lg:w-[309px] shrink-0">
-                <div className="bg-[#1C0E3480] border border-white/10 rounded-2xl p-5 space-y-4">
+              <div
+                className="w-full lg:w-[309px] shrink-0 animate-in fade-in slide-in-from-right-4 duration-500"
+                style={{ animationDelay: "260ms", animationFillMode: "both" }}
+              >
+                <div className="bg-[#1C0E3480] border border-white/10 rounded-2xl p-5 space-y-4 h-full flex flex-col">
                   <div>
                     <h3 className="text-[#e0e2ea] font-semibold text-[16px] leading-[28px]">
                       Stake on this Claim
@@ -258,7 +281,7 @@ export default function ProofOfActionModal({
                   </div>
 
                   {typeof xpReward !== "undefined" && (
-                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#00e1a2] font-semibold">
+                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#00e1a2] font-semibold animate-in fade-in duration-500" style={{ animationDelay: "520ms", animationFillMode: "both" }}>
                       <span>Unlocks +{xpReward} XP</span>
                     </div>
                   )}
@@ -267,26 +290,29 @@ export default function ProofOfActionModal({
                     onClick={handleStake}
                     disabled={staking || staked}
                     data-testid="proof-modal-deposit"
-                    className={`w-full h-[40px] rounded-[100px] font-semibold text-[14px] flex items-center justify-center gap-2 transition-all duration-200 ${
+                    className={`w-full h-[42px] rounded-[100px] font-semibold text-[14px] flex items-center justify-center gap-2 mt-auto relative overflow-hidden transition-all duration-300 ease-out ${
                       staked
-                        ? "bg-[#00e1a2] text-black"
+                        ? "bg-[#00e1a2] text-black shadow-[0_0_24px_rgba(0,225,162,0.45)]"
                         : staking
-                          ? "bg-white/60 text-black/60 cursor-wait"
-                          : "bg-white text-black hover:bg-white/90 active:scale-[0.99]"
+                          ? "bg-white/70 text-black/70 cursor-wait"
+                          : "bg-white text-black hover:bg-white hover:scale-[1.02] hover:shadow-[0_0_22px_rgba(139,62,254,0.45)] active:scale-[0.97]"
                     }`}
                   >
+                    {staking && !staked && (
+                      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer" />
+                    )}
                     {staked ? (
-                      <>
+                      <span className="flex items-center gap-2 animate-in zoom-in-50 fade-in duration-300">
                         <Check className="w-4 h-4" strokeWidth={3} />
                         Claimed
-                      </>
+                      </span>
                     ) : staking ? (
-                      <>
+                      <span className="flex items-center gap-2 relative z-10">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Staking…
-                      </>
+                      </span>
                     ) : (
-                      "Deposit"
+                      <span className="relative z-10">Deposit</span>
                     )}
                   </button>
                 </div>
