@@ -1,4 +1,5 @@
 import { redeem, getMultiVaultAddressFromChainId, getAtomDetails, createTripleStatement, calculateAtomId, calculateTripleId, getTripleDetails, createAtomFromString } from "@0xintuition/sdk";
+import { MultiVaultAbi } from "@0xintuition/protocol";
 import { Address, parseEther, toHex } from "viem";
 import { getWalletClient, getPublicClient } from "../lib/viem";
 import { apiRequestV2 } from "../lib/queryClient";
@@ -125,13 +126,19 @@ export const createProofOfAction = async ({
   const existingTriple = await getTripleDetails(tripleId);
 
   if (existingTriple) {
+    // Stake on an existing triple by calling MultiVault.deposit directly.
+    // The SDK's single `deposit` wrapper drops msg.value, and PROXY_FEE_CONTRACT
+    // was previously used as a workaround but depends on a frontend env var
+    // that is not wired on every deployment. Calling MultiVault with its raw
+    // ABI and a plumbed `value` works in all environments. Default curveId is
+    // 1 (linear) — matches what createTriples uses at triple creation time.
     const account = walletClient.account!.address as Address;
     const { request } = await publicClient.simulateContract({
-      address: PROXY_FEE_CONTRACT,
-      abi: PROXY_CONTRACT_ABI,
+      address,
+      abi: MultiVaultAbi,
       functionName: "deposit",
       account,
-      args: [account, tripleId, 0n, 0n],
+      args: [account, tripleId, 1n, 0n],
       value: stakeAmount,
     });
     const transactionHash = await walletClient.writeContract(request);
