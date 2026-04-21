@@ -161,6 +161,9 @@ export default function ProofOfActionModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         hideClose
+        onInteractOutside={(e) => { if (staking || staked) e.preventDefault(); }}
+        onEscapeKeyDown={(e) => { if (staking || staked) e.preventDefault(); }}
+        onPointerDownOutside={(e) => { if (staking || staked) e.preventDefault(); }}
         className={`p-0 border-0 bg-transparent shadow-none w-[calc(100vw-32px)] ${staked ? "max-w-[448px] sm:w-[448px]" : "max-w-[897px] sm:w-[897px]"} !duration-500 data-[state=open]:!zoom-in-90 data-[state=open]:!slide-in-from-bottom-8 data-[state=closed]:!zoom-out-95 data-[state=closed]:!slide-out-to-bottom-4`}
       >
         <div
@@ -424,16 +427,16 @@ function SuccessView({ xpReward, txHash, onDismiss, networkFeeEth, userXp = 0 }:
               className="mt-4 font-bold text-[17px] sm:text-[22px] text-white text-center leading-[1.05] tracking-[-0.6px] animate-in fade-in slide-in-from-bottom-4 duration-500"
               style={{ animationDelay: "220ms", animationFillMode: "both" }}
             >
-              Claim Created
+              Your Rewards are
               <br />
-              Successfully
+              Ready to be Claimed
             </h2>
 
             <p
               className="mt-2.5 text-[#94a3b8] text-[10px] sm:text-[11px] text-center leading-[14px] max-w-[224px] animate-in fade-in duration-500"
               style={{ animationDelay: "320ms", animationFillMode: "both" }}
             >
-              Your onchain claim has been verified and recorded on the Nexura Network.
+              Your onchain claim has been verified and recorded on The Intuition Knowledge Graph.
             </p>
 
             <div

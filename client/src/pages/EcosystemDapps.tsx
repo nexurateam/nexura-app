@@ -354,7 +354,7 @@ export default function EcosystemDapps() {
         xpReward={proofModalDapp ? getXpFromReward(proofModalDapp.reward) : undefined}
         sourceLabel="Ecosystem"
         onSuccess={finalizeDappClaim}
-        alreadyClaimed={Boolean(proofModalDapp?.done) || (!!proofModalDapp && claimedDapps.includes(proofModalDapp._id))}
+        alreadyClaimed={Boolean(proofModalDapp?.done)}
         userXp={Number(user?.xp) || 0}
       />
     </div>
