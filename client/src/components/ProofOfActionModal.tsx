@@ -7,6 +7,7 @@ import { toUserFriendlyErrorMessage } from "../lib/errorMessages";
 import { getPublicClient } from "../lib/viem";
 import { formatEther } from "viem";
 import { getLevelProgress } from "../lib/levels";
+import { useWallet } from "../hooks/use-wallet";
 import subjectAvatarImg from "../assets/proof-modal/subject-avatar.png";
 import predicateCheckImg from "../assets/proof-modal/predicate-check.png";
 import learnIconImg from "../assets/proof-modal/learn-icon.png";
@@ -59,6 +60,7 @@ export default function ProofOfActionModal({
   userXp = 0,
 }: ProofOfActionModalProps) {
   const { toast } = useToast();
+  const { isConnected, connectWallet } = useWallet();
   const [staking, setStaking] = useState(false);
   const [staked, setStaked] = useState(alreadyClaimed);
   const [txHash, setTxHash] = useState<string>("");
@@ -103,6 +105,14 @@ export default function ProofOfActionModal({
         title: "Invalid deposit",
         description: `Minimum deposit is ${MIN_STAKE} $TRUST.`,
         variant: "destructive",
+      });
+      return;
+    }
+    if (!isConnected) {
+      await connectWallet();
+      toast({
+        title: "Connect your wallet",
+        description: "Approve the connection, then tap Deposit again to stake.",
       });
       return;
     }
