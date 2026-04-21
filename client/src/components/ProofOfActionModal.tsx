@@ -123,10 +123,14 @@ export default function ProofOfActionModal({
         className="p-0 border-0 bg-transparent shadow-none w-[calc(100vw-32px)] max-w-[897px] sm:w-[897px]"
       >
         <div
-          className="relative overflow-hidden rounded-2xl sm:rounded-3xl"
+          className="relative overflow-hidden rounded-[28px] sm:rounded-[40px]"
           style={{
-            background: "linear-gradient(135deg, #2A085E 0%, #3D0F8A 100%)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
+            background: `
+              radial-gradient(circle at 80% 10%, rgba(60, 0, 100, 0.25) 0%, transparent 45%),
+              radial-gradient(circle at 20% 90%, rgba(35, 0, 70, 0.22) 0%, transparent 60%),
+              linear-gradient(135deg, #0a0514 0%, #05020d 100%)
+            `,
+            border: "1px solid rgba(255, 255, 255, 0.12)",
             minHeight: "487px",
           }}
         >
