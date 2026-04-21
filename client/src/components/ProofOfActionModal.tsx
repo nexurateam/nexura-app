@@ -161,7 +161,7 @@ export default function ProofOfActionModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         hideClose
-        className="p-0 border-0 bg-transparent shadow-none w-[calc(100vw-32px)] max-w-[897px] sm:w-[897px] !duration-500 data-[state=open]:!zoom-in-90 data-[state=open]:!slide-in-from-bottom-8 data-[state=closed]:!zoom-out-95 data-[state=closed]:!slide-out-to-bottom-4"
+        className={`p-0 border-0 bg-transparent shadow-none w-[calc(100vw-32px)] ${staked ? "max-w-[448px] sm:w-[448px]" : "max-w-[897px] sm:w-[897px]"} !duration-500 data-[state=open]:!zoom-in-90 data-[state=open]:!slide-in-from-bottom-8 data-[state=closed]:!zoom-out-95 data-[state=closed]:!slide-out-to-bottom-4`}
       >
         <div
           className="relative overflow-hidden rounded-[28px] sm:rounded-[40px]"
@@ -401,10 +401,10 @@ function SuccessView({ xpReward, txHash, onDismiss, networkFeeEth, userXp = 0 }:
   const nextLevelName = levelProgress.next?.name ?? levelProgress.current.name;
 
   return (
-    <div className="px-[28px] sm:px-[34px] pt-[28px] pb-[24px]">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div className="px-[14px] sm:px-[17px] pt-[14px] pb-[12px]">
+      <div className="flex flex-col gap-2.5">
         <div
-          className="lg:col-span-8 relative overflow-hidden rounded-[24px] sm:rounded-[28px] border border-[rgba(212,187,255,0.1)] bg-[rgba(28,32,37,0.6)] backdrop-blur-[10px] shadow-[0_0_40px_0_rgba(138,63,252,0.1)] p-8 sm:p-10 flex flex-col items-center justify-center min-h-[480px] animate-in fade-in zoom-in-95 duration-500"
+          className="relative overflow-hidden rounded-[14px] border border-[rgba(212,187,255,0.1)] bg-[rgba(28,32,37,0.6)] backdrop-blur-[10px] shadow-[0_0_20px_0_rgba(138,63,252,0.1)] p-4 sm:p-5 flex flex-col items-center justify-center min-h-[240px] animate-in fade-in zoom-in-95 duration-500"
           style={{ animationFillMode: "both" }}
         >
           <div
@@ -414,14 +414,14 @@ function SuccessView({ xpReward, txHash, onDismiss, networkFeeEth, userXp = 0 }:
 
           <div className="relative z-10 flex flex-col items-center">
             <div
-              className="w-[96px] h-[96px] rounded-[24px] bg-[rgba(0,225,162,0.1)] border border-[rgba(0,225,162,0.3)] flex items-center justify-center animate-in zoom-in-50 fade-in duration-500"
+              className="w-[48px] h-[48px] rounded-[12px] bg-[rgba(0,225,162,0.1)] border border-[rgba(0,225,162,0.3)] flex items-center justify-center animate-in zoom-in-50 fade-in duration-500"
               style={{ animationDelay: "120ms", animationFillMode: "both" }}
             >
-              <Check className="w-10 h-10 text-[#00e1a2]" strokeWidth={3} />
+              <Check className="w-5 h-5 text-[#00e1a2]" strokeWidth={3} />
             </div>
 
             <h2
-              className="mt-8 font-bold text-[34px] sm:text-[44px] lg:text-[48px] text-white text-center leading-[1.05] tracking-[-1.2px] animate-in fade-in slide-in-from-bottom-4 duration-500"
+              className="mt-4 font-bold text-[17px] sm:text-[22px] text-white text-center leading-[1.05] tracking-[-0.6px] animate-in fade-in slide-in-from-bottom-4 duration-500"
               style={{ animationDelay: "220ms", animationFillMode: "both" }}
             >
               Claim Created
@@ -430,118 +430,118 @@ function SuccessView({ xpReward, txHash, onDismiss, networkFeeEth, userXp = 0 }:
             </h2>
 
             <p
-              className="mt-5 text-[#94a3b8] text-[15px] sm:text-[17px] text-center leading-[26px] max-w-[448px] animate-in fade-in duration-500"
+              className="mt-2.5 text-[#94a3b8] text-[10px] sm:text-[11px] text-center leading-[14px] max-w-[224px] animate-in fade-in duration-500"
               style={{ animationDelay: "320ms", animationFillMode: "both" }}
             >
-              Your onchain claim has been verified and recorded on the Nexura Network. Your rewards are ready to be harvested.
+              Your onchain claim has been verified and recorded on the Nexura Network.
             </p>
 
             <div
-              className="mt-8 flex flex-col items-center gap-1.5 animate-in fade-in zoom-in-95 duration-500"
+              className="mt-4 flex flex-col items-center gap-0.5 animate-in fade-in zoom-in-95 duration-500"
               style={{ animationDelay: "420ms", animationFillMode: "both" }}
             >
-              <span className="text-[#64748b] text-[14px] font-bold tracking-[1.6px] uppercase">
+              <span className="text-[#64748b] text-[8px] font-bold tracking-[0.8px] uppercase">
                 Unclaimed Balance
               </span>
-              <div className="flex items-end gap-2">
+              <div className="flex items-end gap-1">
                 <span
-                  className="text-[#d4bbff] text-[56px] sm:text-[64px] lg:text-[72px] font-bold leading-none"
-                  style={{ textShadow: "0 0 15px rgba(212,187,255,0.5)" }}
+                  className="text-[#d4bbff] text-[28px] sm:text-[32px] font-bold leading-none"
+                  style={{ textShadow: "0 0 10px rgba(212,187,255,0.5)" }}
                 >
                   +{xpAmount}
                 </span>
-                <span className="text-[#94e2ff] text-[22px] sm:text-[24px] font-bold mb-2">XP</span>
+                <span className="text-[#94e2ff] text-[11px] sm:text-[12px] font-bold mb-1">XP</span>
               </div>
             </div>
 
             <button
               onClick={onDismiss}
               data-testid="proof-success-claim-cta"
-              className="mt-8 px-10 py-[18px] rounded-[100px] font-bold text-[16px] sm:text-[18px] text-[#270058] bg-gradient-to-r from-[#8a3ffc] to-[#00ccf9] flex items-center gap-3 hover:scale-[1.03] hover:shadow-[0_0_24px_rgba(138,63,252,0.55)] active:scale-[0.98] transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500"
+              className="mt-4 px-5 py-[9px] rounded-[100px] font-bold text-[10px] sm:text-[11px] text-[#270058] bg-gradient-to-r from-[#8a3ffc] to-[#00ccf9] flex items-center gap-1.5 hover:scale-[1.03] hover:shadow-[0_0_12px_rgba(138,63,252,0.55)] active:scale-[0.98] transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500"
               style={{ animationDelay: "540ms", animationFillMode: "both" }}
             >
               Claim XP Rewards
-              <ArrowRight className="w-4 h-4" strokeWidth={3} />
+              <ArrowRight className="w-3 h-3" strokeWidth={3} />
             </button>
           </div>
         </div>
 
-        <div className="lg:col-span-4 flex flex-col gap-5">
+        <div className="flex flex-col gap-2.5">
           <div
-            className="rounded-[24px] sm:rounded-[28px] border border-[rgba(212,187,255,0.1)] border-l-4 border-l-[#d4bbff] bg-[rgba(28,32,37,0.6)] backdrop-blur-[10px] p-6 animate-in fade-in slide-in-from-right-4 duration-500"
+            className="rounded-[14px] border border-[rgba(212,187,255,0.1)] border-l-2 border-l-[#d4bbff] bg-[rgba(28,32,37,0.6)] backdrop-blur-[10px] p-3 animate-in fade-in slide-in-from-right-4 duration-500"
             style={{ animationDelay: "360ms", animationFillMode: "both" }}
           >
-            <div className="flex items-center gap-2">
-              <FileText className="w-[14px] h-[14px] text-white" strokeWidth={2.5} />
-              <h3 className="text-white font-bold text-[17px]">Claim Summary</h3>
+            <div className="flex items-center gap-1.5">
+              <FileText className="w-[10px] h-[10px] text-white" strokeWidth={2.5} />
+              <h3 className="text-white font-bold text-[11px]">Claim Summary</h3>
             </div>
-            <div className="mt-5 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                <span className="text-[#94a3b8] text-[10px] tracking-[1px] uppercase">Claim ID</span>
-                <span className="font-mono text-[#cdc2d8] text-[12px]">{claimId}</span>
+            <div className="mt-2.5 space-y-1.5">
+              <div className="flex items-center justify-between pb-1 border-b border-white/5">
+                <span className="text-[#94a3b8] text-[8px] tracking-[0.5px] uppercase">Claim ID</span>
+                <span className="font-mono text-[#cdc2d8] text-[9px]">{claimId}</span>
               </div>
-              <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                <span className="text-[#94a3b8] text-[10px] tracking-[1px] uppercase">Status</span>
-                <span className="bg-[rgba(0,225,162,0.1)] text-[#00e1a2] text-[10px] font-semibold uppercase tracking-[-0.5px] px-2 py-1 rounded-[4px]">
+              <div className="flex items-center justify-between pb-1 border-b border-white/5">
+                <span className="text-[#94a3b8] text-[8px] tracking-[0.5px] uppercase">Status</span>
+                <span className="bg-[rgba(0,225,162,0.1)] text-[#00e1a2] text-[7px] font-semibold uppercase tracking-[-0.25px] px-1 py-0.5 rounded-[3px]">
                   Verified
                 </span>
               </div>
-              <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                <span className="text-[#94a3b8] text-[10px] tracking-[1px] uppercase">Network Fee</span>
-                <span className="text-[#cdc2d8] text-[12px]">{formatNetworkFee(networkFeeEth || "")}</span>
+              <div className="flex items-center justify-between pb-1 border-b border-white/5">
+                <span className="text-[#94a3b8] text-[8px] tracking-[0.5px] uppercase">Network Fee</span>
+                <span className="text-[#cdc2d8] text-[9px]">{formatNetworkFee(networkFeeEth || "")}</span>
               </div>
             </div>
           </div>
 
           <div
-            className="rounded-[24px] sm:rounded-[28px] border border-[rgba(212,187,255,0.1)] bg-[rgba(28,32,37,0.6)] backdrop-blur-[10px] p-6 relative overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500"
+            className="rounded-[14px] border border-[rgba(212,187,255,0.1)] bg-[rgba(28,32,37,0.6)] backdrop-blur-[10px] p-3 relative overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500"
             style={{ animationDelay: "460ms", animationFillMode: "both" }}
           >
-            <Sparkles className="absolute -bottom-3 -right-3 w-16 h-16 text-white/5" strokeWidth={1} />
-            <div className="flex items-end justify-between mb-4">
+            <Sparkles className="absolute -bottom-1.5 -right-1.5 w-8 h-8 text-white/5" strokeWidth={1} />
+            <div className="flex items-end justify-between mb-2">
               <div>
-                <span className="text-[#94a3b8] text-[10px] tracking-[1px] uppercase block mb-1">
+                <span className="text-[#94a3b8] text-[8px] tracking-[0.5px] uppercase block mb-0.5">
                   {levelProgress.next ? "Next Level" : "Current Level"}
                 </span>
-                <span className="text-white font-bold text-[16px]">{nextLevelName}</span>
+                <span className="text-white font-bold text-[11px]">{nextLevelName}</span>
               </div>
-              <span className="text-[#94e2ff] text-[14px] font-bold">{levelProgress.progressPct}%</span>
+              <span className="text-[#94e2ff] text-[10px] font-bold">{levelProgress.progressPct}%</span>
             </div>
-            <div className="bg-[#262a30] h-2 rounded-[12px] overflow-hidden">
+            <div className="bg-[#262a30] h-1 rounded-[6px] overflow-hidden">
               <div
-                className="bg-[#94e2ff] h-full rounded-[12px] shadow-[0_0_12px_rgba(148,226,255,0.6)] transition-[width] duration-1000 ease-out"
+                className="bg-[#94e2ff] h-full rounded-[6px] shadow-[0_0_6px_rgba(148,226,255,0.6)] transition-[width] duration-1000 ease-out"
                 style={{ width: `${levelProgress.progressPct}%` }}
               />
             </div>
-            <p className="mt-4 text-[#64748b] text-[11px] italic leading-[18px]">
+            <p className="mt-2 text-[#64748b] text-[8px] italic leading-[12px]">
               {levelProgress.next
-                ? `${levelProgress.xpRemaining.toLocaleString()} XP remaining until ${levelProgress.next.name} unlocks.`
-                : `You've reached the top tier — ${levelProgress.current.name}.`}
+                ? `${levelProgress.xpRemaining.toLocaleString()} XP to ${levelProgress.next.name}.`
+                : `Top tier — ${levelProgress.current.name}.`}
             </p>
           </div>
         </div>
       </div>
 
       <div
-        className="mt-6 flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4 px-2 animate-in fade-in duration-500"
+        className="mt-3 flex flex-row items-center justify-between gap-2 px-1 animate-in fade-in duration-500"
         style={{ animationDelay: "620ms", animationFillMode: "both" }}
       >
-        <div className="flex gap-6">
-          <button className="flex items-center gap-2 text-[#94a3b8] text-[13px] font-medium hover:text-white transition-colors">
-            <Share2 className="w-3.5 h-3.5" />
-            Share Success
+        <div className="flex gap-3">
+          <button className="flex items-center gap-1 text-[#94a3b8] text-[9px] font-medium hover:text-white transition-colors">
+            <Share2 className="w-2.5 h-2.5" />
+            Share
           </button>
-          <button className="flex items-center gap-2 text-[#94a3b8] text-[13px] font-medium hover:text-white transition-colors">
-            <Download className="w-3 h-3" />
-            Download Receipt
+          <button className="flex items-center gap-1 text-[#94a3b8] text-[9px] font-medium hover:text-white transition-colors">
+            <Download className="w-2.5 h-2.5" />
+            Receipt
           </button>
         </div>
         <button
           onClick={onDismiss}
-          className="flex items-center gap-2 text-[#64748b] text-[13px] hover:text-white transition-colors"
+          className="flex items-center gap-1 text-[#64748b] text-[9px] hover:text-white transition-colors"
         >
-          <ArrowLeft className="w-3 h-3" />
-          Return to Dashboard
+          <ArrowLeft className="w-2.5 h-2.5" />
+          Return
         </button>
       </div>
     </div>
