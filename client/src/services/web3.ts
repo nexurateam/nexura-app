@@ -63,15 +63,6 @@ export const sellShares = async (sharesAmount: string, termId: Address, curveId:
   return transactionHash;
 };
 
-// Known on-chain Intuition atom IDs — verified to exist on testnet so we can
-// skip the calculate-and-create path for these common labels.
-// Omitted labels (e.g. "Explored") fall through to the standard calculate-or-
-// create flow, which will create the atom on first use and reuse it after.
-const KNOWN_ATOM_IDS: Record<string, Address> = {
-  I: "0x7ab197b346d386cd5926dbfeeb85dade42f113c7ed99ff2046a5123bb5cd016b",
-  Completed: "0x2d864f0214db084b5420de2a72acaddae82d56d9e6e9fed7ecbab3d9f6afc1fe",
-};
-
 export const createProofOfAction = async ({
   subjectString = "I",
   predicateString = "Completed",
@@ -91,16 +82,11 @@ export const createProofOfAction = async ({
   const address = getMultiVaultAddressFromChainId(walletClient.chain?.id!);
 
   const resolveAtom = async (label: string): Promise<Address> => {
-    // Trust-but-verify known IDs: if the precomputed hash is stale or was
-    // computed with a different encoding, fall through to the canonical path.
-    const known = KNOWN_ATOM_IDS[label];
-    if (known) {
-      try {
-        if (await getAtomDetails(known)) return known;
-      } catch { /* fall through */ }
-    }
     // createAtomFromString stores atomData as toHex(label); match that here
     // so calculateAtomId produces the same id as what the contract indexes.
+    // This is network-agnostic — the network-specific MultiVault is picked up
+    // via `address` (from getMultiVaultAddressFromChainId) and the network-
+    // specific GraphQL endpoint is configured at app bootstrap.
     const atomId = calculateAtomId(toHex(label));
     const exists = await getAtomDetails(atomId);
     if (exists) return atomId;
