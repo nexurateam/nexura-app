@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
-import { Sparkles, CheckCircle2, Loader2, Coins, AlertCircle } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "./ui/dialog";
+import { X, Loader2, Check, AlertCircle } from "lucide-react";
+import { Dialog, DialogContent } from "./ui/dialog";
 import { createProofOfAction } from "../services/web3";
 import { useToast } from "../hooks/use-toast";
+import subjectAvatarImg from "../assets/proof-modal/subject-avatar.png";
+import predicateCheckImg from "../assets/proof-modal/predicate-check.png";
+import learnIconImg from "../assets/proof-modal/learn-icon.png";
+import questIconImg from "../assets/proof-modal/quest-icon.png";
+import campaignIconImg from "../assets/proof-modal/campaign-icon.png";
+import ecosystemIconImg from "../assets/proof-modal/ecosystem-icon.png";
+import infoSubjectImg from "../assets/proof-modal/info-subject.svg";
+import infoPredicateImg from "../assets/proof-modal/info-predicate.svg";
+import infoObjectImg from "../assets/proof-modal/info-object.svg";
 
 interface ProofOfActionModalProps {
   open: boolean;
@@ -23,6 +26,16 @@ interface ProofOfActionModalProps {
 }
 
 const PREDICATE = "Completed";
+const TRIPLE_COST = "50.00 $TRUST";
+const INITIAL_DEPOSIT_TOTAL = "1,000.00 $TRUST";
+
+function resolveObjectIcon(sourceLabel?: string): string {
+  const key = (sourceLabel || "").toLowerCase();
+  if (key.includes("quest")) return questIconImg;
+  if (key.includes("campaign")) return campaignIconImg;
+  if (key.includes("ecosystem") || key.includes("dapp")) return ecosystemIconImg;
+  return learnIconImg;
+}
 
 export default function ProofOfActionModal({
   open,
@@ -31,7 +44,7 @@ export default function ProofOfActionModal({
   object,
   xpReward,
   stakeTrust = "0.10",
-  stakeUsd,
+  stakeUsd = "$214.20",
   onSuccess,
   sourceLabel,
 }: ProofOfActionModalProps) {
@@ -50,6 +63,7 @@ export default function ProofOfActionModal({
 
   const subjectLabel = subject?.trim() || "I";
   const objectLabel = object?.trim() || "this action";
+  const objectIcon = resolveObjectIcon(sourceLabel);
 
   const handleStake = async () => {
     if (staking || staked) return;
@@ -102,122 +116,172 @@ export default function ProofOfActionModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-transparent shadow-none">
-        <div className="relative rounded-2xl bg-[#110a2b] border border-purple-500/30 shadow-[0_0_80px_rgba(139,62,254,0.35)] overflow-hidden">
-          <div
-            className="absolute inset-x-0 top-0 h-32 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(ellipse at top, rgba(139,62,254,0.35), transparent 70%)",
-            }}
-          />
-          <div
-            className="absolute -right-16 -bottom-16 w-48 h-48 rounded-full pointer-events-none opacity-40"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(182,95,200,0.5), transparent 70%)",
-            }}
-          />
+      <DialogContent
+        hideClose
+        className="p-0 border-0 bg-transparent shadow-none w-[calc(100vw-32px)] max-w-[897px] sm:w-[897px]"
+      >
+        <div
+          className="relative bg-[#110a2b] border border-[#8b3efe] rounded-[7px] overflow-hidden"
+          style={{ minHeight: "487px" }}
+        >
+          <button
+            onClick={() => handleOpenChange(false)}
+            className="absolute top-[25px] right-[25px] w-[34px] h-[34px] flex items-center justify-center text-white/70 hover:text-white transition-colors z-10"
+            aria-label="Close"
+            data-testid="proof-modal-close"
+          >
+            <X className="w-[22px] h-[22px]" strokeWidth={1.5} />
+          </button>
 
-          <div className="relative px-6 pt-6 pb-5">
-            <DialogHeader className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#8b3efe] to-[#b65fc8] flex items-center justify-center shadow-lg shadow-purple-500/40">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <DialogTitle className="text-base font-bold text-white">
-                  Proof of Action
-                </DialogTitle>
+          <div className="px-[34px] pt-[40px] pb-[40px]">
+            <h2 className="text-[#e0e2ea] font-bold text-[24px] sm:text-[30px] leading-[48px] tracking-[-1.2px]">
+              Proof of Action
+            </h2>
+
+            <p className="text-[#cdc2d8] text-[14px] sm:text-[16px] font-medium leading-[26px] mt-2 max-w-[501px]">
+              Create a structured claim using semantic triples to prove task completion. The system validates your claim after staking. Only valid claims unlock XP rewards.
+            </p>
+
+            <div className="mt-8 flex flex-col lg:flex-row gap-6 lg:gap-[71px]">
+              <div className="flex-1 min-w-0 space-y-5">
+                <TripleField
+                  label="SUBJECT"
+                  labelColor="#8b3efe"
+                  borderColor="#8b3efe"
+                  infoIcon={infoSubjectImg}
+                  avatarType="image"
+                  avatarSrc={subjectAvatarImg}
+                  value={subjectLabel}
+                />
+                <TripleField
+                  label="PREDICATE"
+                  labelColor="#b65fc8"
+                  borderColor="#b65fc8"
+                  infoIcon={infoPredicateImg}
+                  avatarType="check"
+                  avatarSrc={predicateCheckImg}
+                  value={PREDICATE}
+                />
+                <TripleField
+                  label="OBJECT"
+                  labelColor="#00e1a2"
+                  borderColor="#00e1a2"
+                  infoIcon={infoObjectImg}
+                  avatarType="icon"
+                  avatarSrc={objectIcon}
+                  value={objectLabel}
+                />
+
+                {error && (
+                  <div className="flex items-start gap-2 rounded-[14px] border border-red-500/40 bg-red-500/10 px-3 py-2">
+                    <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-[12px] text-red-300 leading-snug break-words">
+                      {error}
+                    </p>
+                  </div>
+                )}
               </div>
-              <DialogDescription className="text-white/60 text-xs leading-relaxed">
-                Stake a triple on-chain to record your action and unlock your XP.
-                {sourceLabel ? ` (${sourceLabel})` : ""}
-              </DialogDescription>
-            </DialogHeader>
-          </div>
 
-          <div className="relative px-6 pb-4 space-y-2.5">
-            <TripleCell label="Subject" value={subjectLabel} accent="purple" />
-            <TripleCell label="Predicate" value={PREDICATE} accent="pink" />
-            <TripleCell label="Object" value={objectLabel} accent="teal" />
-          </div>
+              <div className="w-full lg:w-[309px] shrink-0">
+                <div className="bg-[#110a2b] border border-[#393b60] rounded-[16px] p-5 space-y-4">
+                  <div>
+                    <h3 className="text-[#e0e2ea] font-semibold text-[16px] leading-[28px]">
+                      Stake on this Claim
+                    </h3>
+                    <p className="text-[#cdc2d8] text-[10px] leading-[16px] mt-1">
+                      Support this claim by with measurable $TRUST value.
+                    </p>
+                  </div>
 
-          <div className="relative mx-6 mb-4 rounded-xl bg-[#1a0f3d] border border-purple-500/20 p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[#00e1a2]/15 border border-[#00e1a2]/30 flex items-center justify-center flex-shrink-0">
-                <Coins className="w-4 h-4 text-[#00e1a2]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-[10px] uppercase tracking-wider text-white/40 font-medium">
-                    Stake amount
-                  </span>
+                  <div className="h-px bg-[#393b60]" />
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[rgba(255,255,255,0.6)] text-[10px] font-bold tracking-[1px] uppercase">
+                        Initial Deposit
+                      </span>
+                      <span className="text-[rgba(255,255,255,0.6)] text-[12px] font-semibold">
+                        0 TRUST
+                      </span>
+                    </div>
+                    <div className="bg-[rgba(6,2,16,0.6)] border border-[rgba(131,58,253,0.5)] rounded-[8px] h-[40px] px-[18px] flex items-center justify-between">
+                      <span className="text-[rgba(255,255,255,0.42)] text-[12px] font-semibold">
+                        {stakeTrust}
+                      </span>
+                      <span className="text-[rgba(255,255,255,0.42)] text-[12px] font-semibold">
+                        min
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-[rgba(6,2,16,0.6)] border border-[rgba(131,58,253,0.5)] rounded-[8px] p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[rgba(255,255,255,0.42)] text-[12px] font-semibold leading-[20px]">
+                        Triple Cost
+                      </span>
+                      <span className="text-[rgba(255,255,255,0.42)] text-[12px] font-semibold leading-[20px]">
+                        {TRIPLE_COST}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[rgba(255,255,255,0.42)] text-[12px] font-semibold leading-[20px]">
+                        Initial Deposit
+                      </span>
+                      <span className="text-[rgba(255,255,255,0.42)] text-[12px] font-semibold leading-[20px]">
+                        {INITIAL_DEPOSIT_TOTAL}
+                      </span>
+                    </div>
+                    <div className="h-px bg-[#393b60] my-1" />
+                    <div className="flex items-start justify-between">
+                      <span className="text-[#e0e2ea] text-[14px] font-bold leading-[24px]">
+                        Total
+                      </span>
+                      <div className="text-right">
+                        <div className="text-[#d4bbff] text-[14px] font-bold leading-[28px]">
+                          {stakeTrust} $TRUST
+                        </div>
+                        <div className="text-[#968da1] text-[8px] leading-[15px]">
+                          &asymp; {stakeUsd} USD
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {typeof xpReward !== "undefined" && (
-                    <span className="text-[10px] font-semibold text-[#00e1a2]">
-                      +{xpReward} XP
-                    </span>
+                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#00e1a2] font-semibold">
+                      <span>Unlocks +{xpReward} XP</span>
+                    </div>
                   )}
+
+                  <button
+                    onClick={handleStake}
+                    disabled={staking || staked}
+                    data-testid="proof-modal-deposit"
+                    className={`w-full h-[40px] rounded-[100px] font-semibold text-[14px] flex items-center justify-center gap-2 transition-all duration-200 ${
+                      staked
+                        ? "bg-[#00e1a2] text-black"
+                        : staking
+                          ? "bg-white/60 text-black/60 cursor-wait"
+                          : "bg-white text-black hover:bg-white/90 active:scale-[0.99]"
+                    }`}
+                  >
+                    {staked ? (
+                      <>
+                        <Check className="w-4 h-4" strokeWidth={3} />
+                        Claimed
+                      </>
+                    ) : staking ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Staking…
+                      </>
+                    ) : (
+                      "Deposit"
+                    )}
+                  </button>
                 </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-bold text-white">{stakeTrust}</span>
-                  <span className="text-xs font-medium text-white/60">TRUST</span>
-                  {stakeUsd && (
-                    <span className="text-[11px] text-white/40">
-                      &asymp; {stakeUsd}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[10px] text-white/40 mt-1 leading-snug">
-                  Funds go to the triple vault. You can redeem your stake later.
-                </p>
               </div>
             </div>
-          </div>
-
-          {error && (
-            <div className="relative mx-6 mb-3 rounded-lg bg-red-500/10 border border-red-500/30 px-3 py-2 flex items-start gap-2">
-              <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-[11px] text-red-300 leading-snug break-words">{error}</p>
-            </div>
-          )}
-
-          <div className="relative px-6 pb-6 pt-1">
-            <button
-              onClick={handleStake}
-              disabled={staking || staked}
-              className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
-                staked
-                  ? "bg-[#00e1a2]/20 border border-[#00e1a2]/40 text-[#00e1a2] cursor-default"
-                  : staking
-                    ? "bg-white/5 border border-white/10 text-white/50 cursor-wait"
-                    : "bg-gradient-to-r from-[#8b3efe] to-[#b65fc8] text-white hover:shadow-[0_0_24px_rgba(139,62,254,0.6)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
-              }`}
-            >
-              {staked ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  Claimed
-                </>
-              ) : staking ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Staking on-chain...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  Stake &amp; Claim XP
-                </>
-              )}
-            </button>
-            {!staking && !staked && (
-              <button
-                onClick={() => onOpenChange(false)}
-                className="w-full mt-2 py-2 text-[11px] font-medium text-white/40 hover:text-white/70 transition-colors"
-              >
-                Not now
-              </button>
-            )}
           </div>
         </div>
       </DialogContent>
@@ -225,28 +289,72 @@ export default function ProofOfActionModal({
   );
 }
 
-interface TripleCellProps {
+interface TripleFieldProps {
   label: string;
+  labelColor: string;
+  borderColor: string;
+  infoIcon: string;
+  avatarType: "image" | "check" | "icon";
+  avatarSrc: string;
   value: string;
-  accent: "purple" | "pink" | "teal";
 }
 
-function TripleCell({ label, value, accent }: TripleCellProps) {
-  const accentMap: Record<TripleCellProps["accent"], { bar: string; text: string }> = {
-    purple: { bar: "bg-[#8b3efe]", text: "text-[#c8a8ff]" },
-    pink: { bar: "bg-[#b65fc8]", text: "text-[#e5b5f0]" },
-    teal: { bar: "bg-[#00e1a2]", text: "text-[#7affd5]" },
-  };
-  const { bar, text } = accentMap[accent];
+function TripleField({
+  label,
+  labelColor,
+  borderColor,
+  infoIcon,
+  avatarType,
+  avatarSrc,
+  value,
+}: TripleFieldProps) {
   return (
-    <div className="flex items-stretch rounded-lg bg-white/[0.03] border border-white/5 overflow-hidden">
-      <div className={`w-1 ${bar}`} />
-      <div className="flex-1 px-3 py-2.5 min-w-0">
-        <div className={`text-[9px] uppercase tracking-[0.14em] font-semibold ${text} mb-0.5`}>
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <span
+          className="text-[12px] font-semibold tracking-[1px] uppercase leading-[15px]"
+          style={{ color: labelColor }}
+        >
           {label}
-        </div>
-        <div className="text-sm font-medium text-white truncate">{value}</div>
+        </span>
+        <img src={infoIcon} alt="" className="w-[14px] h-[14px] opacity-80" />
       </div>
+      <div
+        className="flex items-center gap-[14px] bg-[rgba(10,14,19,0.7)] rounded-[14px] px-[10px] py-[6px] h-[44px]"
+        style={{ border: `1px solid ${borderColor}` }}
+      >
+        <TripleAvatar type={avatarType} src={avatarSrc} />
+        <p className="text-white text-[14px] font-semibold leading-normal truncate flex-1 min-w-0">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+interface TripleAvatarProps {
+  type: "image" | "check" | "icon";
+  src: string;
+}
+
+function TripleAvatar({ type, src }: TripleAvatarProps) {
+  if (type === "image") {
+    return (
+      <div className="w-[32px] h-[32px] rounded-[90px] border-[0.2px] border-white/40 overflow-hidden flex-shrink-0">
+        <img src={src} alt="" className="w-full h-full object-cover" />
+      </div>
+    );
+  }
+  if (type === "check") {
+    return (
+      <div className="w-[32px] h-[32px] rounded-[40px] bg-[#0d0d0d] border-[0.2px] border-white/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <img src={src} alt="" className="w-[16px] h-[16px] object-contain" />
+      </div>
+    );
+  }
+  return (
+    <div className="w-[32px] h-[32px] rounded-[40px] bg-[#0d0d0d] border-[0.2px] border-white/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+      <img src={src} alt="" className="w-[18px] h-[18px] object-contain" />
     </div>
   );
 }
