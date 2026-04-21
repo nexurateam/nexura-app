@@ -1,5 +1,5 @@
-import { redeem, getMultiVaultAddressFromChainId, getAtomDetails, createTripleStatement, calculateAtomId, createAtomFromString } from "@0xintuition/sdk";
-import { Address, parseEther} from "viem";
+import { redeem, getMultiVaultAddressFromChainId, getAtomDetails, createTripleStatement, calculateAtomId, calculateTripleId, getTripleDetails, deposit, createAtomFromString } from "@0xintuition/sdk";
+import { Address, parseEther, toHex } from "viem";
 import { getWalletClient, getPublicClient } from "../lib/viem";
 import { apiRequestV2 } from "../lib/queryClient";
 import chain from "../lib/chain";
@@ -89,7 +89,9 @@ export const createProofOfAction = async ({
   const resolveAtom = async (label: string): Promise<Address> => {
     const known = KNOWN_ATOM_IDS[label];
     if (known) return known;
-    const atomId = calculateAtomId(label as Address);
+    // createAtomFromString stores atomData as toHex(label); match that here
+    // so calculateAtomId produces the same id as what the contract indexes.
+    const atomId = calculateAtomId(toHex(label));
     const exists = await getAtomDetails(atomId);
     if (exists) return atomId;
     const { state: { termId } } = await createAtomFromString(
@@ -103,6 +105,25 @@ export const createProofOfAction = async ({
   const predicate = await resolveAtom(predicateString);
   const object = await resolveAtom(objectString);
 
+  const stakeAmount = parseEther('0.1');
+
+  // If the triple (subject, predicate, object) already exists, stake into it
+  // via deposit. Otherwise create the triple with the initial deposit.
+  const tripleId = calculateTripleId(subject, predicate, object);
+  const existingTriple = await getTripleDetails(tripleId);
+
+  if (existingTriple) {
+    const account = walletClient.account!.address;
+    const { transactionHash } = await deposit(
+      { walletClient, publicClient, address },
+      {
+        args: [account, tripleId, 0n, 0n],
+        value: stakeAmount,
+      }
+    );
+    return transactionHash;
+  }
+
   const { transactionHash } = await createTripleStatement(
     { walletClient, publicClient, address },
     {
@@ -110,9 +131,9 @@ export const createProofOfAction = async ({
         [subject],
         [predicate],
         [object],
-        [parseEther('0.1')],
+        [stakeAmount],
       ],
-      value: parseEther('0.1'),
+      value: stakeAmount,
     }
   );
 
