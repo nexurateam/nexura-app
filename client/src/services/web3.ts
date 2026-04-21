@@ -62,6 +62,14 @@ export const sellShares = async (sharesAmount: string, termId: Address, curveId:
   return transactionHash;
 };
 
+// Known on-chain Intuition atom IDs — reuse these verbatim instead of
+// hashing + creating, to guarantee we bind to the existing atoms.
+const KNOWN_ATOM_IDS: Record<string, Address> = {
+  I: "0x7ab197b346d386cd5926dbfeeb85dade42f113c7ed99ff2046a5123bb5cd016b",
+  Completed: "0x2d864f0214db084b5420de2a72acaddae82d56d9e6e9fed7ecbab3d9f6afc1fe",
+  Explored: "0xd211ec9dd52be828be3d3256841485ff54370ec9463cdb0473cf8de9971cbefa",
+};
+
 export const createProofOfAction = async ({
   subjectString = "I",
   predicateString = "Completed",
@@ -79,6 +87,8 @@ export const createProofOfAction = async ({
   const address = getMultiVaultAddressFromChainId(walletClient.chain?.id!);
 
   const resolveAtom = async (label: string): Promise<Address> => {
+    const known = KNOWN_ATOM_IDS[label];
+    if (known) return known;
     const atomId = calculateAtomId(label as Address);
     const exists = await getAtomDetails(atomId);
     if (exists) return atomId;
