@@ -482,6 +482,7 @@ export default function QuestEnvironment() {
         xpReward={totalXP}
         sourceLabel="Quest"
         onSuccess={finalizeQuestReward}
+        alreadyClaimed={completed}
       />
     </div>
   );

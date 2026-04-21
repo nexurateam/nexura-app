@@ -23,6 +23,7 @@ interface ProofOfActionModalProps {
   stakeUsd?: string;
   onSuccess: (txHash: string) => Promise<void> | void;
   sourceLabel?: string;
+  alreadyClaimed?: boolean;
 }
 
 const SUBJECT = "I";
@@ -50,19 +51,24 @@ export default function ProofOfActionModal({
   stakeUsd = "$214.20",
   onSuccess,
   sourceLabel,
+  alreadyClaimed = false,
 }: ProofOfActionModalProps) {
   const { toast } = useToast();
   const [staking, setStaking] = useState(false);
-  const [staked, setStaked] = useState(false);
+  const [staked, setStaked] = useState(alreadyClaimed);
   const [txHash, setTxHash] = useState<string>("");
 
   useEffect(() => {
     if (!open) {
       setStaking(false);
-      setStaked(false);
+      setStaked(alreadyClaimed);
       setTxHash("");
     }
-  }, [open]);
+  }, [open, alreadyClaimed]);
+
+  useEffect(() => {
+    if (alreadyClaimed) setStaked(true);
+  }, [alreadyClaimed]);
 
   const objectName = object?.trim();
   const objectLabel = objectName ? `${objectName} on nexura` : "this action on nexura";
@@ -70,7 +76,7 @@ export default function ProofOfActionModal({
   const objectIcon = resolveObjectIcon(sourceLabel);
 
   const handleStake = async () => {
-    if (staking || staked) return;
+    if (staking || staked || alreadyClaimed) return;
     if (!objectName) {
       toast({
         title: "Stake failed",

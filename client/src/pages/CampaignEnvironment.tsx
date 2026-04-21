@@ -748,6 +748,7 @@ export default function CampaignEnvironment() {
         object={title || "this campaign"}
         sourceLabel="Campaign"
         onSuccess={finalizeCampaignReward}
+        alreadyClaimed={Boolean(campaignCompleted)}
       />
     </div>
   )

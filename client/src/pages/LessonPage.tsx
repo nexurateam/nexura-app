@@ -1024,6 +1024,7 @@ export default function LessonPage() {
         xpReward={lesson?.reward}
         sourceLabel="Lesson"
         onSuccess={finalizeLessonXpClaim}
+        alreadyClaimed={Boolean(lesson?.done)}
       />
 
       {/* Lesson Complete modal — matches Figma design */}
