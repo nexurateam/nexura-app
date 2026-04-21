@@ -350,8 +350,7 @@ export default function EcosystemDapps() {
       <ProofOfActionModal
         open={!!proofModalDapp}
         onOpenChange={(o) => { if (!o) setProofModalDapp(null); }}
-        subject={(user as any)?.username || (user as any)?.usernaeme || ""}
-        object={proofModalDapp?.name ? `${proofModalDapp.name} dApp` : "this dApp"}
+        object={proofModalDapp?.name || "this dApp"}
         xpReward={proofModalDapp ? getXpFromReward(proofModalDapp.reward) : undefined}
         sourceLabel="Ecosystem"
         onSuccess={finalizeDappClaim}

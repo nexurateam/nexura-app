@@ -62,46 +62,36 @@ export const sellShares = async (sharesAmount: string, termId: Address, curveId:
   return transactionHash;
 };
 
-export const createProofOfAction = async ({ username, objectString }: { username: string, objectString: string }) => {
+export const createProofOfAction = async ({
+  subjectString = "I",
+  predicateString = "Completed",
+  objectString,
+}: {
+  subjectString?: string;
+  predicateString?: string;
+  objectString: string;
+}) => {
   const walletClient = await getWalletClient();
   const publicClient = getPublicClient();
-  
+
   await walletClient.switchChain({ id: chain.id });
 
   const address = getMultiVaultAddressFromChainId(walletClient.chain?.id!);
 
-  let subject: Address;
-  let object: Address;
-
-  const predicate = "0x2d864f0214db084b5420de2a72acaddae82d56d9e6e9fed7ecbab3d9f6afc1fe";
-
-  const subjectAtomId = calculateAtomId(username as Address);
-  const subjectExists = await getAtomDetails(subjectAtomId);
-
-  if (!subjectExists) {
+  const resolveAtom = async (label: string): Promise<Address> => {
+    const atomId = calculateAtomId(label as Address);
+    const exists = await getAtomDetails(atomId);
+    if (exists) return atomId;
     const { state: { termId } } = await createAtomFromString(
       { walletClient, publicClient, address },
-      username
+      label
     );
+    return termId;
+  };
 
-    subject = termId;
-  } else {
-    subject = subjectAtomId;
-  }
-
-  const objectAtomId = calculateAtomId(objectString as Address);
-  const objectExists = await getAtomDetails(objectAtomId);
-
-  if (!objectExists) {
-    const { state: { termId } } = await createAtomFromString(
-      { walletClient, publicClient, address },
-      objectString
-    );
-
-    object = termId;
-  } else {
-    object = objectAtomId;
-  }
+  const subject = await resolveAtom(subjectString);
+  const predicate = await resolveAtom(predicateString);
+  const object = await resolveAtom(objectString);
 
   const { transactionHash } = await createTripleStatement(
     { walletClient, publicClient, address },

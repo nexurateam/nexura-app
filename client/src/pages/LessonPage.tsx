@@ -1020,7 +1020,6 @@ export default function LessonPage() {
       <ProofOfActionModal
         open={showProofModal}
         onOpenChange={setShowProofModal}
-        subject={user?.username || user?.usernaeme || ""}
         object={lesson?.title || "this lesson"}
         xpReward={lesson?.reward}
         sourceLabel="Lesson"

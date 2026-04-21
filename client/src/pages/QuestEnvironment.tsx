@@ -478,7 +478,6 @@ export default function QuestEnvironment() {
       <ProofOfActionModal
         open={showProofModal}
         onOpenChange={setShowProofModal}
-        subject={(user as any)?.username || (user as any)?.usernaeme || ""}
         object={title || "this quest"}
         xpReward={totalXP}
         sourceLabel="Quest"

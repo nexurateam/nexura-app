@@ -745,7 +745,6 @@ export default function CampaignEnvironment() {
       <ProofOfActionModal
         open={showProofModal}
         onOpenChange={setShowProofModal}
-        subject={(user as any)?.username || (user as any)?.usernaeme || ""}
         object={title || "this campaign"}
         sourceLabel="Campaign"
         onSuccess={finalizeCampaignReward}

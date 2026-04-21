@@ -16,7 +16,6 @@ import infoObjectImg from "../assets/proof-modal/info-object.svg";
 interface ProofOfActionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  subject: string;
   object: string;
   xpReward?: number | string;
   stakeTrust?: string;
@@ -25,7 +24,7 @@ interface ProofOfActionModalProps {
   sourceLabel?: string;
 }
 
-const PREDICATE = "Completed";
+const SUBJECT = "I";
 const TRIPLE_COST = "50.00 $TRUST";
 const INITIAL_DEPOSIT_TOTAL = "1,000.00 $TRUST";
 
@@ -37,10 +36,15 @@ function resolveObjectIcon(sourceLabel?: string): string {
   return learnIconImg;
 }
 
+function resolvePredicate(sourceLabel?: string): string {
+  const key = (sourceLabel || "").toLowerCase();
+  if (key.includes("ecosystem") || key.includes("dapp")) return "Explored";
+  return "Completed";
+}
+
 export default function ProofOfActionModal({
   open,
   onOpenChange,
-  subject,
   object,
   xpReward,
   stakeTrust = "0.10",
@@ -61,17 +65,14 @@ export default function ProofOfActionModal({
     }
   }, [open]);
 
-  const subjectLabel = subject?.trim() || "I";
-  const objectLabel = object?.trim() || "this action";
+  const objectName = object?.trim();
+  const objectLabel = objectName ? `${objectName} on nexura` : "this action on nexura";
+  const predicateLabel = resolvePredicate(sourceLabel);
   const objectIcon = resolveObjectIcon(sourceLabel);
 
   const handleStake = async () => {
     if (staking || staked) return;
-    if (!subject?.trim()) {
-      setError("Wallet username not found. Please reconnect your wallet.");
-      return;
-    }
-    if (!object?.trim()) {
+    if (!objectName) {
       setError("Missing action context. Please try again.");
       return;
     }
@@ -81,7 +82,8 @@ export default function ProofOfActionModal({
 
     try {
       const txHash = await createProofOfAction({
-        username: subject,
+        subjectString: SUBJECT,
+        predicateString: predicateLabel,
         objectString: objectLabel,
       });
       setStaked(true);
@@ -151,7 +153,7 @@ export default function ProofOfActionModal({
                   infoIcon={infoSubjectImg}
                   avatarType="image"
                   avatarSrc={subjectAvatarImg}
-                  value={subjectLabel}
+                  value={SUBJECT}
                 />
                 <TripleField
                   label="PREDICATE"
@@ -160,7 +162,7 @@ export default function ProofOfActionModal({
                   infoIcon={infoPredicateImg}
                   avatarType="check"
                   avatarSrc={predicateCheckImg}
-                  value={PREDICATE}
+                  value={predicateLabel}
                 />
                 <TripleField
                   label="OBJECT"
