@@ -298,7 +298,9 @@ export default function ClaimDetails() {
         pos?.direction === mainTab
     );
 
-    return up ? Number(formatEther(BigInt(parseInt(up.shares ?? "0")))) : 0;
+    console.log({ hj: up?.shares });
+
+    return up ? Number(formatEther(BigInt(parseInt(up.shares) > 0 ? up.shares : 0))) : 0;
   }, [userPositions, user, growthType, mainTab]);
 
   const hasOppositePosition = useMemo(() => {
@@ -413,7 +415,8 @@ export default function ClaimDetails() {
       if (isBuy) {
         transactionHash = await buyShares({ buyAmount, termId: termId as Address, curveId, isApproved: user.isApproved});
       } else {
-        await sellShares(sellAmount, termId as Address, curveId);
+        console.log({ sellAmount });
+        transactionHash = await sellShares(sellAmount, termId as Address, curveId);
       }
 
       await apiRequestV2("POST", "/api/user/update-claims", { transactionHash, action: isBuy ? "buy" : "sell" });
