@@ -370,12 +370,18 @@ export default function Campaigns() {
             </span>
           </div>
 
-          <div className="flex flex-row justify-between text-xs items-center">
-            <span className="text-gray-500">Reward:</span>
-            <span className="text-white flex items-center gap-1 text-right">
-              {hasTrustReward ? `${trustReward} TRUST + ${campaign.reward.xp} XP` : `${campaign.reward.xp} XP`}
-            </span>
-          </div>
+          {(Number(campaign.reward?.xp) > 0 || hasTrustReward) && (
+            <div className="flex flex-row justify-between text-xs items-center">
+              <span className="text-gray-500">Reward:</span>
+              <span className="text-white flex items-center gap-1 text-right">
+                {hasTrustReward && Number(campaign.reward?.xp) > 0
+                  ? `${trustReward} TRUST + ${campaign.reward.xp} XP`
+                  : hasTrustReward
+                  ? `${trustReward} TRUST`
+                  : `${campaign.reward.xp} XP`}
+              </span>
+            </div>
+          )}
 
           {campaign.reward.pool && (
             <div className="flex flex-row justify-between text-xs items-center">

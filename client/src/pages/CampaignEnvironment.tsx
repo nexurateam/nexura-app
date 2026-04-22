@@ -466,12 +466,14 @@ export default function CampaignEnvironment() {
               </div>
             </button>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              <p className="text-[0.65rem] sm:text-sm opacity-70 uppercase">Total XP</p>
-              <div className="bg-purple-600/30 border border-purple-500/40 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full flex items-center gap-1 sm:gap-2">
-                <span className="font-bold text-xs sm:text-sm">{reward.xp} XP</span>
+            {Number(reward.xp) > 0 && (
+              <div className="flex items-center gap-2 sm:gap-3">
+                <p className="text-[0.65rem] sm:text-sm opacity-70 uppercase">Total XP</p>
+                <div className="bg-purple-600/30 border border-purple-500/40 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full flex items-center gap-1 sm:gap-2">
+                  <span className="font-bold text-xs sm:text-sm">{reward.xp} XP</span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="w-full bg-white/10 h-2 sm:h-3 rounded-full overflow-hidden mt-2 sm:mt-3">
@@ -507,10 +509,18 @@ export default function CampaignEnvironment() {
                     {title || subTitle || description || "Complete quests in this campaign and earn rewards."}
                   </p>
                 </div>
-                <div className="mt-3 space-y-1">
-                  <p className="text-xs opacity-50 uppercase">Rewards</p>
-                  <p className="text-sm">{hasTrustReward ? `${reward.xp} XP + ${trustReward} $TRUST` : `${reward.xp} XP`}</p>
-                </div>
+                {(Number(reward.xp) > 0 || hasTrustReward) && (
+                  <div className="mt-3 space-y-1">
+                    <p className="text-xs opacity-50 uppercase">Rewards</p>
+                    <p className="text-sm">
+                      {hasTrustReward && Number(reward.xp) > 0
+                        ? `${reward.xp} XP + ${trustReward} $TRUST`
+                        : hasTrustReward
+                        ? `${trustReward} $TRUST`
+                        : `${reward.xp} XP`}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <Button
