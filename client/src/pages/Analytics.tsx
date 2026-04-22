@@ -27,6 +27,7 @@ interface AnalyticsData {
   claimsCreated: number;
   claimsBought: number;
   payments: number;
+  others: number;
   totalQuests: number;
   totalQuestsCompleted: number;
   totalCampaignsCompleted: number;
@@ -107,7 +108,7 @@ export default function Analytics() {
   const claimsCount = data?.claimsBought ?? 0;
   const paymentsCount = data?.payments ?? 0;
   const nexonsMintedCount = Math.max(0, onchainInteractions - claimsCount - paymentsCount);
-  const othersCount = 0;
+  const othersCount = data?.others ?? 0;
   const totalTransactions = claimsCount + paymentsCount + nexonsMintedCount + othersCount;
 
   const transactionsData = [
