@@ -26,8 +26,6 @@ const DISCORD_CAMPAIGN_TAGS = new Set([
 const isDiscordCampaignTask = (task: Record<string, any>) =>
   DISCORD_CAMPAIGN_TAGS.has(String(task?.tag ?? "").trim()) || String(task?.category ?? "").trim() === "discord";
 
-const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
 const ONGOING_CAMPAIGN_STATUSES = ["Active", "Scheduled"] as const;
 
 const getDiscordQuestGuildIdsForCampaigns = async (campaignIds: string[]) => {
@@ -105,9 +103,7 @@ export const createHub = async (req: GlobalRequest, res: GlobalResponse) => {
 
     const name = String(req.body.name ?? "").trim();
 
-    const nameExists = await hub.exists({
-      name: { $regex: `^${escapeRegex(name)}$`, $options: "i" },
-    });
+    const nameExists = await hub.exists({ name });
     if (nameExists) {
       res.status(BAD_REQUEST).json({ error: "name is already in use" });
       return;
@@ -339,7 +335,7 @@ export const updateHub = async (req: GlobalRequest, res: GlobalResponse) => {
     const trimmedName = typeof name === "string" ? name.trim() : undefined;
     if (trimmedName) {
       const nameExists = await hub.exists({
-        name: { $regex: `^${escapeRegex(trimmedName)}$`, $options: "i" },
+        name: trimmedName,
         _id: { $ne: req.admin.hub },
       });
 
