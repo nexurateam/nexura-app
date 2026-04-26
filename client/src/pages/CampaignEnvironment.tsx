@@ -37,7 +37,23 @@ type Quest = {
   };
   hub?: string;
   done: boolean;
+  feedbackCharLimit?: number;
 };
+
+// Minimum characters required on a feedback submission. Sourced from the
+// admin-set `feedbackCharLimit` on the quest; falls back to 200 only when
+// the field is missing on legacy quests created before per-quest limits
+// existed. Coerces strings just in case the server returns a string.
+const FEEDBACK_MIN_FALLBACK = 200;
+function resolveFeedbackMinChars(quest: Quest): number {
+  const raw = (quest as { feedbackCharLimit?: unknown }).feedbackCharLimit;
+  const n = typeof raw === "number" ? raw : Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : FEEDBACK_MIN_FALLBACK;
+}
+
+// Hard upper bound on what the textarea will accept. Comfortably above
+// any sensible admin-set minimum so the user is never accidentally capped.
+const FEEDBACK_MAX_CHARS = 5000;
 
 type HubInfo = {
   id?: string;
@@ -631,7 +647,7 @@ export default function CampaignEnvironment() {
                       {isFeedback ? (
                         <>
                           {(() => {
-                            const minChars = Number((quest as any).feedbackCharLimit) > 0 ? Number((quest as any).feedbackCharLimit) : 200;
+                            const minChars = resolveFeedbackMinChars(quest);
                             const currentLength = proofLinks[quest._id]?.length || 0;
                             return (
                               <>
@@ -640,7 +656,7 @@ export default function CampaignEnvironment() {
                                   value={proofLinks[quest._id] || ""}
                                   onChange={(e) => setProofLinks({ ...proofLinks, [quest._id]: e.target.value })}
                                   rows={5}
-                                  maxLength={Math.max(2000, minChars)}
+                                  maxLength={Math.max(FEEDBACK_MAX_CHARS, minChars)}
                                   className="w-full bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-purple-500 resize-none"
                                 />
                                 <div className="flex items-center justify-between">
@@ -663,13 +679,13 @@ export default function CampaignEnvironment() {
                       )}
                       <button
                         onClick={() => {
-                          const minChars = Number((quest as any).feedbackCharLimit) > 0 ? Number((quest as any).feedbackCharLimit) : 200;
+                          const minChars = resolveFeedbackMinChars(quest);
                           if (isFeedback && (proofLinks[quest._id]?.length || 0) < minChars) {
                             return;
                           }
                           retryQuests.includes(quest._id) ? retryQuest(quest) : submitCommentProof(quest);
                         }}
-                        disabled={isFeedback && (proofLinks[quest._id]?.length || 0) < (Number((quest as any).feedbackCharLimit) > 0 ? Number((quest as any).feedbackCharLimit) : 200)}
+                        disabled={isFeedback && (proofLinks[quest._id]?.length || 0) < (resolveFeedbackMinChars(quest))}
                         className="w-full bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isFeedback ? "Submit Feedback" : "Submit for Review"}
