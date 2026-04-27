@@ -37,7 +37,38 @@ type Quest = {
   };
   hub?: string;
   done: boolean;
+  feedbackCharLimit?: number;
+  feedbackMaxChars?: number;
 };
+
+// Per-quest character bounds for feedback submissions. The minimum gates
+// the submit button; the maximum is the hard cap on what the textarea
+// accepts. Both are admin-configurable from the dashboard. Fallbacks
+// kick in only for legacy quests created before per-quest limits existed.
+const FEEDBACK_MIN_FALLBACK = 10;
+const FEEDBACK_MAX_FALLBACK = 500;
+
+function readPositiveInt(value: unknown, fallback: number): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
+
+function resolveFeedbackMinChars(quest: Quest): number {
+  return readPositiveInt(
+    (quest as { feedbackCharLimit?: unknown }).feedbackCharLimit,
+    FEEDBACK_MIN_FALLBACK,
+  );
+}
+
+function resolveFeedbackMaxChars(quest: Quest): number {
+  const min = resolveFeedbackMinChars(quest);
+  const max = readPositiveInt(
+    (quest as { feedbackMaxChars?: unknown }).feedbackMaxChars,
+    FEEDBACK_MAX_FALLBACK,
+  );
+  // Guard against admins setting max <= min — keep the textarea usable.
+  return Math.max(max, min);
+}
 
 type HubInfo = {
   id?: string;
@@ -631,21 +662,22 @@ export default function CampaignEnvironment() {
                       {isFeedback ? (
                         <>
                           {(() => {
-                            const minChars = Number((quest as any).feedbackCharLimit) > 0 ? Number((quest as any).feedbackCharLimit) : 200;
+                            const minChars = resolveFeedbackMinChars(quest);
+                            const maxChars = resolveFeedbackMaxChars(quest);
                             const currentLength = proofLinks[quest._id]?.length || 0;
                             return (
                               <>
                                 <textarea
-                                  placeholder={`Write your feedback here (minimum ${minChars} characters)...`}
+                                  placeholder={`Write your feedback here (${minChars}–${maxChars} characters)...`}
                                   value={proofLinks[quest._id] || ""}
                                   onChange={(e) => setProofLinks({ ...proofLinks, [quest._id]: e.target.value })}
                                   rows={5}
-                                  maxLength={Math.max(2000, minChars)}
+                                  maxLength={maxChars}
                                   className="w-full bg-black/40 border border-white/20 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-purple-500 resize-none"
                                 />
                                 <div className="flex items-center justify-between">
                                   <p className={`text-xs ${currentLength < minChars ? "text-red-400" : "text-green-400"}`}>
-                                    {currentLength}/{minChars} characters minimum
+                                    {currentLength}/{maxChars} characters ({minChars} min)
                                   </p>
                                 </div>
                               </>
@@ -663,13 +695,13 @@ export default function CampaignEnvironment() {
                       )}
                       <button
                         onClick={() => {
-                          const minChars = Number((quest as any).feedbackCharLimit) > 0 ? Number((quest as any).feedbackCharLimit) : 200;
+                          const minChars = resolveFeedbackMinChars(quest);
                           if (isFeedback && (proofLinks[quest._id]?.length || 0) < minChars) {
                             return;
                           }
                           retryQuests.includes(quest._id) ? retryQuest(quest) : submitCommentProof(quest);
                         }}
-                        disabled={isFeedback && (proofLinks[quest._id]?.length || 0) < (Number((quest as any).feedbackCharLimit) > 0 ? Number((quest as any).feedbackCharLimit) : 200)}
+                        disabled={isFeedback && (proofLinks[quest._id]?.length || 0) < (resolveFeedbackMinChars(quest))}
                         className="w-full bg-gradient-to-r from-purple-700 via-purple-800 to-indigo-900 hover:from-purple-600 hover:via-purple-700 hover:to-indigo-800 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isFeedback ? "Submit Feedback" : "Submit for Review"}
