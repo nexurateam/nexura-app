@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import AnimatedBackground from "../../components/AnimatedBackground.tsx";
 import UserSidebar from "./UserSidebar.tsx";
 import { projectApiRequest, isProjectSignedIn } from "../../lib/projectApi";
-import { apiRequest } from "../../lib/config.ts";
 
 import {
   Dialog,
@@ -16,6 +15,7 @@ import {
 import { Button } from "../../components/ui/button";
 import { Check, X } from "lucide-react";
 import { TASKSS } from "../../types/admin";
+import QuestSubmissions from "../../components/admin/QuestsSubmissions.tsx";
 
 interface StudioDashboardProps {
   onLogout: () => void;
@@ -56,6 +56,15 @@ const activeTab: TabType =
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TASKSS | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const toggleUserSelection = (id: string) => {
+  setSelectedUsers(prev => {
+    const newSet = new Set(prev);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    return newSet;
+  });
+};
 
   // ---------------- FETCH QUESTS ----------------
   const fetchQuests = async () => {
@@ -132,7 +141,7 @@ const activeTab: TabType =
 const navigate = (tab: TabType) => {
   if (tab === "profile") setLocation("/user-dashboard/user-profile");
   if (tab === "quests") setLocation("/user-dashboard/quests-tab");
-  if (tab === "questSubmissions") setLocation("/user-dashboard/quest-submissions");
+  if (tab === "questSubmissions") setLocation("/user-dashboard");
 };
 
   return (
@@ -144,7 +153,6 @@ const navigate = (tab: TabType) => {
         {/* SIDEBAR */}
         <UserSidebar
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
         />
 
         {/* MAIN AREA */}
@@ -162,11 +170,20 @@ const navigate = (tab: TabType) => {
           {/* CONTENT */}
           <main className="flex-1 overflow-y-auto px-6 py-6">
 
-{/* {activeTab === "questSubmissions" && (
-  <div className="text-white text-2xl">
-    TEST STAT OVERVIEW
-  </div>
-)} */}
+            {activeTab === "questSubmissions" && (
+  <QuestSubmissions
+    tasks={questTasks}
+    loading={loading}
+    searchTerm={searchTerm}
+    setSearchTerm={setSearchTerm}
+    selectedUsers={selectedUsers}
+    viewedSubmissions={viewedSubmissions}
+    toggleUserSelection={toggleUserSelection}
+    handleView={handleView}
+    handleAction={handleAction}
+    onRefresh={fetchQuests}
+  />
+)}
 
             {activeTab === "quests" && (
               <div className="text-white">Quests Page</div>

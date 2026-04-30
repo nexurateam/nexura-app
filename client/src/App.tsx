@@ -62,7 +62,6 @@ import AnalyticsBackground from "./components/AnalyticsBackground.tsx"
 import UserDashboard from "./pages/studio/UserDashboard.tsx";
 import CreateNewQuests from "./components/admin/CreateNewQuest.tsx";
 import UserLayout from "./pages/studio/UserLayout.tsx";
-import QuestSubmissions from "./components/admin/QuestsSubmissions.tsx";
 
 function Router() {
    const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -118,11 +117,6 @@ function Router() {
       <Route path="/studio-dashboard">
         <StudioDashboard onLogout={handleLogout} />
       </Route>
-<Route path="/user-dashboard/quest-submissions">
-  <UserLayout title="Quest Submissions" onLogout={handleLogout}>
-    <QuestSubmissions/>
-  </UserLayout>
-</Route>
       <Route path="/studio-dashboard/dashboard">
         <StudioDashboard onLogout={handleLogout} />
       </Route>

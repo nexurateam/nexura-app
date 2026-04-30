@@ -12,12 +12,10 @@ type TabType =
 
 interface UserSidebarProps {
   activeTab: TabType;
-  setActiveTab: (tab: TabType) => void;
 }
 
 export default function UserSidebar({
   activeTab,
-  setActiveTab,
 }: UserSidebarProps) {
   const [, setLocation] = useLocation();
 
@@ -44,11 +42,10 @@ export default function UserSidebar({
   const routeByTab: Record<TabType, string> = {
     userProfile: "/user-dashboard/user-profile",
     questsTab: "/user-dashboard/quests-tab",
-    questSubmissions: "/user-dashboard/quest-submissions", 
+    questSubmissions: "/user-dashboard", 
   };
 
   const navigate = (id: TabType) => {
-    setActiveTab(id);
     setLocation(routeByTab[id]);
   };
 
