@@ -551,7 +551,7 @@ const quests = questsRaw.filter(isActiveQuest);
                     lesson={lesson}
                     title={title}
                     description={description}
-                    heroImage={lesson.project_image || "/lesson-1.png"}
+                    heroImage={lesson.coverImage || lesson.project_image || "/lesson-1.png"}
                   />
                 </div>
               );
