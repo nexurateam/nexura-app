@@ -12,7 +12,6 @@ import QuestCard from "../components/QuestCard";
 import EcosystemCard from "../components/EcosystemCard";
 // import AnalyticsBackground from "../components/AnalyticsBackground";
 import ReusableBackground from "../components/ReusableBackground";
-import { dummyCampaigns } from "../types/dummyCampaign";
 
 
 export default function Discover() {
@@ -119,12 +118,7 @@ export default function Discover() {
   },
 });
 
-// const campaignsToRender =
-//   trendingCampaigns && trendingCampaigns.length > 0
-//     ? trendingCampaigns
-//     : dummyCampaigns;
-
-const campaignsToRender = dummyCampaigns;
+const campaignsToRender = campaigns;
 
 const [dapps, setDapps] = useState<any[]>([]);
 
