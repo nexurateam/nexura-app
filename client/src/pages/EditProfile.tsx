@@ -269,7 +269,7 @@ const getFinalUsername = (name: string, mode: string) => {
   <div className="relative">
     <Input
       id="username"
-      value={name ? `${name}.trust` : ""}
+      value={name ? `${name}` : ""}
       disabled
     />
 
@@ -309,9 +309,15 @@ const getFinalUsername = (name: string, mode: string) => {
             </div>
           </>
         ) : (
-          <p className="text-xs text-red-400">
-            Oops — no .trust username is linked to this wallet.
-          </p>
+         <p className="text-xs text-red-400">
+        Oops, no .trust username was found for this address. If you want one, you can get your .trust username through{" "}
+        <a
+          href="https://tns.intuition.box"
+          className="text-purple-400 underline hover:text-purple-300"
+        >
+          TNS
+        </a>
+      </p>
         )}
       </div>
     )}
