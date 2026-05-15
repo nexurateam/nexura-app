@@ -884,59 +884,68 @@ const quests = questsRaw.filter(isActiveQuest);
   </Button>
 </div>
 
-    {/* EMPTY STATE */}
-    {!quests || quests.length === 0 ? (
-      <div className="rounded-2xl border border-white/10 bg-[#170F1F] p-6 text-center text-white/60 text-sm">
-        Quests coming soon...
-      </div>
-    ) : (
-      /* WIDE TICKER (3 cards visible) */
-      <div className="overflow-hidden">
-        <div
-          className={`flex gap-3 w-max ${
-            quests.length <= 3 ? "" : "animate-quest-scroll"
-          }`}
-        >
+{/* EMPTY STATE */}
+{!quests || quests.length === 0 ? (
+  <div className="w-full sm:w-auto -mx-3 sm:mx-0 rounded-none sm:rounded-2xl border border-white/10 bg-[#170F1F] p-6 text-center text-white/60 text-sm">
+    Quests coming soon...
+  </div>
+) : (
+  /* WIDE TICKER */
+  <div className="overflow-hidden">
 
-          {(quests.length <= 3 ? quests : [...quests, ...quests]).map(
-            (quest: any, i: number) => {
-              const title = quest.title || "Untitled Quest";
+    <div
+      className={`flex gap-3 w-max ${
+        quests.length <= 3 ? "" : "animate-quest-scroll"
+      }`}
+    >
 
-              const description =
-                quest.description ||
-                quest.sub_title ||
-                "No description available";
+      {(quests.length <= 3
+        ? quests
+        : [...quests, ...quests]
+      ).map((quest: any, i: number) => {
+        const title = quest.title || "Untitled Quest";
 
-              const project =
-                quest.projectName ||
-                quest.project_name ||
-                "Unknown";
+        const description =
+          quest.description ||
+          quest.sub_title ||
+          "No description available";
 
-              return (
-                <div
-                  key={`${quest._id}-${i}`}
-                  className="w-[280px] sm:w-[320px] md:w-[360px] shrink-0"
-                >
-                  <QuestCard
-                    questId={quest._id}
-                    title={title}
-                    description={description}
-                    creatorName={project}
-                    creatorLogo={quest.project_image || "/quest-1.png"}
-                    heroImage={quest.projectCoverImage || "/quest-1.png"}
-                    rewards={`${quest.reward || quest.rewards || 0} XP`}
-                    starts_at={quest.starts_at}
-                    ends_at={quest.ends_at}
-                    participants={quest.participants}
-                  />
-                </div>
-              );
-            }
-          )}
+        const project =
+          quest.projectName ||
+          quest.project_name ||
+          "Unknown";
 
-        </div>
-      </div>
-    )}
+        return (
+          <div
+            key={`${quest._id}-${i}`}
+            className="
+              w-[280px]
+              sm:w-[320px]
+              md:w-[360px]
+              shrink-0
+            "
+          >
+            <QuestCard
+              questId={quest._id}
+              title={title}
+              description={description}
+              creatorName={project}
+              creatorLogo={quest.project_image || "/quest-1.png"}
+              heroImage={quest.projectCoverImage || "/quest-1.png"}
+              rewards={`${quest.reward || quest.rewards || 0} XP`}
+              starts_at={quest.starts_at}
+              ends_at={quest.ends_at}
+              participants={quest.participants}
+            />
+          </div>
+        );
+      })}
+
+    </div>
+
+  </div>
+)}
+
   </section>
 )}
 
