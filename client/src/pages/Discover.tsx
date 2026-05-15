@@ -727,7 +727,7 @@ const quests = questsRaw.filter(isActiveQuest);
 {activeFilter === "all" && (
   <>
 {/* MOBILE VERSION */}
-<div className="sm:hidden w-full max-w-full overflow-x-hidden px-3">
+<div className="sm:hidden w-full overflow-x-hidden px-3">
 
   <div className="space-y-2 w-full">
 
@@ -744,13 +744,13 @@ const quests = questsRaw.filter(isActiveQuest);
           border border-[rgba(131,58,253,0.18)]
           overflow-hidden
           box-border
+          min-w-0
         "
         style={{
           boxShadow: "inset 0 0 12px rgba(131, 58, 253, 0.07)",
         }}
       >
 
-        {/* glow (contained so it NEVER causes overflow) */}
         <div
           className="absolute w-32 h-32 rounded-full"
           style={{
@@ -763,14 +763,14 @@ const quests = questsRaw.filter(isActiveQuest);
         />
 
         {/* LEFT */}
-        <div className="relative z-10 flex flex-col min-w-0">
-          <div className="text-[10px] uppercase tracking-widest text-white/50 truncate max-w-[60vw]">
+        <div className="relative z-10 flex flex-col min-w-0 flex-1">
+          <div className="text-[10px] uppercase tracking-widest text-white/50 truncate">
             {card.title}
           </div>
         </div>
 
         {/* RIGHT */}
-        <div className="relative z-10 text-sm font-semibold text-white whitespace-nowrap">
+        <div className="relative z-10 text-sm font-semibold text-white whitespace-nowrap flex-shrink-0">
           {typeof card.value === "number"
             ? card.value.toLocaleString()
             : card.value}
