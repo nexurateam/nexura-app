@@ -153,7 +153,7 @@ const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
 
 const [rewardPool, setRewardPool] = useState("");
 const [participants, setParticipants] = useState("");
-const [xpRewards, setXpRewards] = useState("200");
+const [xpRewards, setXpRewards] = useState("500");
 const [hasRewards, setHasRewards] = useState(false);
 const [publishedCampaign, setPublishedCampaign] = useState<any | null>(null);
 const [paymentTxHash, setPaymentTxHash] = useState("");
@@ -309,7 +309,7 @@ useEffect(() => {
       } else {
         setRewardsDeployment(null);
       }
-      setXpRewards("200");
+      setXpRewards("500");
       if (found.projectCoverImage) setCoverImagePreview(found.projectCoverImage);
       let loadedTasks: Task[] = [];
       // Pre-fill tasks from saved quests
@@ -1758,7 +1758,7 @@ const isActive =
   <div className="relative">
     <Input
       type="number"
-      placeholder="200 XP per participant"
+      placeholder="500 XP per participant"
       className={`bg-white/5 border-white/10 pr-10 cursor-not-allowed opacity-60 ${!hasRewards ? "opacity-40" : ""}`}
       value={xpRewards}
       readOnly
