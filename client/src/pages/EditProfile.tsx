@@ -304,7 +304,7 @@ const getFinalUsername = (name: string, mode: string) => {
             <div className="flex items-center gap-1 text-sm text-green-500">
               <img src="/verified.png" alt="verified" className="w-4 h-4" />
               <span className="text-xs sm:text-sm">
-                {name}.trust linked to wallet
+                {name} linked to wallet
               </span>
             </div>
           </>
