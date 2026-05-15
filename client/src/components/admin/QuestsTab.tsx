@@ -28,10 +28,13 @@ type PendingAction = { type: "delete" | "close"; id: string; title: string } | n
 
 function getApiConfig() {
   const session = getStoredUserSession();
-  return {
+  console.log("[QuestsTab] Session:", session);
+  const result = {
     apiPrefix: session?.type === "user" ? "user-hub" : "hub",
     apiRequest: session?.type === "user" ? userApiRequest : projectApiRequest,
   };
+  console.log("[QuestsTab] API Config:", result);
+  return result;
 }
 
 export default function QuestsTab() {
