@@ -41,7 +41,8 @@ interface AnalyticsData {
 
 function pctChange(current: number, previous: number): number | null {
   if (previous === 0) return current > 0 ? 100 : null;
-  return ((current - previous) / previous) * 100;
+  const change = ((current - previous) / previous) * 100;
+  return Math.max(0, change); // Only show positive changes
 }
 
 export default function Analytics() {
@@ -386,9 +387,8 @@ const formatNumber = (num: number) => {
       {card.rate !== null && card.rate !== undefined ? (
         <div className="relative z-10 flex items-center gap-1 text-xs">
           <img src="/rate.png" alt="" className="w-5 h-3" />
-          <span className={card.rate >= 0 ? "text-[#00E1A2]" : "text-red-500"}>
-            {card.rate >= 0 ? "+" : ""}
-            {card.rate.toFixed(1)}% {card.description}
+          <span className="text-[#00E1A2]">
+            +{card.rate.toFixed(1)}% {card.description}
           </span>
         </div>
       ) : (
