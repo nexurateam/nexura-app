@@ -21,7 +21,14 @@ server.use((req, res, next) => {
 	const start = Date.now();
 	res.on("finish", () => {
 		const duration = Date.now() - start;
-		logger.info(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+		const logMsg = `${req.method} ${req.url} ${res.statusCode} ${duration}ms`;
+		if (req.url.includes("user-hub") || req.url.includes("hub")) {
+			console.log(`[HUB REQUEST] ${logMsg}`);
+			if (req.body && Object.keys(req.body).length > 0) {
+				console.log(`[HUB BODY]`, JSON.stringify(req.body, null, 2));
+			}
+		}
+		logger.info(logMsg);
 	});
 	next();
 });
