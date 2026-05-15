@@ -21,7 +21,11 @@ server.use((req, res, next) => {
 	const start = Date.now();
 	res.on("finish", () => {
 		const duration = Date.now() - start;
-		logger.info(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+		const logMsg = `${req.method} ${req.url} ${res.statusCode} ${duration}ms`;
+		console.log(`[REQUEST] ${logMsg}`);
+		if (req.body && Object.keys(req.body).length > 0) {
+			console.log(`[BODY]`, JSON.stringify(req.body, null, 2));
+		}
 	});
 	next();
 });
