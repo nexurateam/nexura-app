@@ -19,7 +19,7 @@ export default function StudioSidebar({
   const [, setLocation] = useLocation();
 
   // State to hold project info
-  const [projectLogo, setProjectLogo] = useState("/default-project-logo.png");
+  const [projectLogo, setProjectLogo] = useState("");
   const [logoFailed, setLogoFailed] = useState(false);
   const [projectHandle, setProjectHandle] = useState("@project");
   const [adminRole, setAdminRole] = useState<string>("");
@@ -99,7 +99,7 @@ export default function StudioSidebar({
             className="flex items-center gap-3 border-2 border-purple-500 rounded-2xl px-3 py-2 relative z-10 w-full min-w-0 hover:bg-white/5 transition-colors cursor-pointer text-left"
           >
             <div className="w-10 h-10 rounded-2xl overflow-hidden flex-shrink-0 bg-purple-900/50 flex items-center justify-center">
-              {logoFailed || !projectLogo || projectLogo === "/default-project-logo.png" ? (
+              {logoFailed || !projectLogo ? (
                 <span className="text-white text-sm font-bold">
                   {String(projectHandle).charAt(0).toUpperCase()}
                 </span>
