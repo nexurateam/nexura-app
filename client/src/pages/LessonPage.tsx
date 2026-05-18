@@ -102,7 +102,6 @@ export default function LessonPage() {
   const isReview = searchParams.get("review") === "1";
 
   const [lesson, setLesson] = useState<LessonSummary | null>(null);
-  const [section2Name, setSection2Name] = useState("");
   const [miniLessons, setMiniLessons] = useState<MiniLesson[]>([]);
   const [questions, setQuestions] = useState<LessonQuestion[]>([]);
   const [videoLessons, setVideoLessons] = useState<VideoLesson[]>([]);
@@ -178,114 +177,36 @@ export default function LessonPage() {
     };
 
     const lessonTitle = sanitize(lesson?.title) || "this lesson";
-    const s2Name = section2Name.trim();
-    const hasSection2 = s2Name.length > 0;
+    const introHeader = "Ready to test your knowledge?";
+    const introBody = `Take a quiz to see how much you understand ${lessonTitle}`;
+    const outroHeader = "Great job!";
+    const outroBody = `You finished the quiz on ${lessonTitle}`;
 
-    // Split into sections based on entry.section (defaults to 1)
-    const s1Items = combined.filter((item) => (item.entry.section ?? 1) === 1);
-    const s2Items = combined.filter((item) => item.entry.section === 2);
-
-    const buildStepsForSection = (
-      items: AnyItem[],
-      introHeader: string,
-      introBody: string,
-      introTrophy: "bronze" | "silver" | "gold" | "",
-      outroHeader: string,
-      outroBody: string,
-      outroTrophy: "bronze" | "silver" | "gold" | "",
-      opts?: { omitAllOutros?: boolean; omitLastOutro?: boolean; omitAllIntros?: boolean },
-    ): LessonStep[] => {
-      const steps: LessonStep[] = [];
-      let i = 0;
-      // Find quiz group boundaries
-      const groups: { start: number; end: number }[] = [];
-      let k = 0;
-      while (k < items.length) {
-        if (items[k].kind === "question") {
-          const start = k;
-          while (k < items.length && items[k].kind === "question") k++;
-          groups.push({ start, end: k - 1 });
-        } else { k++; }
-      }
-      i = 0;
-      let gIdx = 0;
-      while (i < items.length) {
-        const item = items[i];
-        if (item.kind === "question") {
-          const isLastGroup = gIdx === groups.length - 1;
-          if (!opts?.omitAllIntros) {
-            steps.push({
-              kind: "intro" as const,
-              key: `intro-group-${item.entry._id}`,
-              header: introHeader,
-              body: introBody,
-              trophy: introTrophy,
-            });
-          }
-          while (i < items.length && items[i].kind === "question") {
-            const qEntry = items[i].entry;
-            steps.push({ kind: "question" as const, key: `question-${qEntry._id}`, question: qEntry });
-            i++;
-          }
-          const shouldOmit = opts?.omitAllOutros || (isLastGroup && opts?.omitLastOutro);
-          if (!shouldOmit) {
-            steps.push({
-              kind: "outro" as const,
-              key: `outro-group-${items[i - 1].entry._id}`,
-              header: outroHeader,
-              body: outroBody,
-              trophy: outroTrophy,
-            });
-          }
-          gIdx++;
-        } else {
-          if (item.kind === "mini") {
-            steps.push({ kind: "mini" as const, key: `mini-${item.entry._id}`, text: item.entry.text });
-          } else {
-            steps.push({ kind: "video" as const, key: `video-${item.entry._id}`, url: item.entry.url });
-          }
+    // Build steps with one intro/outro per contiguous quiz group
+    const steps: LessonStep[] = [];
+    let i = 0;
+    while (i < combined.length) {
+      const item = combined[i];
+      if (item.kind === "question") {
+        steps.push({ kind: "intro", key: `intro-group-${item.entry._id}`, header: introHeader, body: introBody, trophy: "bronze" });
+        while (i < combined.length && combined[i].kind === "question") {
+          const qEntry = combined[i].entry;
+          steps.push({ kind: "question", key: `question-${qEntry._id}`, question: qEntry });
           i++;
         }
+        steps.push({ kind: "outro", key: `outro-group-${combined[i - 1].entry._id}`, header: outroHeader, body: outroBody, trophy: "silver" });
+      } else {
+        if (item.kind === "mini") {
+          steps.push({ kind: "mini", key: `mini-${item.entry._id}`, text: item.entry.text });
+        } else {
+          steps.push({ kind: "video", key: `video-${item.entry._id}`, url: item.entry.url });
+        }
+        i++;
       }
-      return steps;
-    };
-
-    const out: LessonStep[] = [];
-
-    // Section 1 — Bronze intros, Silver outros (omit all if no section 2, omit last if section 2)
-    out.push(...buildStepsForSection(
-      s1Items,
-      "Ready to test your knowledge?",
-      `Take a quiz to see how much you understand ${lessonTitle}`,
-      "bronze",
-      "Great job!",
-      `You finished the quiz on ${lessonTitle}`,
-      "silver",
-      { omitAllOutros: !hasSection2, omitLastOutro: hasSection2 },
-    ));
-
-    // Bridge card
-    if (hasSection2) {
-      out.push({
-        kind: "intro" as const,
-        key: "section2-bridge",
-        header: "Great job!",
-        body: `You nailed Section 1, continue to ${s2Name}`,
-        trophy: "silver",
-      });
-      // Section 2 — no intros (bridge is the intro), no outros
-      out.push(...buildStepsForSection(
-        s2Items,
-        "Ready to test your knowledge?",
-        `Take a quiz to see how much you understand ${s2Name}`,
-        "silver",
-        "", "", "",
-        { omitAllOutros: true, omitAllIntros: true },
-      ));
     }
 
-    return [...out, { kind: "claim" as const, key: "claim" }];
-  }, [miniLessons, questions, videoLessons, lesson?.title, section2Name]);
+    return [...steps, { kind: "claim" as const, key: "claim" }];
+  }, [miniLessons, questions, videoLessons, lesson?.title]);
 
   const activeStep = lessonSteps[currentStep];
   const currentQuestion = activeStep?.kind === "question" ? activeStep.question : null;
@@ -343,7 +264,6 @@ export default function LessonPage() {
       const nextMiniLessons = detailsResponse.miniLessons || [];
       const nextQuestions = detailsResponse.questions || [];
       const nextVideoLessons = detailsResponse.videoLessons || [];
-      const s2Name = detailsResponse.section2Name || "";
       const nextSelectedAnswers = nextQuestions.reduce((acc: Record<string, string>, entry: LessonQuestion) => {
         if (entry.done && entry.answer) {
           acc[entry._id] = entry.answer;
@@ -352,7 +272,6 @@ export default function LessonPage() {
       }, {});
 
       setLesson(lessonMatch);
-      setSection2Name(s2Name);
       setMiniLessons(nextMiniLessons);
       setQuestions(nextQuestions);
       setVideoLessons(nextVideoLessons);
