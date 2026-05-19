@@ -303,7 +303,7 @@ export default function Campaigns() {
             <span className="text-gray-500">Participants:</span>
             <span className="text-white flex items-center gap-1">
               <Users className="w-3 h-3" />
-              {allowedParticipants.toLocaleString()}
+              {(campaign.participants ?? 0).toLocaleString()}
             </span>
           </div>
 
