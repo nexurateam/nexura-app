@@ -204,8 +204,8 @@ const xpThisMonth = checkInsThisMonth.length * 20; // temporary fallback
     <div
       className="relative flex items-center justify-center rounded-full"
       style={{
-  width: "140px",
-  height: "140px",
+  width: "120px",
+  height: "120px",
   background: "linear-gradient(135deg, #1E123CE5, #0F0A1EF2)",
   border: "4px solid #8B5CF6",
 }}
@@ -232,7 +232,7 @@ const xpThisMonth = checkInsThisMonth.length * 20; // temporary fallback
   </div>
 
   {/* Below Circle Text */}
-  <div className="mt-2 text-center">
+  <div className="mt-1 text-center">
     <div className="text-sm font-medium text-white">Current Streak</div>
     <div className="text-xs text-white/40 mt-1">
   {nextMilestone
@@ -243,7 +243,7 @@ const xpThisMonth = checkInsThisMonth.length * 20; // temporary fallback
 </div>
 
 {/* Stats Cards */}
-<div className="px-3 grid grid-cols-2 gap-2">
+<div className="px-3 grid grid-cols-2 gap-2 -mt-3">
 
 {/* LEFT CARD - NEXT MILESTONE */}
 <div
@@ -350,7 +350,7 @@ const xpThisMonth = checkInsThisMonth.length * 20; // temporary fallback
 </div>
 
 {/* Milestone Title */}
-<div className="px-3 pt-2">
+<div className="px-3 pt-1 -mt-3">
   <div className="text-[10px] font-semibold text-[#8B5CF6B2] tracking-wider mb-2">
     MILESTONE PROGRESSIONS
   </div>
@@ -437,7 +437,7 @@ const xpThisMonth = checkInsThisMonth.length * 20; // temporary fallback
 </div>
 
         {/* Check-in button */}
-        <div className="px-5 pb-5 pt-1">
+        <div className="px-5 pb-3">
           <button
             onClick={handleCheckIn}
             disabled={alreadyCheckedIn || isLoading || isFetching}
