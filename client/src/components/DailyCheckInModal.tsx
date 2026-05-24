@@ -7,8 +7,10 @@ import {
   DialogDescription,
 } from "./ui/dialog";
 import { apiRequest } from "../lib/queryClient";
+import { apiRequestV2 } from "../lib/queryClient";
 import { useToast } from "../hooks/use-toast";
 import { Check, Flame, ChevronLeft, ChevronRight, Trophy, X } from "lucide-react";
+import { useAuth } from "../lib/auth";
 
 interface DailyCheckInModalProps {
   open: boolean;
@@ -23,6 +25,7 @@ const MONTH_NAMES = [
 ];
 
 export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess }: DailyCheckInModalProps) {
+  const { user } = useAuth();
   const [checkInDates, setCheckInDates] = useState<string[]>([]);
   const [streak, setStreak] = useState(0);
   const [longestStreak, setLongestStreak] = useState(0);
@@ -35,6 +38,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
   const { toast } = useToast();
   const MOCK_TODAY = new Date("2026-05-25T00:00:00Z");
+  const [xpThisMonth, setXpThisMonth] = useState(0);
 
   useEffect(() => {
     if (open) {
@@ -44,6 +48,8 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
       setViewYear(now.getFullYear());
     }
   }, [open]);
+
+
 
   useEffect(() => {
     if (justClaimed) {
@@ -73,47 +79,6 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
     }
   };
 
-// const fetchHistory = async () => {
-//   setIsFetching(true);
-
-//   try {
-//     // HARD-CODED TEST DATA
-//     const data = {
-//       user: {
-//         streak: 14,
-//         longestStreak: 10,
-//         checkInDates: [
-//           "2026-05-20",
-//           "2026-05-21",
-//           "2026-05-22",
-//           "2026-05-23",
-//           "2026-05-24",
-//         ],
-//       },
-//       openDailySignIn: false,
-//     };
-
-//     // FIXED "NOW" FOR TESTING
-//     const MOCK_TODAY = "2026-05-24";
-
-//     setServerDate(MOCK_TODAY);
-
-//     const user = data.user;
-
-//     setStreak(user.streak);
-//     setLongestStreak(user.longestStreak);
-
-//     // false means already checked in today
-//     setAlreadyCheckedIn(!data.openDailySignIn);
-
-//     setCheckInDates(user.checkInDates || []);
-//   } catch (err) {
-//     console.error("Mock fetch failed:", err);
-//   } finally {
-//     setIsFetching(false);
-//   }
-// };
-
   const handleCheckIn = async () => {
     if (alreadyCheckedIn || isLoading) return;
     setIsLoading(true);
@@ -136,6 +101,27 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
       setIsLoading(false);
     }
   };
+
+const XPclaimed = async () => {
+  try {
+    const response = await apiRequestV2(
+      "GET",
+      "/api/user/daily-xp-details"
+    );
+
+    const xp = response?.dailyXpDetails?.xpClaimedThisMonth ?? 0;
+    setXpThisMonth(xp);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+useEffect(() => {
+  if (open) {
+    XPclaimed();
+  }
+}, [open]);
+
 
   const today = serverDate || new Date().toISOString().split("T")[0];
   const checkInSet = useMemo(() => new Set(checkInDates), [checkInDates]);
@@ -173,9 +159,7 @@ const progress =
 const daysRemaining = nextMilestone ? nextMilestone.day - streak : 0;
 
 // const totalCheckIns = checkInDates?.length || 0;
-const totalCheckIns = useMemo(() => {
-  return Array.isArray(checkInDates) ? checkInDates.length : 0;
-}, [checkInDates]);
+const totalCheckIns = user?.totalCheckIns ?? 0;
 
 const currentMonth = new Date().getMonth();
 const currentYear = new Date().getFullYear();
@@ -184,9 +168,6 @@ const checkInsThisMonth = checkInDates.filter((date) => {
   const d = new Date(date);
   return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
 });
-
-// ⚠️ placeholder ONLY if backend doesn't provide XP
-const xpThisMonth = checkInsThisMonth.length * 20; // temporary fallback
 
 const lastCheckInDate = useMemo(() => {
   if (!checkInDates.length) return null;
@@ -229,7 +210,7 @@ const isBrokenBeforeNextMilestone = useMemo(() => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#100721] backdrop-blur-3xl border border-[#FFFFFF4D] rounded-3xl w-[93vw] max-w-sm p-0 overflow-hidden font-geist">
+      <DialogContent className="bg-[#100721] rounded-[48px] w-[93vw] max-w-sm p-0 overflow-hidden font-geist">
         {/* Header */}
 <div className="px-3 pt-2 pb-1 text-center">
   <DialogHeader>
