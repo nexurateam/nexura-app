@@ -1226,11 +1226,9 @@ export const getAnalytics = async (req: GlobalRequest, res: GlobalResponse) => {
 
     const totalLessonJoined = await lessonCompleted.countDocuments();
 
-    const lessonsCreated = await lesson.countDocuments();
+    const lessonsCreated = await lesson.countDocuments({ status: "published" });
 
-    const totalLessonCompleted = await lessonCompleted.countDocuments({
-      done: true,
-    });
+    const totalLessonCompleted = await lessonCompleted.countDocuments({ done: true });
 
     const totalJoined =
       totalQuestsJoined +
