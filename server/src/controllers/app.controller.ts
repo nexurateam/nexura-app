@@ -1628,24 +1628,18 @@ export const performDailySignIn = async (
       type: "daily-xp",
     });
 
-    await userExists.save();
-
     // Best-effort secondary record kept for any external readers (analytics,
     // admin dashboards). Not authoritative — failures here don't affect the
     // user's response or streak.
-    try {
-      const dailySignInRecord = await dailySignIn.findOne({ month, user: userId }).select("xpClaimedThisMonth");
-      if (!dailySignInRecord) {
-        await dailySignIn.create({ month, user: userId, xpClaimedThisMonth: dailyXpAmount });
-      } else {
-        dailySignInRecord.xpClaimedThisMonth += dailyXpAmount;
-        await dailySignInRecord.save();
-      }
-    } catch (syncErr) {
-      logger.warn(
-        `dailySignIn sync failed for user ${userId} (non-fatal): ${syncErr}`,
-      );
+    const dailySignInRecord = await dailySignIn.findOne({ month, user: userId }).select("xpClaimedThisMonth");
+    if (!dailySignInRecord) {
+      await dailySignIn.create({ month, user: userId, xpClaimedThisMonth: dailyXpAmount, date: onlyDate });
+    } else {
+      dailySignInRecord.xpClaimedThisMonth += dailyXpAmount;
+      await dailySignInRecord.save();
     }
+
+    await userExists.save();
 
     res.status(OK).json({ message: "Daily sign-in successful", done: true });
   } catch (error) {
