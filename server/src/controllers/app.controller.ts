@@ -1494,7 +1494,7 @@ export const fetchDailyXpDetails = async (req: GlobalRequest, res: GlobalRespons
     const dailyXpDetailsInDB = await dailySignIn.findOne({ user: req.id, month }).lean().select("xpClaimedThisMonth");
 
     if (!dailyXpDetailsInDB) {
-      res.status(NO_CONTENT).json({ error: "daily xp details not found" });
+      res.status(OK).json({ error: "daily xp details not found" });
       return;
     }
 
