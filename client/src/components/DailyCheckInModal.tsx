@@ -11,6 +11,7 @@ import { apiRequestV2 } from "../lib/queryClient";
 import { useToast } from "../hooks/use-toast";
 import { Check, Flame, ChevronLeft, ChevronRight, Trophy, X } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import { payRestoreStreakFee } from "../lib/performOnchainAction";
 
 interface DailyCheckInModalProps {
   open: boolean;
@@ -39,6 +40,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
   const { toast } = useToast();
   const MOCK_TODAY = new Date("2026-05-25T00:00:00Z");
   const [xpThisMonth, setXpThisMonth] = useState(0);
+  const [streakLost, setStreakLost] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -63,6 +65,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
     try {
       const response = await apiRequest("GET", "/api/user/profile");
       const data = await response.json();
+      console.log(data)
     
       const user = data.user;
       setStreak(user?.streak || 0);
@@ -108,9 +111,14 @@ const XPclaimed = async () => {
       "GET",
       "/api/user/daily-xp-details"
     );
+    console.log(response)
 
     const xp = response?.dailyXpDetails?.xpClaimedThisMonth ?? 0;
+    const lost = response?.dailyXpDetails?.streakLost ?? false;
+
     setXpThisMonth(xp);
+    setStreakLost(lost);
+
   } catch (err) {
     console.log(err);
   }
@@ -174,31 +182,6 @@ const lastCheckInDate = useMemo(() => {
   return new Date(checkInDates[checkInDates.length - 1]);
 }, [checkInDates]);
 
-const streakLost = useMemo(() => {
-  if (!lastCheckInDate) return false;
-
-  const now = new Date();
-
-  const diffInDays = Math.floor(
-    (now.getTime() - lastCheckInDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  return diffInDays >= 1;
-}, [lastCheckInDate]);
-
-// const streakLost = useMemo(() => {
-//   if (!lastCheckInDate) return false;
-
-//   const now = new Date(serverDate);
-
-//   const diffInDays = Math.floor(
-//     (now.getTime() - lastCheckInDate.getTime()) /
-//       (1000 * 60 * 60 * 24)
-//   );
-
-//   return diffInDays >= 1;
-// }, [lastCheckInDate, serverDate]);
-
 const nextMilestoneDay = nextMilestone?.day ?? Infinity;
 
 const isBrokenBeforeNextMilestone = useMemo(() => {
@@ -207,6 +190,41 @@ const isBrokenBeforeNextMilestone = useMemo(() => {
 
   return streak < nextMilestoneDay;
 }, [streakLost, streak, nextMilestoneDay]);
+
+const handleRestoreStreak = async () => {
+  try {
+    setIsLoading(true);
+
+    // 1. pay onchain fee
+    const txHash = await payRestoreStreakFee();
+
+    // 2. send tx hash to backend
+    await apiRequestV2(
+      "POST",
+      `/api/user/restore-streak?transactionHash=${txHash}`
+    );
+
+    // 3. refresh state
+    await fetchHistory();
+    await XPclaimed();
+
+    toast({
+      title: "Streak restored",
+      description: "Your streak has been successfully restored.",
+    });
+
+  } catch (err) {
+    console.log("restore error:", err);
+
+    toast({
+      title: "Restore failed",
+      description: "Payment or restore process failed.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -578,15 +596,16 @@ const isUpcoming = streak < m.day;
     {/* RIGHT SIDE */}
     <div className="w-[30%] flex justify-end">
       <button
-        className="px-4 py-2 rounded-xl text-[10px] font-medium whitespace-nowrap"
-        style={{
-          background: "transparent",
-          border: "1px solid #8B5CF666",
-          color: "#A78BFA",
-        }}
-      >
-        Restore Streak
-      </button>
+  onClick={handleRestoreStreak}
+  className="px-4 py-2 rounded-xl text-[10px] font-medium whitespace-nowrap"
+  style={{
+    background: "transparent",
+    border: "1px solid #8B5CF666",
+    color: "#A78BFA",
+  }}
+>
+  Restore Streak
+</button>
     </div>
   </div>
 )}
