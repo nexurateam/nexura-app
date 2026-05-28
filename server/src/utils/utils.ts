@@ -315,8 +315,8 @@ export const validateUserSignUpData = (reqData: any) => {
 
 export const validateSaveCampaignData = (reqData: any) => {
   const campaignSchema = z.object({
-		title: z.string().trim().max(150),
-		description: z.string().trim().max(150),
+		title: z.string().trim(),
+		description: z.string().trim(),
 		nameOfProject: z.string().trim(),
     starts_at: z.string().trim(),
 		projectCoverImage: z.string().optional(),
@@ -413,9 +413,13 @@ export const getAmountPaid = async (txHash: string) => {
 	const tx = await provider.getTransaction(txHash);
 	if (!tx) {
 		throw new Error("Transaction not found");
-	}
+  }
 
-	return { from: tx.from, value: formatEther(tx.value) };
+  const block = await provider.getBlock(tx.blockNumber as number);
+
+  const timestamp = new Date(Number(block!.timestamp) * 1000).toLocaleString({ timeZone: "Africa/Lagos" }).split(", ")[0]; // Extract just the date part
+
+	return { from: tx.from, value: formatEther(tx.value), timestamp };
 }
 
 export const validateCreateLesson = (reqData: any) => {

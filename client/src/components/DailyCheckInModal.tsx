@@ -7,8 +7,11 @@ import {
   DialogDescription,
 } from "./ui/dialog";
 import { apiRequest } from "../lib/queryClient";
+import { apiRequestV2 } from "../lib/queryClient";
 import { useToast } from "../hooks/use-toast";
 import { Check, Flame, ChevronLeft, ChevronRight, Trophy, X } from "lucide-react";
+import { useAuth } from "../lib/auth";
+import { payRestoreStreakFee } from "../lib/performOnchainAction";
 
 interface DailyCheckInModalProps {
   open: boolean;
@@ -23,6 +26,7 @@ const MONTH_NAMES = [
 ];
 
 export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess }: DailyCheckInModalProps) {
+  const { user } = useAuth();
   const [checkInDates, setCheckInDates] = useState<string[]>([]);
   const [streak, setStreak] = useState(0);
   const [longestStreak, setLongestStreak] = useState(0);
@@ -35,6 +39,8 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
   const { toast } = useToast();
   const MOCK_TODAY = new Date("2026-05-25T00:00:00Z");
+  const [xpThisMonth, setXpThisMonth] = useState(0);
+  const [streakLost, setStreakLost] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -44,6 +50,8 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
       setViewYear(now.getFullYear());
     }
   }, [open]);
+
+
 
   useEffect(() => {
     if (justClaimed) {
@@ -57,6 +65,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
     try {
       const response = await apiRequest("GET", "/api/user/profile");
       const data = await response.json();
+      console.log(data)
     
       const user = data.user;
       setStreak(user?.streak || 0);
@@ -73,45 +82,6 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
     }
   };
 
-// const fetchHistory = async () => {
-//   setIsFetching(true);
-
-//   try {
-//     // HARD-CODED TEST DATA
-//     const data = {
-//       user: {
-//         streak: 3,
-//         longestStreak: 10,
-//         checkInDates: [
-//           "2026-05-20",
-//           "2026-05-21",
-//           "2026-05-22",
-//           "2026-05-23",
-//         ],
-//       },
-//       openDailySignIn: true,
-//     };
-
-//     // FIXED "NOW" FOR STREAK TESTING
-//     const MOCK_TODAY = "2026-05-25";
-//     setServerDate(MOCK_TODAY);
-
-//     const user = data.user;
-
-//     setStreak(user.streak);
-//     setLongestStreak(user.longestStreak);
-
-//     // true = user has NOT signed in today
-//     setAlreadyCheckedIn(!data.openDailySignIn);
-
-//     setCheckInDates(user.checkInDates || []);
-//   } catch (err) {
-//     console.error("Mock fetch failed:", err);
-//   } finally {
-//     setIsFetching(false);
-//   }
-// };
-
   const handleCheckIn = async () => {
     if (alreadyCheckedIn || isLoading) return;
     setIsLoading(true);
@@ -122,7 +92,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
       setStreak((s) => s + 1);
       const today = serverDate || new Date().toISOString().split("T")[0];
       setCheckInDates((prev) => [...prev, today]);
-      toast({ title: "Check-in complete!", description: "+20 XP earned" });
+      toast({ title: "Check-in complete!", description: "+50 XP earned" });
       onCheckInSuccess();
     } catch (error: any) {
       toast({
@@ -134,6 +104,32 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
       setIsLoading(false);
     }
   };
+
+const XPclaimed = async () => {
+  try {
+    const response = await apiRequestV2(
+      "GET",
+      "/api/user/daily-xp-details"
+    );
+    console.log(response)
+
+    const xp = response?.dailyXpDetails?.xpClaimedThisMonth ?? 0;
+    const lost = response?.dailyXpDetails?.streakLost ?? false;
+
+    setXpThisMonth(xp);
+    setStreakLost(lost);
+
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+useEffect(() => {
+  if (open) {
+    XPclaimed();
+  }
+}, [open]);
+
 
   const today = serverDate || new Date().toISOString().split("T")[0];
   const checkInSet = useMemo(() => new Set(checkInDates), [checkInDates]);
@@ -171,9 +167,7 @@ const progress =
 const daysRemaining = nextMilestone ? nextMilestone.day - streak : 0;
 
 // const totalCheckIns = checkInDates?.length || 0;
-const totalCheckIns = useMemo(() => {
-  return Array.isArray(checkInDates) ? checkInDates.length : 0;
-}, [checkInDates]);
+const totalCheckIns = user?.totalCheckIns ?? 0;
 
 const currentMonth = new Date().getMonth();
 const currentYear = new Date().getFullYear();
@@ -183,25 +177,10 @@ const checkInsThisMonth = checkInDates.filter((date) => {
   return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
 });
 
-// ⚠️ placeholder ONLY if backend doesn't provide XP
-const xpThisMonth = checkInsThisMonth.length * 20; // temporary fallback
-
 const lastCheckInDate = useMemo(() => {
   if (!checkInDates.length) return null;
   return new Date(checkInDates[checkInDates.length - 1]);
 }, [checkInDates]);
-
-const streakLost = useMemo(() => {
-  if (!lastCheckInDate) return false;
-
-  const now = new Date();
-
-  const diffInDays = Math.floor(
-    (now.getTime() - lastCheckInDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  return diffInDays >= 1;
-}, [lastCheckInDate]);
 
 const nextMilestoneDay = nextMilestone?.day ?? Infinity;
 
@@ -212,9 +191,44 @@ const isBrokenBeforeNextMilestone = useMemo(() => {
   return streak < nextMilestoneDay;
 }, [streakLost, streak, nextMilestoneDay]);
 
+const handleRestoreStreak = async () => {
+  try {
+    setIsLoading(true);
+
+    // 1. pay onchain fee
+    const txHash = await payRestoreStreakFee();
+
+    // 2. send tx hash to backend
+    await apiRequestV2(
+      "POST",
+      `/api/user/restore-streak?transactionHash=${txHash}`
+    );
+
+    // 3. refresh state
+    await fetchHistory();
+    await XPclaimed();
+
+    toast({
+      title: "Streak restored",
+      description: "Your streak has been successfully restored.",
+    });
+
+  } catch (err) {
+    console.log("restore error:", err);
+
+    toast({
+      title: "Restore failed",
+      description: "Payment or restore process failed.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#100721] backdrop-blur-3xl border border-[#FFFFFF4D] rounded-3xl w-[93vw] max-w-sm p-0 overflow-hidden font-geist">
+      <DialogContent className="bg-[#100721] w-[93vw] max-w-sm p-0 overflow-hidden font-geist">
         {/* Header */}
 <div className="px-3 pt-2 pb-1 text-center">
   <DialogHeader>
@@ -366,7 +380,7 @@ const isBrokenBeforeNextMilestone = useMemo(() => {
 
       {/* XP PILL */}
       <div
-        className="absolute -top-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] whitespace-nowrap"
+        className="absolute -top-3 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded-full text-[8px] whitespace-nowrap"
         style={{
           background: "#200D4FEE",
           border: "1px solid #8B5CF64D",
@@ -399,7 +413,7 @@ const isBrokenBeforeNextMilestone = useMemo(() => {
     <span className="text-[10px] text-[#A78BFA8C]">
       XP claimed this month
     </span>
-    <span className="text-white text-[12px]">
+    <span className="text-[##E9D5FF] text-[10px]">
       {new Intl.NumberFormat().format(xpThisMonth)}
     </span>
   </div>
@@ -409,9 +423,9 @@ const isBrokenBeforeNextMilestone = useMemo(() => {
   {/* Longest Streak */}
   <div className="flex justify-between items-center">
     <span className="text-[10px] text-[#A78BFA8C]">
-      Highest Streak
+      Longest Streak
     </span>
-    <span className="text-white text-[12px]">
+    <span className="text-[#E9D5FF] text-[10px]">
       {longestStreak} days
     </span>
   </div>
@@ -423,7 +437,7 @@ const isBrokenBeforeNextMilestone = useMemo(() => {
     <span className="text-[10px] text-[#A78BFA8C]">
       Total Check-Ins
     </span>
-    <span className="text-white text-[12px]">
+    <span className="text-[##E9D5FF] text-[10px]">
       {totalCheckIns}
     </span>
   </div>
@@ -436,107 +450,126 @@ const isBrokenBeforeNextMilestone = useMemo(() => {
     MILESTONE PROGRESSION
   </div>
 
-  {/* Card */}
-  <div
-    className="rounded-2xl p-3 w-full"
-    style={{
-      background: "linear-gradient(135deg, #8B5CF614, #581CDC0D)",
-      border: "1px solid #8B5CF633",
-    }}
-  >
+{/* Card */}
+<div
+  className="rounded-2xl p-3 w-full overflow-hidden"
+  style={{
+    background: "linear-gradient(135deg, #8B5CF614, #581CDC0D)",
+    border: "1px solid #8B5CF633",
+  }}
+>
+  {/* TRACK */}
+  <div className="relative flex items-start w-full">
 
-    {/* TRACK */}
-    <div className="relative flex w-full">
+    {MILESTONES.map((m, i, arr) => {
+      const isLast = i === arr.length - 1;
 
-      {MILESTONES.map((m, i, arr) => {
-        const isLast = i === arr.length - 1;
+const reached = streak > m.day;
+const isAtCheckpoint = streak === m.day;
+const isUpcoming = streak < m.day;
+      const isNext = m.day === nextMilestone?.day;
+      const isNextBroken = isNext && isBrokenBeforeNextMilestone;
 
-        const reached = streak >= m.day;
-        const isCurrent = streak === m.day;
-        const isNext = m.day === nextMilestone?.day;
-        const isNextBroken = isNext && isBrokenBeforeNextMilestone;
+      return (
+        <div
+          key={m.day}
+          className="relative flex-1 flex flex-col items-center min-w-0"
+        >
 
-        return (
+          {/* CONNECTOR LINE */}
+          {!isLast && (
+            <div
+              className="absolute top-[10px] left-1/2 h-[1.5px] z-0"
+              style={{
+                width: "100%",
+                background: reached
+                  ? "linear-gradient(90deg, #7C3AED, rgba(167,139,250,0.35))"
+                  : "rgba(255,255,255,0.12)",
+              }}
+            />
+          )}
+
+          {/* NODE */}
           <div
-            key={m.day}
-            className="relative flex-1 flex flex-col items-center px-[2px]"
+            className="relative w-5 h-5 rounded-full flex items-center justify-center shrink-0 z-10 backdrop-blur-sm"
+            style={{
+              background: isNextBroken
+                ? "#F87171"
+                : reached
+                  ? "linear-gradient(135deg, #6D28D9, #7C3AED)"
+                  : "rgba(255,255,255,0.03)",
+
+              border: isNextBroken
+                ? "1px solid #EF4444"
+                : reached
+                  ? "1px solid #8B5CF699"
+                  : "1px solid rgba(255,255,255,0.08)",
+
+              boxShadow: reached
+                ? "0 0 10px rgba(139,92,246,0.35)"
+                : "none",
+            }}
           >
-
-            {/* CONNECTOR LINE */}
-            {!isLast && (
-              <div
-                className="absolute top-[10px] left-1/2 w-full h-[1px] -z-10"
-                style={{
-                  background: "rgba(255,255,255,0.15)",
-                  transform: "translateX(50%)",
-                }}
-              />
-            )}
-
-            {/* NODE */}
-            <div
-              className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 z-10"
-              style={{
-                background: isNextBroken
-                  ? "#F87171"
-                  : reached
-                    ? "linear-gradient(135deg, #6D28D9, #7C3AED)"
-                    : "transparent",
-
-                border: isNextBroken
-                  ? "1px solid #EF4444"
-                  : "1px solid #8B5CF64D",
-              }}
-            >
-              {isNextBroken ? (
-                <X className="w-3 h-3 text-white" />
-              ) : reached ? (
-                isCurrent ? (
-                  <Check className="w-3 h-3 text-white" />
-                ) : (
-                  <span className="text-white text-[9px]">
-                    {m.day}
-                  </span>
-                )
-              ) : (
-                <img src="/padlock.png" className="w-3 h-3 opacity-80" />
-              )}
-            </div>
-
-            {/* XP */}
-            <div
-              className="mt-0.5 px-1.5 py-[1px] rounded-full text-[8px] whitespace-nowrap"
-              style={{
-                background: isNextBroken
-                  ? "#F8717133"
-                  : "#6D28D94D",
-
-                border: isNextBroken
-                  ? "1px solid #F8717166"
-                  : "1px solid #8B5CF64D",
-
-                color: isNextBroken ? "#F87171" : "#fff",
-              }}
-            >
-              {new Intl.NumberFormat().format(m.xp)} XP
-            </div>
-
-            {/* LABEL */}
-            <div
-              className="text-[8.5px] mt-0.5 text-center leading-tight"
-              style={{
-                color: isNextBroken ? "#F87171" : "#A78BFAB2",
-              }}
-            >
-              {m.label}
-            </div>
-
+            {isNextBroken ? (
+  <X className="w-3 h-3 text-white" />
+) : isAtCheckpoint ? (
+  // USER HAS HIT CHECKPOINT BUT NOT VERIFIED YET → show number
+<span
+  className="text-white text-[8px] font-semibold px-1 py-[3px] rounded-full"
+  style={{
+    background: "linear-gradient(135deg, #8B3EFE, #6D28D9)",
+    border: "1px solid #8B5CF64D",
+    boxShadow: "0 0 8px rgba(139,62,254,0.25)",
+  }}
+>
+  {m.day}
+</span>
+) : reached ? (
+  // USER HAS VERIFIED (past checkpoint) → show check
+  <Check className="w-3 h-3 text-white" />
+) : (
+  <img
+    src="/padlock.png"
+    className="w-2.5 h-2.5 opacity-20 blur-[0.3px]"
+  />
+)}
           </div>
-        );
-      })}
 
-    </div>
+          {/* XP */}
+          <div
+            className="mt-1 px-1.5 py-[1px] rounded-full text-[7px] whitespace-nowrap"
+            style={{
+              background: isNextBroken
+                ? "#F8717133"
+                : "#6D28D94D",
+
+              border: isNextBroken
+                ? "1px solid #F8717166"
+                : "1px solid #8B5CF64D",
+
+              color: isNextBroken ? "#F87171" : "#fff",
+            }}
+          >
+            {new Intl.NumberFormat().format(m.xp)} XP
+          </div>
+
+          {/* LABEL */}
+          <div
+            className="text-[8px] mt-0.5 text-center leading-tight"
+            style={{
+              color: isNextBroken
+                ? "#F87171"
+                : "#A78BFAB2",
+            }}
+          >
+            {m.label} Days
+          </div>
+
+        </div>
+      );
+    })}
   </div>
+</div>
 </div>
 
 {/* STREAK RESTORATION CARD */}
@@ -563,21 +596,22 @@ const isBrokenBeforeNextMilestone = useMemo(() => {
     {/* RIGHT SIDE */}
     <div className="w-[30%] flex justify-end">
       <button
-        className="px-4 py-2 rounded-xl text-[10px] font-medium whitespace-nowrap"
-        style={{
-          background: "transparent",
-          border: "1px solid #8B5CF666",
-          color: "#A78BFA",
-        }}
-      >
-        Restore Streak
-      </button>
+  onClick={handleRestoreStreak}
+  className="px-4 py-2 rounded-xl text-[10px] font-medium whitespace-nowrap"
+  style={{
+    background: "transparent",
+    border: "1px solid #8B5CF666",
+    color: "#A78BFA",
+  }}
+>
+  Restore Streak
+</button>
     </div>
   </div>
 )}
 
         {/* Check-in button */}
-        <div className="px-5 pb-2">
+        <div className="px-5 pb-4">
           <button
             onClick={handleCheckIn}
             disabled={alreadyCheckedIn || isLoading || isFetching}
@@ -593,7 +627,7 @@ const isBrokenBeforeNextMilestone = useMemo(() => {
                 ? "Checking in..."
                 : alreadyCheckedIn
                   ? "Checked In"
-                  : "Check In  (+20 XP)"}
+                  : "Check In  (+50 XP)"}
           </button>
         </div>
       </DialogContent>
