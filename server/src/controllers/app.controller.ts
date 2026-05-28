@@ -1519,7 +1519,15 @@ export const fetchDailyXpDetails = async (req: GlobalRequest, res: GlobalRespons
       return;
     }
 
-    await user.findByIdAndUpdate(req.id, { streak: 0, streakToRestore: req.user.streak });
+    const userStreakToUpdate = await user.findById(req.id).select("streak streakToRestore");
+
+    if (userStreakToUpdate!.streakToRestore === 0) {
+      userStreakToUpdate!.streakToRestore = userStreakToUpdate!.streak;
+    }
+
+    userStreakToUpdate!.streak = 0;
+
+    await userStreakToUpdate!.save();
 
     streakLost = true;
 
