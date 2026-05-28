@@ -301,6 +301,8 @@ export const authenticateAdmin = async (req: GlobalRequest, res: GlobalResponse,
     req.id = id;
     req.token = token;
     req.role = adminUser.role;
+    // Platform admins (admin model) manage all hubs; hub admins are the fallback and stay hub-scoped.
+    req.isPlatformAdmin = Boolean(isAdmin);
     req.adminName = adminName;
     req.admin = {
       ...adminUser,
