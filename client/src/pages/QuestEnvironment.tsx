@@ -351,7 +351,7 @@ export default function QuestEnvironment() {
           <p className="font-medium text-sm md:text-base">{quest.text}</p>
           {isPortalTask && !claimed &&
             <p className="text-sm text-white/70">
-              ⚠️ A minimum of 1 TRUST is required to either oppose or support a proposal before the task can be claimed.
+              ⚠️ A minimum of 5 TRUST is required to either oppose or support a proposal before the task can be claimed.
             </p>
           }
 
