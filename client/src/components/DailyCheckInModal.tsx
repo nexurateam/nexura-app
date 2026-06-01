@@ -713,7 +713,7 @@ const isUpcoming = streak < m.day;
                 : "#A78BFAB2",
             }}
           >
-            {m.label} Days
+            {m.day} Days
           </div>
 
         </div>
