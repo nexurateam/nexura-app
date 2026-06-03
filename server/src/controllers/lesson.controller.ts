@@ -548,6 +548,12 @@ export const getLessons = async (req: GlobalRequest, res: GlobalResponse) => {
         }
       }
 
+      // Any lesson with no resolved hub (no/unknown creatorModel) → attribute to the Nexura platform hub
+      if (!mergedSingleLesson.creatorName && systemHub) {
+        mergedSingleLesson.creatorName = systemHub.name;
+        mergedSingleLesson.profileImage = systemHub.logo;
+      }
+
       mergedLessons.push(mergedSingleLesson);
     }
 
