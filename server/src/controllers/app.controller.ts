@@ -1523,6 +1523,7 @@ export const fetchDailyXpDetails = async (req: GlobalRequest, res: GlobalRespons
 
     if (userStreakToUpdate.streakToRestore === 0) {
       userStreakToUpdate.streakToRestore = userStreakToUpdate.streak;
+      await userStreakToUpdate.save();
     }
 
     res.status(OK).json({ message: "daily xp details fetched", dailyXpDetails: { streakLost, xpClaimedThisMonth } });
