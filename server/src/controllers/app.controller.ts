@@ -48,6 +48,7 @@ import { checksumAddress, parseEther, type Address } from "viem";
 import { campaign, campaignCompleted } from "@/models/campaign.model";
 import { dailySignIn } from "@/models/dailySignIn.model";
 import { startOfDayUTC, updateLevel, getAmountPaid } from "@/utils/utils";
+import { evaluateDailyStreak } from "@/utils/streak.utils";
 import { lesson, lessonCompleted } from "@/models/lesson.model";
 import { xpLog } from "@/models/xpLog.model";
 import { formatDate } from "date-fns";
@@ -903,6 +904,14 @@ export const updateBadge = async (req: GlobalRequest, res: GlobalResponse) => {
   }
 };
 
+export const de = (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    
+  } catch (error) {
+    logger.error(error);
+  }
+}
+
 export const validatePortalTask = async (
   req: GlobalRequest,
   res: GlobalResponse,
@@ -923,7 +932,7 @@ export const validatePortalTask = async (
       return;
     }
 
-    // set shares to be from 4.5
+    // set shares to be from 1.3
     const query = `
       query GetTriple($id: String!, $address: String!) {
         triple(term_id: $id) {
@@ -932,7 +941,7 @@ export const validatePortalTask = async (
               _eq: $address
             }
             shares:  {
-              _gte: 4500000000000000000
+              _gte: 1300000000000000000
             }
           }) {
             account_id
@@ -943,7 +952,7 @@ export const validatePortalTask = async (
               _eq: $address
             }
             shares:  {
-              _gte: 4500000000000000000
+              _gte: 1300000000000000000
             }
           }) {
             account_id
@@ -1490,48 +1499,34 @@ export const fetchDailyXpDetails = async (req: GlobalRequest, res: GlobalRespons
   try {
     const month = formatDate(new Date(), "MMM, y");
 
-    const dailyXpDetailsInDB = await dailySignIn.findOne({ user: req.id, month }).lean().select("xpClaimedThisMonth date");
+    const [dailyXpDetailsInDB, userStreakToUpdate] = await Promise.all([
+      dailySignIn.findOne({ user: req.id, month }).lean().select("xpClaimedThisMonth date"),
+      user.findById(req.id).select("lastSignInDate streak streakToRestore"),
+    ]);
 
-    if (!dailyXpDetailsInDB) {
-      res.status(OK).json({ error: "daily xp details not found" });
+    if (!userStreakToUpdate) {
+      res.status(NOT_FOUND).json({ error: "invalid user id" });
       return;
     }
 
-    const lastSignInDate = dailyXpDetailsInDB.date;
+    const xpClaimedThisMonth = dailyXpDetailsInDB?.xpClaimedThisMonth ?? 0;
 
-    const today = startOfDayUTC();
+    const { streakLost } = evaluateDailyStreak(
+      userStreakToUpdate.lastSignInDate,
+      userStreakToUpdate.streak
+    );
 
-    const yesterday = new Date(today);
-    yesterday.setUTCDate(today.getUTCDate() - 1);
-
-    const yesterdayDate = yesterday.toISOString().split("T")[0] as string;
-    const todayDate = today.toISOString().split("T")[0] as string;
-
-    let streakLost = false;
-
-    if (todayDate === lastSignInDate) {
-      res.status(OK).json({ message: "daily xp details fetched", dailyXpDetails: { streakLost, xpClaimedThisMonth: dailyXpDetailsInDB.xpClaimedThisMonth } });
+    if (!streakLost) {
+      res.status(OK).json({ message: "daily xp details fetched", dailyXpDetails: { streakLost, xpClaimedThisMonth } });
       return;
     }
 
-    if (lastSignInDate === yesterdayDate) {
-      res.status(OK).json({ message: "daily xp details fetched", dailyXpDetails: { streakLost, xpClaimedThisMonth: dailyXpDetailsInDB.xpClaimedThisMonth } });
-      return;
+    if (userStreakToUpdate.streakToRestore === 0) {
+      userStreakToUpdate.streakToRestore = userStreakToUpdate.streak;
+      await userStreakToUpdate.save();
     }
 
-    const userStreakToUpdate = await user.findById(req.id).select("streak streakToRestore");
-
-    if (userStreakToUpdate!.streakToRestore === 0) {
-      userStreakToUpdate!.streakToRestore = userStreakToUpdate!.streak;
-    }
-
-    userStreakToUpdate!.streak = 0;
-
-    await userStreakToUpdate!.save();
-
-    streakLost = true;
-
-    res.status(OK).json({ message: "daily xp details fetched", dailyXpDetails: { streakLost, xpClaimedThisMonth: dailyXpDetailsInDB.xpClaimedThisMonth } });
+    res.status(OK).json({ message: "daily xp details fetched", dailyXpDetails: { streakLost, xpClaimedThisMonth } });
   } catch (error) {
     logger.error(error);
     res
@@ -1548,26 +1543,28 @@ export const claimStreakReward = async (req: GlobalRequest, res: GlobalResponse)
 
     let streakReward = 0;
 
+    let dayCount = userFromReq.dayCount || 0;
+
     const dailyXpReward = await dailySignIn.findOne({ user: req.id, month });
 
-    if (userFromReq.streak >= 7 && userFromReq.streak < 15 && dailyXpReward!.dayCount !== 7) {
+    if (userFromReq.streak >= 7 && userFromReq.streak < 15 && dayCount === 0) {
       streakReward = 500;
-      dailyXpReward!.dayCount = 7;
-    } else if (userFromReq.streak >= 15 && userFromReq.streak < 30 && dailyXpReward!.dayCount !== 15) {
+      dayCount = 7;
+    } else if (userFromReq.streak >= 15 && userFromReq.streak < 30 && dayCount === 7) {
       streakReward = 1000;
-      dailyXpReward!.dayCount = 15;
-    } else if (userFromReq.streak >= 30 && userFromReq.streak < 45 && dailyXpReward!.dayCount !== 30) {
+      dayCount = 15;
+    } else if (userFromReq.streak >= 30 && userFromReq.streak < 45 && dayCount === 15) {
       streakReward = 2500;
-      dailyXpReward!.dayCount = 30;
-    } else if (userFromReq.streak >= 45 && userFromReq.streak < 60 && dailyXpReward!.dayCount !== 45) {
+      dayCount = 30;
+    } else if (userFromReq.streak >= 45 && userFromReq.streak < 60 && dayCount === 30) {
       streakReward = 5000;
-      dailyXpReward!.dayCount = 45;
-    } else if (userFromReq.streak >= 60 && userFromReq.streak < 90 && dailyXpReward!.dayCount !== 60) {
+      dayCount = 45;
+    } else if (userFromReq.streak >= 60 && userFromReq.streak < 90 && dayCount === 45) {
       streakReward = 10000;
-      dailyXpReward!.dayCount = 60;
-    } else if (userFromReq.streak >= 90 && dailyXpReward!.dayCount !== 90) {
+      dayCount = 60;
+    } else if (userFromReq.streak >= 90 && dayCount === 60) {
       streakReward = 20000;
-      dailyXpReward!.dayCount = 90;
+      dayCount = 90;
     }
 
     if (streakReward === 0) {
@@ -1578,7 +1575,7 @@ export const claimStreakReward = async (req: GlobalRequest, res: GlobalResponse)
     dailyXpReward!.xpClaimedThisMonth += streakReward;
     await dailyXpReward!.save();
 
-    await user.findByIdAndUpdate(req.id, { $inc: { xp: streakReward } });
+    await user.findByIdAndUpdate(req.id, { $inc: { xp: streakReward }, $set: { dayCount } });
 
     await xpLog.create({ amount: streakReward, address: req.user.address, username: req.user.username, type: "daily-xp-streak-reward", status: "success" });
 
@@ -1595,8 +1592,15 @@ export const performDailySignIn = async (
   req: GlobalRequest,
   res: GlobalResponse,
 ) => {
+  const userId = req.id;
+  
+  const userExists = await user.findById(userId);
+  if (!userExists) {
+    res.status(NOT_FOUND).json({ message: "User not found" });
+    return;
+  }
+
   try {
-    const userId = req.id;
 
     const today = startOfDayUTC();
     const yesterday = new Date(today);
@@ -1604,12 +1608,6 @@ export const performDailySignIn = async (
 
     const onlyDate = today.toISOString().split("T")[0] as string;
     const yesterdayDate = yesterday.toISOString().split("T")[0] as string;
-
-    const userExists = await user.findById(userId);
-    if (!userExists) {
-      res.status(NOT_FOUND).json({ message: "User not found" });
-      return;
-    }
 
     // Source of truth for streak: user.lastSignInDate.
     // The previous version read from dailySignIn.findOne(), but legacy data has
@@ -1624,11 +1622,8 @@ export const performDailySignIn = async (
       return;
     }
 
-    const previousStreak =
-      typeof userExists.streak === "number" ? userExists.streak : 0;
-
     if (lastSignIn === yesterdayDate) {
-      userExists.streak = previousStreak + 1;
+      userExists.streak += 1;
     } else {
       // First sign-in ever, OR a gap of 2+ days — reset to 1.
       userExists.streak = 1;
@@ -1641,7 +1636,7 @@ export const performDailySignIn = async (
     userExists.xp += dailyXpAmount;
     userExists.lastSignInDate = onlyDate;
 
-    if (userExists.streak > (userExists.longestStreak || 0)) {
+    if (userExists.streak > userExists.longestStreak) {
       userExists.longestStreak = userExists.streak;
     }
 
@@ -1654,6 +1649,17 @@ export const performDailySignIn = async (
     userExists.level = level;
     userExists.totalCheckIns += 1;
 
+    const dailySignInRecord = await dailySignIn.findOne({ month, user: userId }).select("xpClaimedThisMonth date");
+    if (!dailySignInRecord) {
+      await dailySignIn.create({ month, user: userId, xpClaimedThisMonth: dailyXpAmount, date: onlyDate });
+    } else {
+      dailySignInRecord.xpClaimedThisMonth += dailyXpAmount;
+      dailySignInRecord.date = onlyDate;
+      await dailySignInRecord.save();
+    }
+
+    await userExists.save();
+
     await xpLog.create({
       address: userExists.address,
       username: userExists.username,
@@ -1662,18 +1668,15 @@ export const performDailySignIn = async (
       type: "daily-xp",
     });
 
-    const dailySignInRecord = await dailySignIn.findOne({ month, user: userId }).select("xpClaimedThisMonth");
-    if (!dailySignInRecord) {
-      await dailySignIn.create({ month, user: userId, xpClaimedThisMonth: dailyXpAmount, date: onlyDate });
-    } else {
-      dailySignInRecord.xpClaimedThisMonth += dailyXpAmount;
-      await dailySignInRecord.save();
-    }
-
-    await userExists.save();
-
     res.status(OK).json({ message: "Daily sign-in successful", done: true });
   } catch (error) {
+    await xpLog.create({
+      address: userExists.address,
+      username: userExists.username,
+      amount: 50,
+      status: "failed",
+      type: "daily-xp",
+    });
     logger.error(error);
     res
       .status(INTERNAL_SERVER_ERROR)
@@ -1697,14 +1700,14 @@ export const restoreStreak = async (req: GlobalRequest, res: GlobalResponse) => 
       return;
     }
 
-    const amount = network === "mainnet" ? "5" : "0.01";
+    const amount = network === "mainnet" ? "1" : "0.01";
 
     if (value !== amount) {
       res.status(BAD_REQUEST).json({ error: `user must deposit ${amount} trust before streak can be restored` });
       return;
     }
 
-    const currentDate = new Date().toLocaleString({ timeZone: "Africa/Lagos" }).split(", ")[0] as string;
+    const currentDate = new Date().toLocaleDateString("en-US", { timeZone: "Africa/Lagos" }) as string;
 
     if (timestamp !== currentDate) {
       res.status(BAD_REQUEST).json({ error: "transaction must be from the current day" });
@@ -1715,9 +1718,19 @@ export const restoreStreak = async (req: GlobalRequest, res: GlobalResponse) => 
 
     const date = today.toISOString().split("T")[0] as string;
 
-    await user.findByIdAndUpdate(req.id, { $inc: { streak: req.user.streakToRestore, totalCheckIns: 1, xp: 50 }, $set: { lastSignInDate: date } });
+    const streak = req.user.streakToRestore += 1;
 
-    await dailySignIn.findOneAndUpdate({ user: req.id, month: formatDate(new Date(), "MMM, y") }, { $set: { date }, $inc: { xpClaimedThisMonth: 50 } });
+    await user.findByIdAndUpdate(req.id, { $inc: { totalCheckIns: 1, xp: 50 }, $set: { streak, lastSignInDate: date, streakToRestore: 0 } });
+
+    const month = formatDate(new Date(), "MMM, y");
+
+    const dailySignInExists = await dailySignIn.findOne({ user: req.id, month }).select("xpClaimedThisMonth");
+    if (!dailySignInExists) {
+      await dailySignIn.create({ user: req.id, date, month, xpClaimedThisMonth: 50 });
+    } else {
+      dailySignInExists.xpClaimedThisMonth += 50; 
+      await dailySignInExists.save();
+    }
 
     res.status(OK).json({ message: "streak restored" });
   } catch (error) {
@@ -3020,7 +3033,6 @@ export const checkDiscordTask = async (
               user_id: discordId,
               guild_id: resolvedGuildId,
             });
-          fallbackQueries.push({ user_id: discordId });
 
           for (const query of fallbackQueries) {
             const sentMessage = await firstMessage.findOne(query).lean();
