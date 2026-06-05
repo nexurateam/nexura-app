@@ -66,7 +66,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
 
 
   ///////////// TEST
-  const USE_MOCK = true;
+  const USE_MOCK = false;
 
 const fetchHistory = async () => {
   setIsFetching(true);
@@ -713,7 +713,7 @@ const isUpcoming = streak < m.day;
                 : "#A78BFAB2",
             }}
           >
-            {m.label} Days
+            {m.day} Days
           </div>
 
         </div>
