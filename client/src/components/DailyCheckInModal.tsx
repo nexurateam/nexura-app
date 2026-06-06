@@ -48,7 +48,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
   const [showXp, setShowXp] = useState(true);
   const [displayXp, setDisplayXp] = useState(0);
   const animateXp = (target) => {
-  const duration = 2000; // 2 seconds
+  const duration = 2000;
   const start = 0;
   const startTime = performance.now();
 
@@ -87,7 +87,7 @@ export default function DailyCheckInModal({ open, onOpenChange, onCheckInSuccess
 
 
   ///////////// TEST
-  const USE_MOCK = true;
+  const USE_MOCK = false;
 
 const fetchHistory = async () => {
   setIsFetching(true);
@@ -273,7 +273,6 @@ const progress = useMemo(() => {
 const isMilestoneCompleted =
   MILESTONES.some(m => m.day === streak);
 
-
   const completedMilestone =
   [...MILESTONES]
     .reverse()
@@ -312,6 +311,8 @@ useEffect(() => {
 const totalCheckIns = user?.totalCheckIns ?? 0;
 
 const nextMilestoneDay = nextMilestone?.day ?? Infinity;
+
+const canOpenChest = completedMilestone && !claimed;
 
 
 const isBrokenBeforeNextMilestone = useMemo(() => {
@@ -533,47 +534,32 @@ const handleClaimReward = async () => {
 
     </div>
 
-{/* REWARD BOX */}
-<div className="relative shrink-0 w-[64px] flex items-center justify-center -mt-8">
+  {/* REWARD BOX (FIXED ALIGNMENT TO END OF BAR) */}
+  <div className="relative shrink-0 flex items-center justify-center -mt-4">
+    <div className="relative">
+      
+      <img
+        src="/reward-box.png"
+        alt=""
+        className="w-16 h-16 object-contain"
+      />
 
-  <div className="relative w-[64px] h-[64px]">
-
-    <img
-      src="/reward-box.png"
-      alt=""
-      className="w-full h-full object-contain block"
-    />
-
-    {/* XP PILL (fades out, does NOT affect layout) */}
-    {!MILESTONES.some(m => streak >= m.day) && nextMilestone && (
+      {/* XP PILL */}
       <div
-        className="absolute -top-3 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded-full text-[8px] whitespace-nowrap transition-opacity duration-300"
+        className="absolute -top-3 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded-full text-[8px] whitespace-nowrap"
         style={{
           background: "#200D4FEE",
           border: "1px solid #8B5CF64D",
           color: "#fff",
         }}
       >
-        +{new Intl.NumberFormat().format(nextMilestone.xp)} XP
+        +{new Intl.NumberFormat().format(nextMilestone?.xp || 0)} XP
       </div>
-    )}
 
-  </div>
-</div>
+    </div>
   </div>
 
-{/* CHEST BUTTON (ABSOLUTE OVERLAY, no layout shift) */}
-{MILESTONES.some(m => streak >= m.day) && (
-  <div className="absolute right-3 bottom-2 mt-2">
-    <button
-      onClick={() => setChestOpen(true)}
-      className="text-[9px] px-2 py-[2px] rounded-full bg-[#8B3EFE] text-white hover:opacity-90 transition mt-2"
-    >
-      Open Chest
-    </button>
   </div>
-)}
-
 </div>
 
 {/* RIGHT CARD - YOUR STATS */}
