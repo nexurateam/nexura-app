@@ -97,11 +97,13 @@ export default function UserSignIn() {
 
       toast({
         title: "Email sent!",
-        description: `Reset instructions sent to ${resetEmail}.`,
+        description: `Reset code sent to ${resetEmail}.`,
       });
 
+      const target = `/studio/reset-password?type=user&email=${encodeURIComponent(resetEmail)}`;
       setShowResetModal(false);
       setResetEmail("");
+      setLocation(target);
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Failed to send reset email.";

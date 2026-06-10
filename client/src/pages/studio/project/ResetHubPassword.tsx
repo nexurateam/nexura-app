@@ -6,13 +6,19 @@ import { Card, CardTitle } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
 import { projectApiRequest, storeProjectSession } from "../../../lib/projectApi";
+import { userApiRequest } from "../../../lib/userApi";
+import { storeUserSession } from "../../../lib/userSession";
 import { useToast } from "../../../hooks/use-toast";
 
 export default function ResetHubPassword() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const token = useMemo(() => new URLSearchParams(window.location.search).get("token") ?? "", []);
 
+  const queryParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const isUserHub = (queryParams.get("type") ?? "").toLowerCase() === "user";
+
+  const [email, setEmail] = useState(queryParams.get("email") ?? "");
+  const [code, setCode] = useState(queryParams.get("code") ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,8 +35,8 @@ export default function ResetHubPassword() {
   const allPwdValid = Object.values(pwdChecks).every(Boolean);
 
   const handleResetPassword = async () => {
-    if (!token) {
-      setPageError("This reset link is invalid. Request a new password reset email.");
+    if (!email || !code) {
+      setPageError("Enter the email and the reset code we sent to your inbox.");
       return;
     }
 
@@ -53,6 +59,39 @@ export default function ResetHubPassword() {
     setPageError("");
 
     try {
+      if (isUserHub) {
+        const res = await userApiRequest<{
+          message?: string;
+          accessToken?: string;
+          token?: string;
+          admin?: { _id: string; name: string; email: string; role?: string; hub?: string };
+        }>({
+          method: "POST",
+          endpoint: "/user-hub/reset-password",
+          data: { email, code, password },
+        });
+
+        const accessToken = (res.token ?? res.accessToken) as string | undefined;
+        if (!accessToken || !res.admin) {
+          throw new Error("No access token received");
+        }
+
+        storeUserSession({
+          token: accessToken,
+          type: "user",
+          role: res.admin.role ?? "user",
+          userId: res.admin._id,
+          username: res.admin.name,
+          name: res.admin.name,
+          email: res.admin.email,
+          hub: res.admin.hub,
+        });
+
+        toast({ title: "Password updated", description: "Your password has been reset successfully." });
+        setLocation("/user-dashboard");
+        return;
+      }
+
       const res = await projectApiRequest<{
         message?: string;
         accessToken?: string;
@@ -61,7 +100,7 @@ export default function ResetHubPassword() {
       }>({
         method: "POST",
         endpoint: "/hub/reset-password",
-        data: { token, password },
+        data: { email, code, password },
       });
 
       const accessToken = (res.token ?? res.accessToken) as string | undefined;
@@ -111,10 +150,11 @@ export default function ResetHubPassword() {
       <div className="max-w-md mx-auto relative z-10 space-y-6 py-6">
         <div className="text-center py-4 sm:py-6 px-2 sm:px-0">
           <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">
-            Reset Your Studio Password
+            Reset Your {isUserHub ? "User" : "Studio"} Password
           </h1>
           <p className="text-sm sm:text-base text-white/60 leading-relaxed">
-            Create a new password to regain access to your Nexura Studio dashboard.
+            Enter the code we emailed you and create a new password to regain access to your Nexura
+            {isUserHub ? " user hub." : " Studio dashboard."}
           </p>
         </div>
 
@@ -136,6 +176,29 @@ export default function ResetHubPassword() {
           ) : null}
 
           <div className="space-y-4">
+            <div>
+              <label className="block text-xs text-white/50 mb-1 ml-1">Email</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="w-full bg-gray-800 text-white border-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-white/50 mb-1 ml-1">Reset Code</label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="Enter the code from your email"
+                className="w-full bg-gray-800 text-white border-purple-500 tracking-widest"
+              />
+            </div>
+
             <div>
               <label className="block text-xs text-white/50 mb-1 ml-1">New Password</label>
               <div className="relative">
@@ -205,10 +268,10 @@ export default function ResetHubPassword() {
 
             <button
               type="button"
-              onClick={() => setLocation("/projects/create/signin-to-hub")}
+              onClick={() => setLocation(isUserHub ? "/studio/users/user-signin" : "/projects/create/signin-to-hub")}
               className="text-sm text-purple-300 hover:text-white transition-colors"
             >
-              Back to studio sign in
+              Back to {isUserHub ? "user" : "studio"} sign in
             </button>
           </div>
         </Card>
@@ -216,5 +279,3 @@ export default function ResetHubPassword() {
     </div>
   );
 }
-
-

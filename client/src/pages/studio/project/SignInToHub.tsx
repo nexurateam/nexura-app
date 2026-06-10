@@ -69,9 +69,11 @@ export default function SignInToHub() {
         endpoint: "/hub/forgot-password",
         data: { email: resetEmail, role: "project" },
       });
-      toast({ title: "Email sent!", description: `Password reset instructions sent to ${resetEmail}.` });
+      toast({ title: "Email sent!", description: `Password reset code sent to ${resetEmail}.` });
+      const target = `/studio/reset-password?email=${encodeURIComponent(resetEmail)}`;
       setShowResetModal(false);
       setResetEmail("");
+      setLocation(target);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to send reset email.";
       toast({ title: "Error", description: msg, variant: "destructive" });
