@@ -1,6 +1,4 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import { useLocation } from "wouter";
 
 interface EcosystemCardProps {
   dapp: {
@@ -42,14 +40,14 @@ export default function EcosystemCard({
   dapp,
   index,
 }: EcosystemCardProps) {
-  const router = useRouter();
+  const [, setLocation] = useLocation();
 
   const style =
     categoryStyles[index % categoryStyles.length];
 
   return (
     <div
-      onClick={() => router.push("/ecosystem-dapps")}
+      onClick={() => setLocation("/ecosystem-dapps")}
       className="group cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-[#080808] transition-all duration-300 hover:border-white/20 hover:bg-[#0d0d0d] h-[260px] flex flex-col"
     >
       {/* IMAGE */}

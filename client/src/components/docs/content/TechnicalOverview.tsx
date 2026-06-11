@@ -1,5 +1,3 @@
-"use client";
-
 const TechnicalOverview = ({onNext, onPrev}: any) => {
   return (
     <div id="nexura-technical-overview docs-top" className="max-w-[59rem]">

@@ -1,8 +1,6 @@
-"use client";
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Loader2, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useLocation } from "wouter";
 import { useToast } from "../../hooks/use-toast";
 import { apiRequestV2, getStoredAccessToken } from "../../lib/queryClient";
 import { projectApiRequest, storeProjectSession, base64ToBlob } from "../../lib/projectApi";
@@ -43,7 +41,7 @@ export default function OTPModal({ isOpen, onClose, email, page }: OTPModalProps
   const [canResend, setCanResend] = useState(false);
   const [resentMessage, setResentMessage] = useState("");
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
-  const router = useRouter();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const resendOtp = useCallback(async () => {
@@ -140,7 +138,7 @@ export default function OTPModal({ isOpen, onClose, email, page }: OTPModalProps
         sessionStorage.removeItem(SIGNUP_DATA_KEY);
         toast({ title: "Account created!", description: "Welcome to Nexura Studio." });
         onClose();
-        router.push("/studio-dashboard/connect-discord");
+        setLocation("/studio-dashboard/connect-discord");
       }
     } else {
       const usernameToUse = pending.mainAppUsername || pending.walletAddress || pending.name || pending.email.split("@")[0];
@@ -178,14 +176,14 @@ export default function OTPModal({ isOpen, onClose, email, page }: OTPModalProps
         const session = getStoredUserSession();
         console.log("[OTPModal] Stored session:", session);
         if (session && session.token) {
-          router.push("/studio/users-hub");
+          setLocation("/studio/users-hub");
         } else {
           console.error("Session not stored properly, redirecting anyway");
-          router.push("/studio/users-hub");
+          setLocation("/studio/users-hub");
         }
       }
     }
-  }, [router, toast, onClose]);
+  }, [setLocation, toast, onClose]);
 
   const verifyOtp = useCallback(async () => {
     const filled = otp.every((d) => d !== "");
@@ -289,7 +287,7 @@ export default function OTPModal({ isOpen, onClose, email, page }: OTPModalProps
           {otp.map((digit, i) => (
             <input
               key={i}
-              ref={(el) => { inputsRef.current[i] = el; }}
+              ref={(el) => (inputsRef.current[i] = el)}
               type="text"
               inputMode="numeric"
               maxLength={1}

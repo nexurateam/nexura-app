@@ -1,5 +1,3 @@
-"use client";
-
 export default function HomeBackground() {
   return (
     <div

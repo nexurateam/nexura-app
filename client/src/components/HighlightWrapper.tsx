@@ -1,5 +1,3 @@
-"use client";
-
 import { ReactNode } from "react";
 
 const highlightText = (text: string, query: string) => {

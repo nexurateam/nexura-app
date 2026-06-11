@@ -1,8 +1,6 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { usePathname } from "next/navigation";
+import { useLocation } from "wouter";
 
 type Props = {
   onClose?: () => void;
@@ -11,12 +9,12 @@ type Props = {
 
 const XPRewardPopup: React.FC<Props> = ({ onClose, forceShow = false }) => {
   const [show, setShow] = useState(false);
-const pathname = usePathname();
+const [location] = useLocation();
 const TARGET_PAGE = "/portal-claims";
   const LOCAL_KEY = "xpPopupShownCount";
 
   useEffect(() => {
-  if (pathname !== TARGET_PAGE) return;
+  if (location !== TARGET_PAGE) return;
 
   if (forceShow) {
     setShow(true);
@@ -28,7 +26,7 @@ const TARGET_PAGE = "/portal-claims";
     setShow(true);
     localStorage.setItem(LOCAL_KEY, (count + 1).toString());
   }
-}, [forceShow, pathname]);
+}, [forceShow, location]);
   if (!show) return null;
 
   return createPortal(

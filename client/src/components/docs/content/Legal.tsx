@@ -1,5 +1,3 @@
-"use client";
-
 const Legal = ({ onNext, onPrev }: any) => {
   return (
     <div id="legal docs-top" className="max-w-[59rem]">

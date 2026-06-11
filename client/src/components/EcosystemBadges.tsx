@@ -1,8 +1,5 @@
-"use client";
-
-import _intuitionLogo from "@/assets/attached_assets/image_1758369448125.png";
-const intuitionLogo = _intuitionLogo.src;
-import { useRouter } from "next/navigation";
+import intuitionLogo from "@assets/image_1758369448125.png";
+import { useLocation } from "wouter";
 
 interface Ecosystem {
   name: string;
@@ -19,7 +16,7 @@ export default function EcosystemBadges({
   title = "Network",
   ecosystems = []
 }: EcosystemBadgesProps) {
-  const router = useRouter();
+  const [, setLocation] = useLocation();
 
   // Only show Intuition ecosystem
   const defaultEcosystems: Ecosystem[] = [
@@ -35,7 +32,7 @@ export default function EcosystemBadges({
           <h2 className="text-2xl font-bold text-foreground">{title}</h2>
           <button
             className="text-sm text-primary hover:text-primary/80 font-medium"
-            onClick={() => router.push("/discover")}
+            onClick={() => setLocation("/discover")}
             data-testid="button-show-all-ecosystems"
           >
             Show all
@@ -46,7 +43,7 @@ export default function EcosystemBadges({
           {displayEcosystems.map((ecosystem) => (
             <button
               key={ecosystem.name}
-              onClick={() => router.push(ecosystem.href)}
+              onClick={() => setLocation(ecosystem.href)}
               className="group flex flex-col items-center p-4 rounded-lg bg-card hover:bg-card/80 border border-card-border hover-elevate transition-colors"
               data-testid={`ecosystem-${ecosystem.name.toLowerCase()}`}
             >

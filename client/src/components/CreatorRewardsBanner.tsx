@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 
 const imgRewardIcon72X1 = "https://www.figma.com/api/mcp/asset/0b92dd9f-906c-4d2c-a9b4-198e135b9cdb";
