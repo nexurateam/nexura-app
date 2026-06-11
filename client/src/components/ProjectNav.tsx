@@ -1,8 +1,5 @@
-"use client";
-
 import React from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Link, useLocation } from "wouter";
 import {
   Sidebar,
   SidebarContent,
@@ -18,8 +15,7 @@ import { useAuth } from "../lib/auth";
 import { Layout, Calendar, BarChart2, Trophy, Users, Settings } from "lucide-react";
 
 export default function ProjectNav({ base, projectName }: { base: string; projectName?: string }) {
-  const pathname = usePathname();
-  const router = useRouter();
+  const [location, setLocation] = useLocation();
   const auth = useAuth();
   const [mounted, setMounted] = React.useState(false);
 
@@ -38,8 +34,8 @@ export default function ProjectNav({ base, projectName }: { base: string; projec
   ];
 
   const isActive = (to: string) => {
-    if (to === `${base}/dashboard`) return pathname === `${base}` || pathname === to;
-    return pathname.startsWith(to);
+    if (to === `${base}/dashboard`) return location === `${base}` || location === to;
+    return location.startsWith(to);
   };
 
   return (

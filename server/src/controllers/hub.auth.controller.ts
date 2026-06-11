@@ -373,7 +373,6 @@ export const forgotPassword = async (req: GlobalRequest, res: GlobalResponse) =>
 		await OTP.create({
 			email: strippedEmail,
 			code,
-			page: "project",
 			expiresAt: new Date(Date.now() + 5 * 60 * 1000),
 		});
 
@@ -698,7 +697,6 @@ export const userHubForgotPassword = async (req: GlobalRequest, res: GlobalRespo
 				email: hubAdminExists.email,
 				code,
 				hubId,
-				page: "user",
 				expiresAt: new Date(Date.now() + 5 * 60 * 1000),
 			},
 			{ upsert: true, new: true, setDefaultsOnInsert: true }

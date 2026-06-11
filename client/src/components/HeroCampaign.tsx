@@ -1,9 +1,7 @@
-"use client";
-
 import { Badge } from "./ui/badge";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useLocation } from "wouter";
 
 interface Campaign {
   _id: string;
@@ -33,12 +31,12 @@ interface HeroCampaignProps {
 
 export default function HeroCampaign({ campaigns }: HeroCampaignProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const router = useRouter();
+  const [, setLocation] = useLocation();
   const currentCampaign = campaigns[currentIndex];
 
   const handleCampaignClick = () => {
     if (currentCampaign && currentCampaign.status === "Active") {
-      router.push(`/campaign/${currentCampaign._id}`);
+      setLocation(`/campaign/${currentCampaign._id}`);
     }
   };
 

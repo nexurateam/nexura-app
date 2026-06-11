@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Sidebar,
   SidebarContent,
@@ -11,8 +9,7 @@ import {
   useSidebar,
 } from "./ui/sidebar";
 import React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "wouter";
 import AnimatedBackground from "./AnimatedBackground";
 
 const mainNavItems = [
@@ -29,7 +26,7 @@ const mainNavItems = [
 ];
 
 export default function NexuraSidebar() {
-  const pathname = usePathname();
+  const [location] = useLocation();
   const [mounted, setMounted] = React.useState(false);
   const { setOpen, setOpenMobile, isMobile } = useSidebar();
   const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -87,8 +84,8 @@ export default function NexuraSidebar() {
             >
               {mainNavItems.map((item) => {
                 const isActive =
-                  pathname === item.href ||
-                  (item.href === "/" && (pathname === "/" || pathname === "/discover"));
+                  location === item.href ||
+                  (item.href === "/" && (location === "/" || location === "/discover"));
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton

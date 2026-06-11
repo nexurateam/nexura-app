@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Card } from "../ui/card";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, useLocation } from "wouter";
 import { projectApiRequest, getStoredProjectInfo } from "../../lib/projectApi";
 import { useToast } from "../../hooks/use-toast";
 import { useWallet } from "../../hooks/use-wallet";
@@ -57,7 +56,7 @@ export default function CampaignsTab() {
   const [serverOffset, setServerOffset] = useState<number>(0);
   const [countdowns, setCountdowns] = useState<Record<string, string>>({});
   const [rewardBalances, setRewardBalances] = useState<Record<string, bigint>>({});
-  const router = useRouter();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { address, isConnected, connectWallet } = useWallet();
 
@@ -389,7 +388,7 @@ export default function CampaignsTab() {
             <div className="flex gap-1.5 flex-wrap">
               <button
                 className="flex-1 px-2 py-1.5 text-xs bg-[#8B3EFE] rounded-lg hover:bg-[#7b35e6] transition"
-                onClick={() => router.push(`/studio-dashboard/create-new-campaign?edit=${campaign._id}`)}
+                onClick={() => setLocation(`/studio-dashboard/create-new-campaign?edit=${campaign._id}`)}
               >
                 {isSuperAdmin ? "View Details" : "View"}
               </button>

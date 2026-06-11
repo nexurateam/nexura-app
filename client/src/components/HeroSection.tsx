@@ -1,12 +1,7 @@
-"use client";
-
-import Link from "next/link";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import _userAvatar from "@/assets/attached_assets/generated_images/User_avatar_Web3_0f8d9459.png";
-const userAvatar = _userAvatar.src;
-import _siteLogo from "@/assets/attached_assets/logo.png";
-const siteLogo = _siteLogo.src;
+import userAvatar from "@assets/generated_images/User_avatar_Web3_0f8d9459.png";
+import siteLogo from "@assets/logo.png";
 
 export default function HeroSection() {
   return (
@@ -28,9 +23,9 @@ export default function HeroSection() {
             <Button size="lg" variant="outline" className="btn-float" data-testid="button-intel-hero">
               Intel
             </Button>
-            <Link href="/levels">
+            <a href="/levels">
               <Button size="lg" variant="ghost" className="btn-float" data-testid="button-levels-hero">Levels</Button>
-            </Link>
+            </a>
           </div>
 
           <div className="max-w-4xl mx-auto mt-6">
