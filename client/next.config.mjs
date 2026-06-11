@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  output: 'export',
+  distDir: 'dist',
   env: {
     NEXT_PUBLIC_BACKEND_URL: "https://api.nexura.intuition.box",
     NEXT_PUBLIC_NETWORK: "testnet",
