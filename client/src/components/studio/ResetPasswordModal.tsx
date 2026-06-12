@@ -19,7 +19,7 @@ interface ResetPasswordModalProps {
 }
 
 const cardClass =
-  "max-w-[600px] max-h-[90vh] overflow-y-auto bg-[#27134e] border-none p-0 rounded-[20px] shadow-[-12px_-10px_18px_5px_rgba(0,0,0,0.25),12px_10px_18px_5px_rgba(0,0,0,0.25)] flex flex-col items-center font-[family-name:var(--font-geist-sans)] scale-[0.85]";
+  "max-w-[600px] max-h-[90vh] overflow-y-auto bg-[#27134e] border-none p-0 rounded-[20px] shadow-[-12px_-10px_18px_5px_rgba(0,0,0,0.25),12px_10px_18px_5px_rgba(0,0,0,0.25)] flex flex-col items-center font-[family-name:var(--font-geist-sans)] scale-50";
 
 function IconBadge() {
   return (

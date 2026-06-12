@@ -59,7 +59,12 @@ export default function UserLayout({
           });
           if (res.admin && res.hub) {
             const current = getStoredUserSession();
-            if (current && (!current.hub || current.username !== res.admin.name)) {
+            if (
+              current &&
+              (!current.hub ||
+                current.username !== res.admin.name ||
+                (res.hub.logo && current.avatar !== res.hub.logo))
+            ) {
               const updated = {
                 ...current,
                 hub: res.hub._id,
