@@ -1,6 +1,7 @@
-import chain from "./chain";
+import { getChain } from "./chain";
 import { getWalletClient, getPublicClient } from "./viem";
-import { network, NEXONS, NEXONS_ABI, REWARD_ABI, REWARD_BYTECODE, LESSON_FEE_CONTRACT_USER, LESSON_FEE_CONTRACT_PROJECT, QUEST_FEE_CONTRACT, STREAK_RESTORE_ABI, STREAK_RESTORE_CA } from "./constants";
+import { getNetwork } from "./runtimeNetwork";
+import { NEXONS, NEXONS_ABI, REWARD_ABI, REWARD_BYTECODE, STREAK_RESTORE_ABI, getStreakRestoreCA } from "./constants";
 import { ethers } from "ethers";
 import { createPublicClient, http, parseAbi, type Address, parseEther, formatEther } from "viem";
 import { getIntuitionNetworkParams } from "./utils";
@@ -20,12 +21,10 @@ type StudioPaymentConfig = {
   authorizedAddress?: string;
 };
 
-const mainnet = network === "mainnet";
-
-const chainId = mainnet ? "0x483" : "0x350b";
+const getChainIdHex = () => getNetwork() === "mainnet" ? "0x483" : "0x350b";
 let readonlyPublicClient: ReturnType<typeof createPublicClient> | undefined;
 
-const requireContractAddress = (address: string | undefined, label: string, networkLabel: string = network ?? "the current") => {
+const requireContractAddress = (address: string | undefined, label: string, networkLabel: string = getNetwork() ?? "the current") => {
   const normalized = address?.trim();
 
   if (!normalized) {
@@ -41,6 +40,7 @@ const requireContractAddress = (address: string | undefined, label: string, netw
 
 const getReadonlyPublicClient = () => {
   if (!readonlyPublicClient) {
+    const chain = getChain();
     readonlyPublicClient = createPublicClient({
       chain,
       transport: http(chain.rpcUrls.default.http[0]),
@@ -109,12 +109,12 @@ export const payRestoreStreakFee = async (): Promise<string> => {
     const signer = await provider.getSigner();
 
     const contract = new ethers.Contract(
-      STREAK_RESTORE_CA,
+      getStreakRestoreCA(),
       STREAK_RESTORE_ABI,
       signer
     );
 
-    const tx = await contract.payFee({ value: parseEther(network === "mainnet" ? "1" : "0.01") });
+    const tx = await contract.payFee({ value: parseEther(getNetwork() === "mainnet" ? "1" : "0.01") });
 
     await tx.wait();
 
@@ -202,7 +202,7 @@ export const createRewardsContract = async ({ nameOfCampaign, totalRewards, rewa
     const publicClient = getPublicClient();
     if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
 
-    await ensureSwitch(chainId);
+    await ensureSwitch(getChainIdHex());
 
     const authorizedAddress = await getServerAuthorizedAddress();
 
@@ -223,7 +223,7 @@ export const createRewardsContract = async ({ nameOfCampaign, totalRewards, rewa
       bytecode: REWARD_BYTECODE,
       args: [nameOfCampaign, totalRewardsWei, rewardTokenWei, authorizedAddress, startDate],
       account,
-      chain,
+      chain: getChain(),
       value: totalRewardsWei
     });
 
@@ -280,7 +280,7 @@ export const addReward = async (contractAddress: string, rewardsToAdd: number | 
     const publicClient = getPublicClient();
     if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
 
-    await ensureSwitch(chainId);
+    await ensureSwitch(getChainIdHex());
 
     const [account] = await walletClient.getAddresses();
 
@@ -291,7 +291,7 @@ export const addReward = async (contractAddress: string, rewardsToAdd: number | 
       address: contractAddress as "0x",
       functionName: "addReward",
       args: [rewardsToAddWei],
-      chain,
+      chain: getChain(),
       account,
       value: rewardsToAddWei
     });
@@ -351,7 +351,7 @@ export const updateRewardStartTime = async (contractAddress: string, newDate: nu
     const publicClient = getPublicClient();
     if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
 
-    await ensureSwitch(chainId);
+    await ensureSwitch(getChainIdHex());
 
     const [account] = await walletClient.getAddresses();
     const validatedCampaignAddress = requireContractAddress(contractAddress, "Campaign contract");
@@ -362,7 +362,7 @@ export const updateRewardStartTime = async (contractAddress: string, newDate: nu
       address: validatedCampaignAddress as Address,
       functionName: "updateDate",
       args: [normalizedDate],
-      chain,
+      chain: getChain(),
       account,
     });
 
@@ -415,7 +415,7 @@ export const closeRewardCampaign = async (contractAddress: string): Promise<stri
     const publicClient = getReadonlyPublicClient();
     if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
 
-    await ensureSwitch(chainId);
+    await ensureSwitch(getChainIdHex());
 
     const [account] = await walletClient.getAddresses();
     const validatedCampaignAddress = requireContractAddress(contractAddress, "Campaign contract");
@@ -424,7 +424,7 @@ export const closeRewardCampaign = async (contractAddress: string): Promise<stri
       abi: REWARD_ABI,
       address: validatedCampaignAddress as Address,
       functionName: "closeCampaign",
-      chain,
+      chain: getChain(),
       account,
     });
 
@@ -456,7 +456,7 @@ export const claimCampaignOnchainReward = async ({ campaignAddress, userId }: { 
 
     await window.ethereum.request({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId }]
+      params: [{ chainId: getChainIdHex() }]
     });
 
     const provider = new ethers.BrowserProvider((window as any).ethereum);
@@ -496,7 +496,7 @@ export const claimReferralReward = async (userId: string) => {
     const walletClient = await getWalletClient();
     if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
 
-    const mainnet = network === "mainnet";
+    const mainnet = getNetwork() === "mainnet";
 
     await walletClient.switchChain({ id: mainnet ? 1155 : 13579 });
 
@@ -508,7 +508,7 @@ export const claimReferralReward = async (userId: string) => {
       functionName: "claimReferralReward",
       args: [userId],
       account: account[0],
-      chain
+      chain: getChain()
     });
   } catch (error: any) {
     console.error(error);
@@ -521,7 +521,7 @@ export const mintNexon = async (level: number, userId: string) => {
     const walletClient = await getWalletClient();
     if (!walletClient) throw new Error("No wallet provider available. Connect a wallet with RainbowKit first.");
 
-    const mainnet = network === "mainnet";
+    const mainnet = getNetwork() === "mainnet";
 
     await window.ethereum.request({
       method: "wallet_switchEthereumChain",

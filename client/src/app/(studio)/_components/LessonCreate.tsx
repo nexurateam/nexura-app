@@ -11,7 +11,7 @@ import { projectApiRequest } from "@/lib/projectApi";
 import { apiRequestV2 } from "@/lib/queryClient";
 import { usePathname, useRouter } from "next/navigation";
 
-import { BACKEND_URL, LESSON_FEE_CONTRACT_PROJECT } from "@/lib/constants";
+import { BACKEND_URL, getLessonFeeContractProject } from "@/lib/constants";
 import { getStoredAccessToken } from "@/lib/queryClient";
 import { payStudioHubFee } from "@/lib/performOnchainAction";
 
@@ -2261,7 +2261,7 @@ export default function CreateLesson({
                   onClick={async () => {
                     setPaymentLoading(true);
                     try {
-                      const hash = await payStudioHubFee(1, LESSON_FEE_CONTRACT_PROJECT);
+                      const hash = await payStudioHubFee(1, getLessonFeeContractProject());
                       setPaymentTxHash(hash);
                       await projectApiRequest({
                         method: "PATCH",

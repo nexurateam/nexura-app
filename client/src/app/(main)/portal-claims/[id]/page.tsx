@@ -14,7 +14,7 @@ import { buyShares, sellShares } from "@/services/web3";
 import { useToast } from "@/hooks/use-toast";
 import { Term, Position } from "@/types/types";
 import { getPublicClient, getWalletClient } from "@/lib/viem";
-import chain from "@/lib/chain";
+import { getChain } from "@/lib/chain";
 import { PROXY_FEE_CONTRACT } from "@/lib/constants";
 import { multiVaultPreviewDeposit, multiVaultPreviewRedeem, getMultiVaultAddressFromChainId } from "@0xintuition/sdk";
 import html2canvas from "html2canvas";
@@ -130,9 +130,9 @@ export default function ClaimDetails() {
 
       const walletClient = await getWalletClient();
 
-      await walletClient.switchChain({ id: chain.id });
+      await walletClient.switchChain({ id: getChain().id });
 
-      const address = getMultiVaultAddressFromChainId(chain.id!);
+      const address = getMultiVaultAddressFromChainId(getChain().id!);
 
       let sharesAmount = 0n;
 
@@ -352,14 +352,14 @@ export default function ClaimDetails() {
 
     const walletClient = await getWalletClient();
     const publicClient = getPublicClient();
-    await walletClient.switchChain({ id: chain.id });
+    await walletClient.switchChain({ id: getChain().id });
 
     const linearCurve = 1n;
     const exponentialCurve = 2n;
 
     let totalShares = 0n;
 
-    const address = getMultiVaultAddressFromChainId(chain.id!);
+    const address = getMultiVaultAddressFromChainId(getChain().id!);
 
     // sum across all vaults for both term and counterTerm
     for (const curveId of [linearCurve, exponentialCurve]) {

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { projectApiRequest } from "@/lib/projectApi";
 import { userApiRequest } from "@/lib/userApi";
 import { payStudioHubFee } from "@/lib/performOnchainAction";
-import { QUEST_FEE_CONTRACT } from "@/lib/constants";
+import { getQuestFeeContract } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 import { getStoredUserSession } from "@/lib/userSession";
 import { apiRequestV2 } from "@/lib/queryClient";
@@ -983,7 +983,7 @@ export default function QuestCreate({ isUserMode = false }: QuestCreateProps) {
                 <button disabled={paymentLoading} onClick={async () => {
                   setPaymentLoading(true);
                   try {
-                    const hash = await payStudioHubFee(undefined, QUEST_FEE_CONTRACT);
+                    const hash = await payStudioHubFee(undefined, getQuestFeeContract());
                     setPaymentTxHash(hash);
                     await apiRequest({ method: "PATCH", endpoint: `/${apiPrefix}/save-payment-hash`, data: { txHash: hash } });
                     toast({ title: "Payment successful", description: "60 $TRUST sent." });

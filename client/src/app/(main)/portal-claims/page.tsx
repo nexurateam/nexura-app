@@ -9,12 +9,12 @@ import { formatNumber } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { getPublicClient } from "@/lib/viem";
 import { useAuth } from "@/lib/auth";
-import { network } from "@/lib/constants";
+import { getNetwork } from "@/lib/runtimeNetwork";
 import { Term, Position } from "@/types/types";
 import XPRewardPopup from "@/components/XPRewardPopup"
 import { toFixed } from "@/lib/claimsFormat";
 
-const explorer = network === "testnet" ? "https://testnet.explorer.intuition.systems" : "https://explorer.intuition.systems";
+const getExplorer = () => getNetwork() === "testnet" ? "https://testnet.explorer.intuition.systems" : "https://explorer.intuition.systems";
 
 interface Claim {
   user: { address: Address };
@@ -378,7 +378,7 @@ useEffect(() => {
 
       await apiRequestV2("POST", "/api/user/update-claims", { transactionHash, action: action === "deposit" ? "buy" : "sell" });
 
-      setTransactionLink(`${explorer}/tx/${transactionHash}`);
+      setTransactionLink(`${getExplorer()}/tx/${transactionHash}`);
 
       // Refresh wallet balance after transaction
       const balance = await fetchWalletBalance(user.address);

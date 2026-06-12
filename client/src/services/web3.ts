@@ -3,7 +3,7 @@ import { MultiVaultAbi } from "@0xintuition/protocol";
 import { Address, parseEther, toHex } from "viem";
 import { getWalletClient, getPublicClient } from "../lib/viem";
 import { apiRequestV2 } from "../lib/queryClient";
-import chain from "../lib/chain";
+import { getChain } from "../lib/chain";
 import { PROXY_CONTRACT_ABI, PROXY_FEE_CONTRACT } from "../lib/constants";
 import { allowToDeposit } from "../lib/utils";
 
@@ -12,7 +12,7 @@ export const buyShares = async ({ buyAmount, termId, curveId, isApproved }: { bu
   const walletClient = await getWalletClient();
   const publicClient = getPublicClient();
 
-  await walletClient.switchChain({ id: chain.id });
+  await walletClient.switchChain({ id: getChain().id });
 
   const account = walletClient?.account?.address as "0x";
 
@@ -45,7 +45,7 @@ export const sellShares = async (sharesAmount: string, termId: Address, curveId:
   const walletClient = await getWalletClient();
   const publicClient = getPublicClient();
   
-  await walletClient.switchChain({ id: chain.id });
+  await walletClient.switchChain({ id: getChain().id });
 
   const address = getMultiVaultAddressFromChainId(walletClient.chain?.id!);
 
@@ -77,7 +77,7 @@ export const createProofOfAction = async ({
   const walletClient = await getWalletClient();
   const publicClient = getPublicClient();
 
-  await walletClient.switchChain({ id: chain.id });
+  await walletClient.switchChain({ id: getChain().id });
 
   const address = getMultiVaultAddressFromChainId(walletClient.chain?.id!);
 
