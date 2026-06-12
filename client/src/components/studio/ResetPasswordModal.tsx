@@ -19,12 +19,12 @@ interface ResetPasswordModalProps {
 }
 
 const cardClass =
-  "max-w-[600px] max-h-[90vh] overflow-y-auto bg-[#27134e] border-none p-0 rounded-[20px] shadow-[-12px_-10px_18px_5px_rgba(0,0,0,0.25),12px_10px_18px_5px_rgba(0,0,0,0.25)] flex flex-col items-center font-[family-name:var(--font-geist-sans)] scale-50";
+  "max-w-[600px] bg-[#27134e] border-none p-0 rounded-[20px] shadow-[-12px_-10px_18px_5px_rgba(0,0,0,0.25),12px_10px_18px_5px_rgba(0,0,0,0.25)] flex flex-col items-center font-[family-name:var(--font-geist-sans)] scale-[0.75]";
 
 function IconBadge() {
   return (
-    <div className="mt-[40px] flex items-center justify-center size-[120px] rounded-[100px] bg-[rgba(139,62,254,0.1)] shadow-[0px_6px_67px_-10px_#7f3ae8]">
-      <Image src="/activate-studio.png" alt="" width={120} height={120} className="size-[120px] object-contain" priority />
+    <div className="mt-[24px] flex items-center justify-center size-[84px] rounded-[100px] bg-[rgba(139,62,254,0.1)] shadow-[0px_6px_67px_-10px_#7f3ae8]">
+      <Image src="/activate-studio.png" alt="" width={84} height={84} className="size-[84px] object-contain" priority />
     </div>
   );
 }
@@ -349,7 +349,7 @@ export default function ResetPasswordModal({ isOpen, onClose, email, type, onRes
             </div>
           )}
 
-          <div className="mt-[24px] w-full px-[35px]">
+          <div className="mt-[16px] w-full px-[35px]">
             <label className="block text-[18px] font-bold text-white mb-[12px]">New Password</label>
             <div className="relative w-full">
               <input
@@ -369,7 +369,7 @@ export default function ResetPasswordModal({ isOpen, onClose, email, type, onRes
             </div>
           </div>
 
-          <div className="mt-[14px] w-full px-[35px] flex flex-col gap-[7px]">
+          <div className="mt-[10px] w-full px-[35px] flex flex-col gap-[5px]">
             {requirements.map(([ok, label]) => (
               <div key={label} className="flex items-center gap-[8px] text-[13px] font-bold">
                 {ok ? (
@@ -384,7 +384,7 @@ export default function ResetPasswordModal({ isOpen, onClose, email, type, onRes
             ))}
           </div>
 
-          <div className="mt-[24px] w-full px-[35px]">
+          <div className="mt-[16px] w-full px-[35px]">
             <label className="block text-[18px] font-bold text-white mb-[12px]">Confirm New Password</label>
             <div className="relative w-full">
               <input
@@ -407,7 +407,7 @@ export default function ResetPasswordModal({ isOpen, onClose, email, type, onRes
           <button
             onClick={handleReset}
             disabled={loading}
-            className="mt-[32px] mb-[40px] w-[340px] max-w-full h-[45px] bg-[#8b3efe] hover:bg-[#9b51ff] disabled:bg-[#8b3efe]/50 disabled:cursor-not-allowed text-white text-[16px] font-semibold rounded-[30px] flex items-center justify-center transition-colors"
+            className="mt-[20px] mb-[28px] w-[340px] max-w-full h-[45px] bg-[#8b3efe] hover:bg-[#9b51ff] disabled:bg-[#8b3efe]/50 disabled:cursor-not-allowed text-white text-[16px] font-semibold rounded-[30px] flex items-center justify-center transition-colors"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Reset Password"}
           </button>
