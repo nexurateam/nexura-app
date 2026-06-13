@@ -227,6 +227,7 @@ export default function QuestCreate({ isUserMode = false }: QuestCreateProps) {
   };
 
   const handleSaveDraft = async (thenNavigate?: string) => {
+    console.log("[ACTION] QuestCreate.handleSaveDraft — save draft");
     if (!questName) {
       toast({ title: "Missing Name", description: "Please enter a quest name.", variant: "destructive" });
       return null;
@@ -271,6 +272,7 @@ export default function QuestCreate({ isUserMode = false }: QuestCreateProps) {
   };
 
   const handlePublish = async () => {
+    console.log("[ACTION] QuestCreate.handlePublish — publish quest");
     if (!questName || tasks.length < 5) {
       toast({ title: "Incomplete", description: "Please provide a name and at least 5 tasks.", variant: "destructive" });
       return;
@@ -309,6 +311,7 @@ export default function QuestCreate({ isUserMode = false }: QuestCreateProps) {
   };
 
   const handleUpdateQuest = async () => {
+    console.log("[ACTION] QuestCreate.handleUpdateQuest — update quest");
     if (!questId) return;
 
     if (questDescription.length < 50 || questDescription.length > 100) {
@@ -336,6 +339,7 @@ export default function QuestCreate({ isUserMode = false }: QuestCreateProps) {
   };
 
   const handleSaveTask = () => {
+    console.log("[ACTION] QuestCreate.handleSaveTask — add/save task");
     const finalTask = { ...newTask };
     if (finalTask.type === "Create a Post") {
       finalTask.handleOrUrl = "https://x.com";

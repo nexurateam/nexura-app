@@ -1020,6 +1020,7 @@ export default function CreateLesson({
   // ----- Publish / unpublish from review step -----
 
   const handlePublishToggle = async (target: "published" | "draft") => {
+    console.log("[ACTION] LessonCreate.handlePublishToggle →", target);
     const id = ensureLessonId();
     if (!id) return;
     const endpoint =
@@ -1059,6 +1060,7 @@ export default function CreateLesson({
   };
 
   const handleSaveCompletion = async () => {
+    console.log("[ACTION] LessonCreate.handleSaveCompletion — save completion criteria");
     const id = ensureLessonId();
     if (!id) return;
     try {
