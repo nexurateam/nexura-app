@@ -250,8 +250,8 @@ const mockQuests = [
 const quests = data?.quests?.length ? data.quests : mockQuests;
 
   const QUEST_FILTERS = {
-    FEATURED: "featured",
     SEASONAL: "seasonal",
+    FEATURED: "featured",
     DAILY: "daily",
   };
 
@@ -639,7 +639,7 @@ const renderSeasonalQuestCard = (quest: Quest, index: number = 0) => {
               <button
                 key={filter}
                 onClick={() => setQuestFilter(filter)}
-                className="px-3 py-1 text-xs capitalize border rounded-2xl transition"
+                className="px-4 py-2 text-[16px] capitalize border rounded-2xl transition"
                 style={{
                   backgroundColor: isActive ? "#8B3EFE" : "transparent",
                   borderColor: "#8B3EFE",
