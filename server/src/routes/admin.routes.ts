@@ -44,7 +44,7 @@ import {
   deleteCampaignAdmin,
   getBannedCreators,
 } from "@/controllers/admin.controller";
-import { deleteQuest, saveQuest } from "@/controllers/quest.controller";
+import { deleteQuest, saveQuest, saveSingleQuest, publishSingleQuest } from "@/controllers/quest.controller";
 import { fetchChannels, fetchRoles, fetchServers } from "@/controllers/hub.auth.controller";
 import { disconnectHubDiscord, getCampaign, getHub, saveCampaign, saveCampaignWithQuests, updateHub } from "@/controllers/hub.controller";
 import {
@@ -108,6 +108,8 @@ router
   .patch("/publish-campaign", requireAdminSuperadmin, attachAdminCampaignHub, noPaymentRequired, publishAdminCampaign)
   .patch("/publish-quest", requireAdminSuperadmin, attachAdminCampaignHub, noPaymentRequired, publishAdminQuest)
   .patch("/save-quest", requireAdminSuperadmin, attachAdminCampaignHub, upload.single("coverImage"), saveQuest)
+  .patch("/publish-single-quest", requireAdminSuperadmin, attachAdminCampaignHub, noPaymentRequired, publishSingleQuest)
+  .patch("/save-single-quest", requireAdminSuperadmin, attachAdminCampaignHub, upload.single("coverImage"), saveSingleQuest)
   .delete("/delete-campaign", requireAdminSuperadmin, attachAdminCampaignHub, deleteCampaignAdmin)
   .delete("/delete-quest", requireAdminSuperadmin, attachAdminCampaignHub, deleteQuest)
   .delete("/delete-fraud-quest", requireAdminSuperadmin, deleteQuestAdmin)

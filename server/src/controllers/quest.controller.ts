@@ -128,6 +128,19 @@ export const fetchQuests = async (req: GlobalRequest, res: GlobalResponse) => {
 
 		const startOfToday = startOfDayUTC();
 
+		// Resolve each quest's task tag so the main app can detect relic / portal-claim
+		// (i-*) quests. Featured/daily are single-task, so the first mini-quest is the
+		// quest's task. Batched to avoid an N+1 lookup.
+		const allMiniQuests = await miniQuest
+			.find({ quest: { $in: questsInDB.map((q) => q._id) } })
+			.select("_id tag link quest")
+			.lean();
+		const firstMiniQuestByQuestId = new Map<string, any>();
+		for (const mq of allMiniQuests) {
+			const key = mq.quest?.toString();
+			if (key && !firstMiniQuestByQuestId.has(key)) firstMiniQuestByQuestId.set(key, mq);
+		}
+
 		const quests: any[] = [];
 
 		for (const singleQuest of questsInDB) {
@@ -146,6 +159,16 @@ export const fetchQuests = async (req: GlobalRequest, res: GlobalResponse) => {
 
 			mergedQuest.done = singleQuestCompleted && !isStaleDaily ? singleQuestCompleted.done : false;
 			mergedQuest.joined = !!singleQuestCompleted && !isStaleDaily;
+
+			// Expose the single task's tag so the main app can render the right action
+			// (relic -> Check Relic / RelicScanModal, i-* -> atlas verify via check-atlas-task).
+			const firstMiniQuest = firstMiniQuestByQuestId.get(singleQuest._id.toString());
+			if (firstMiniQuest?.tag) {
+				mergedQuest.taskType = firstMiniQuest.tag;
+				mergedQuest.taskId = firstMiniQuest._id;
+				mergedQuest.taskLink = firstMiniQuest.link;
+				mergedQuest.isRelicQuest = firstMiniQuest.tag === "relic";
+			}
 
 			const temporalStatus = getTemporalQuestStatus(singleQuest);
 			if (temporalStatus && temporalStatus !== singleQuest.status && singleQuest.status !== "Save" && singleQuest.status !== "Ended") {
@@ -1273,29 +1296,6 @@ export const saveQuest = async (req: GlobalRequest, res: GlobalResponse) => {
       } catch { /* ignore */ }
     }
 
-    // Featured/daily quests are published with no title/description/dates from the
-    // dashboard; derive sensible defaults from the first task so validation + the
-    // main-app card have meaningful values. Seasonal sends real values and is untouched.
-    if (req.body.category === "featured" || req.body.category === "daily") {
-      const firstTaskText = String(miniQuestsToSave?.[0]?.quest || miniQuestsToSave?.[0]?.text || "").trim();
-      const fallbackTitle = req.body.category === "daily" ? "Daily Quest" : "Featured Quest";
-
-      if (!String(req.body.title ?? "").trim()) {
-        req.body.title = firstTaskText || fallbackTitle;
-      }
-      if (!String(req.body.description ?? "").trim()) {
-        req.body.description = (firstTaskText || fallbackTitle).slice(0, 100);
-      }
-      if (!String(req.body.nameOfProject ?? "").trim()) {
-        req.body.nameOfProject = req.admin?.name || fallbackTitle;
-      }
-      if (!String(req.body.starts_at ?? "").trim()) {
-        req.body.starts_at = new Date().toISOString();
-      }
-      if (!String(req.body.ends_at ?? "").trim()) {
-        req.body.ends_at = new Date("2999-12-31T00:00:00.000Z").toISOString();
-      }
-    }
 
     const { error } = validateSaveQuestData(req.body);
     if (error) {
@@ -1501,6 +1501,180 @@ export const saveQuest = async (req: GlobalRequest, res: GlobalResponse) => {
     res.status(INTERNAL_SERVER_ERROR).json({ error: error?.message || "error saving quest" });
   }
 }
+
+export const saveSingleQuest = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    if (typeof req.body.reward === "string") {
+      try { req.body.reward = JSON.parse(req.body.reward); } catch { /* leave as-is */ }
+    }
+    if (req.body.reward && typeof req.body.reward === "object") {
+      req.body.reward = Number(req.body.reward.xp) || 0;
+    }
+
+    const category = req.body.category;
+    if (category !== "featured" && category !== "daily") {
+      res.status(BAD_REQUEST).json({ error: "invalid category for single quest" });
+      return;
+    }
+
+    const page = req.body.page;
+    let hubFound: any;
+    if (page === "user") {
+      hubFound = await userHub.findById(req.admin.hub).lean();
+      if (!hubFound) {
+        res.status(BAD_REQUEST).json({ error: "create a user hub to continue" });
+        return;
+      }
+    } else {
+      hubFound = await hub.findById(req.admin.hub).lean();
+      if (!hubFound) {
+        res.status(BAD_REQUEST).json({ error: "create a hub to continue" });
+        return;
+      }
+    }
+
+    let tasks: any[] = [];
+    const rawTasks = req.body.miniQuests ?? req.body.campaignQuests;
+    if (rawTasks !== undefined) {
+      try {
+        tasks = typeof rawTasks === "string" ? JSON.parse(rawTasks) : rawTasks;
+      } catch { /* ignore */ }
+    }
+    const firstTask = tasks?.[0];
+    if (!firstTask) {
+      res.status(BAD_REQUEST).json({ error: "a task is required" });
+      return;
+    }
+
+    const firstTaskText = String(firstTask?.quest || firstTask?.text || "").trim();
+    const fallbackTitle = category === "daily" ? "Daily Quest" : "Featured Quest";
+    const title = String(req.body.title ?? "").trim() || firstTaskText || fallbackTitle;
+    const description = String(req.body.description ?? "").trim() || (firstTaskText || fallbackTitle).slice(0, 100);
+    const nameOfProject = String(req.body.nameOfProject ?? "").trim() || hubFound.name || fallbackTitle;
+    const starts_at = normalizeCampaignDateInput(req.body.starts_at) || new Date().toISOString();
+    const ends_at = normalizeCampaignDateInput(req.body.ends_at) || new Date("2999-12-31T00:00:00.000Z").toISOString();
+
+    const { id } = req.query as { id: string };
+    if (id && !mongoose.Types.ObjectId.isValid(id)) {
+      res.status(BAD_REQUEST).json({ error: "invalid quest id" });
+      return;
+    }
+
+    const buildMiniQuest = (questId: any) => {
+      const { quest: questText, _id, ...rest } = firstTask;
+      return { ...rest, text: questText || firstTask.text || "", quest: questId };
+    };
+
+    const existingQuest = id ? await quest.findById(id).lean() : null;
+
+    if (!existingQuest) {
+      const questCount = await quest.countDocuments({ creator: req.admin.hub });
+      const body = {
+        title,
+        description,
+        category,
+        reward: req.body.reward,
+        page,
+        nameOfProject,
+        sub_title: description,
+        project_image: hubFound.logo ?? "pending",
+        project_name: hubFound.name ?? nameOfProject,
+        projectCoverImage: "pending",
+        questNumber: questCount + 1,
+        starts_at,
+        ends_at,
+        creator: req.admin.hub,
+        creatorModel: page === "user" ? "user" : "admin",
+        status: "Save",
+      };
+      const savedQuest = await quest.create(body);
+      await miniQuest.deleteMany({ quest: savedQuest._id });
+      await miniQuest.create(buildMiniQuest(savedQuest._id));
+      await quest.findByIdAndUpdate(savedQuest._id, { noOfQuests: 1 });
+      res.status(CREATED).json({ questId: savedQuest._id });
+      return;
+    }
+
+    await quest.findByIdAndUpdate(id, {
+      title,
+      description,
+      category,
+      reward: req.body.reward,
+      nameOfProject,
+      sub_title: description,
+      starts_at,
+      ends_at,
+    });
+    await miniQuest.deleteMany({ quest: id });
+    await miniQuest.create(buildMiniQuest(id));
+    await quest.findByIdAndUpdate(id, { noOfQuests: 1 });
+    res.status(OK).json({ questId: id });
+  } catch (error: any) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: error?.message || "error saving single quest" });
+  }
+};
+
+export const publishSingleQuest = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    const id = (req.query.id as string) || (req.body.id as string) || (req.body.questId as string);
+    if (!id) {
+      res.status(BAD_REQUEST).json({ error: "Quest ID is required" });
+      return;
+    }
+
+    const adminHub = req.admin?.hub ? String(req.admin.hub) : null;
+    if (!adminHub) {
+      res.status(BAD_REQUEST).json({ error: "Admin has no associated hub" });
+      return;
+    }
+
+    const questDoc = await quest.findById(id);
+    if (!questDoc) {
+      res.status(NOT_FOUND).json({ error: "Quest not found" });
+      return;
+    }
+
+    if (String(questDoc.creator) !== adminHub) {
+      res.status(FORBIDDEN).json({ error: "You are not allowed to publish this quest" });
+      return;
+    }
+
+    const { status } = req.body;
+    if (status === "Ended") {
+      questDoc.status = "Ended";
+      await questDoc.save();
+      res.status(OK).json({ message: "Quest closed successfully!" });
+      return;
+    }
+
+    if (questDoc.status !== "Save") {
+      res.status(BAD_REQUEST).json({ error: "Quest is not in draft status" });
+      return;
+    }
+
+    const now = new Date();
+    let newStatus: "Active" | "Scheduled";
+    if (!questDoc.starts_at || new Date(questDoc.starts_at) <= now) {
+      newStatus = "Active";
+    } else {
+      newStatus = "Scheduled";
+    }
+
+    if (questDoc.ends_at && new Date(questDoc.ends_at) <= now) {
+      res.status(BAD_REQUEST).json({ error: "Cannot publish a quest that has already ended" });
+      return;
+    }
+
+    questDoc.status = newStatus;
+    await questDoc.save();
+
+    res.status(OK).json({ message: "Quest published successfully!" });
+  } catch (error: any) {
+    logger.error("Error publishing single quest: " + error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: error?.message || "Error publishing quest" });
+  }
+};
 
 export const deleteQuest = async (req: GlobalRequest, res: GlobalResponse) => {
   try {
