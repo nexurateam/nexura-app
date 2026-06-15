@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { JWT_SECRET, network, REFRESH_SECRET, ALCHEMY_API_KEY, STUDIO_FEE_CONTRACT } from "./env.utils";
-import { getPublicClient } from "./account";
+import { getPublicClient, getEthMainnetClient } from "./account";
 import { NexonsAddress, STUDIO_ABI, RELIC_CONTRACT } from "./constants";
 import { ethers } from "ethers";
 import bcrypt from "bcrypt";
@@ -450,7 +450,7 @@ export const validateCreateQuestion = (reqData: any) => {
 }
 
 export const getNFT = async (walletAddress: string) => {
-  const client = getPublicClient();
+  const client = getEthMainnetClient();
 
 	const balance = await client.readContract({
 		address: RELIC_CONTRACT,

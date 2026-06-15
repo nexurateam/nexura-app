@@ -1230,6 +1230,13 @@ export const saveQuest = async (req: GlobalRequest, res: GlobalResponse) => {
       try { req.body.reward = JSON.parse(req.body.reward); } catch { /* leave as-is */ }
     }
 
+    // The quest model stores `reward` as a Number; the dashboard sends a
+    // { xp, pool, trust } object. Coerce to the xp value so create/update don't
+    // fail the Number cast.
+    if (req.body.reward && typeof req.body.reward === "object") {
+      req.body.reward = Number(req.body.reward.xp) || 0;
+    }
+
     req.body.starts_at = normalizeCampaignDateInput(req.body.starts_at);
     req.body.ends_at = normalizeCampaignDateInput(req.body.ends_at);
 
@@ -1255,14 +1262,39 @@ export const saveQuest = async (req: GlobalRequest, res: GlobalResponse) => {
       req.body.nameOfProject = hubFound.name || "";
     }
 
-    // Parse miniQuests if provided
+    // Parse mini quests (Studio sends `miniQuests`, the admin/dashboard path sends `campaignQuests`)
     let miniQuestsToSave: any[] | null = null;
-    if (req.body.miniQuests !== undefined) {
+    const rawMiniQuests = req.body.miniQuests ?? req.body.campaignQuests;
+    if (rawMiniQuests !== undefined) {
       try {
-        miniQuestsToSave = typeof req.body.miniQuests === "string"
-          ? JSON.parse(req.body.miniQuests)
-          : req.body.miniQuests;
+        miniQuestsToSave = typeof rawMiniQuests === "string"
+          ? JSON.parse(rawMiniQuests)
+          : rawMiniQuests;
       } catch { /* ignore */ }
+    }
+
+    // Featured/daily quests are published with no title/description/dates from the
+    // dashboard; derive sensible defaults from the first task so validation + the
+    // main-app card have meaningful values. Seasonal sends real values and is untouched.
+    if (req.body.category === "featured" || req.body.category === "daily") {
+      const firstTaskText = String(miniQuestsToSave?.[0]?.quest || miniQuestsToSave?.[0]?.text || "").trim();
+      const fallbackTitle = req.body.category === "daily" ? "Daily Quest" : "Featured Quest";
+
+      if (!String(req.body.title ?? "").trim()) {
+        req.body.title = firstTaskText || fallbackTitle;
+      }
+      if (!String(req.body.description ?? "").trim()) {
+        req.body.description = (firstTaskText || fallbackTitle).slice(0, 100);
+      }
+      if (!String(req.body.nameOfProject ?? "").trim()) {
+        req.body.nameOfProject = req.admin?.name || fallbackTitle;
+      }
+      if (!String(req.body.starts_at ?? "").trim()) {
+        req.body.starts_at = new Date().toISOString();
+      }
+      if (!String(req.body.ends_at ?? "").trim()) {
+        req.body.ends_at = new Date("2999-12-31T00:00:00.000Z").toISOString();
+      }
     }
 
     const { error } = validateSaveQuestData(req.body);
@@ -1312,7 +1344,7 @@ export const saveQuest = async (req: GlobalRequest, res: GlobalResponse) => {
         questNumber: questCount + 1,
         projectCoverImage: req.body.coverImage ?? "pending",
         creator: req.admin.hub,
-        creatorModel: page === "user" ? "user" : "project",
+        creatorModel: page === "user" ? "user" : "admin",
         status: "Save", // Enforce Save status for new quests from Studio
       };
 
@@ -1324,8 +1356,10 @@ export const saveQuest = async (req: GlobalRequest, res: GlobalResponse) => {
         await miniQuest.deleteMany({ quest: savedQuestId });
         if (miniQuestsToSave.length > 0) {
           await miniQuest.insertMany(
-            miniQuestsToSave.map((q: any) => (
-              { ...q, quest: savedQuestId }))
+            miniQuestsToSave.map((q: any) => {
+              const { quest: questText, ...rest } = q;
+              return { ...rest, text: questText || q.text || "", quest: savedQuestId };
+            })
           );
         }
         await quest.findByIdAndUpdate(savedQuestId, { noOfQuests: miniQuestsToSave.length });
@@ -1346,7 +1380,7 @@ export const saveQuest = async (req: GlobalRequest, res: GlobalResponse) => {
         questNumber: questCount + 1,
         projectCoverImage: req.body.coverImage ?? "pending",
         creator: req.admin.hub,
-        creatorModel: page === "user" ? "user" : "project",
+        creatorModel: page === "user" ? "user" : "admin",
         status: "Save", // Enforce Save status for new quests from Studio
       };
 
