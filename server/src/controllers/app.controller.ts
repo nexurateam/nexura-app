@@ -930,20 +930,22 @@ export const checkRelics = async (req: GlobalRequest, res: GlobalResponse) => {
       return;
     }
 
-    const tokenIdExists = await tokenModel.findOne({ tokenId: nft.tokenId, user: req.id, nft: "relic" });
-    if (tokenIdExists) {
-      res.status(BAD_REQUEST).json({ error: "relic has already been used to claim reward" });
-      return;
-    }
-
-    await tokenModel.create({ tokenId: nft.tokenId, user: req.id, nft: "relic" });
-
     await questCompleted.create({ done: false, category: questFound.category, quest: questFound._id, user: req.id });
 
     res.status(OK).json({ message: "relics verified", verified: true });
   } catch (error) {
     logger.error(error);
     res.status(INTERNAL_SERVER_ERROR).json({ error: "error checking user address forrelics contract" })
+  }
+}
+
+export const confirmRelicHodl = async (res: GlobalResponse, req: GlobalRequest) => {
+  try {
+
+    res.sendStatus(OK);
+  } catch (error) {
+    logger.error(error);
+    res.sendStatus(INTERNAL_SERVER_ERROR);
   }
 }
 
