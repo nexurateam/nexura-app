@@ -203,6 +203,15 @@ export const fetchQuests = async (req: GlobalRequest, res: GlobalResponse) => {
 	}
 };
 
+export const performQuest = async (req: GlobalRequest, res: GlobalResponse) => {
+  try {
+    
+  } catch (error) {
+    logger.error(error);
+    res.status(INTERNAL_SERVER_ERROR).json({ error: "error performing quest" });
+  }
+}
+
 export const fetchMiniQuests = async (req: GlobalRequest, res: GlobalResponse) => {
 	try {
 		const id = (req.query.id as string) || (req.body.id as string) || (req.body.questId as string);

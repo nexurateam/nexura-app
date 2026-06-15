@@ -15,7 +15,8 @@ const router = Router();
 
 router
 	.post("/claim-ecosystem-quest", claimEcosystemQuest)
-	.post("/set-timer", setTimer)
+  .post("/set-timer", setTimer)
+	.post("/check-discord-message")
 	.post("/create-mini-quest", createMiniQuest)
 	.post("/start-quest", startQuest)
 	.post("/check-portal-task", validatePortalTask)
