@@ -32,9 +32,15 @@ interface Quest {
   actionLabel?: string;
   status: string;
   tag?: string;
+  taskType?: string;
+  taskId?: string;
+  taskLink?: string;
+  isRelicQuest?: boolean;
   participants?: number;
   maxParticipants?: number;
 }
+
+const ATLAS_TAGS = ["i-trust", "i-collaborated", "i-interact", "i-follow"];
 
 export default function Quests() {
   const { toast } = useToast();
@@ -159,6 +165,56 @@ const handleStartQuest = async (quest: Quest) => {
   }
 };
 
+const [isVerifyingTask, setIsVerifyingTask] = useState<string | null>(null);
+
+const handleAtlasTask = async (quest: Quest) => {
+  if (isVerifyingTask === quest._id) return;
+
+  if (!quest.taskId) {
+    toast({
+      title: "Error",
+      description: "Task is not configured correctly.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setIsVerifyingTask(quest._id);
+
+  try {
+    // Make sure a quest-completion record exists so the reward can be claimed.
+    await apiRequestV2("POST", "/api/quest/start-quest", { questId: quest._id }).catch(() => {});
+
+    if (quest.taskLink) {
+      window.open(quest.taskLink, "_blank", "noopener,noreferrer");
+    }
+
+    await apiRequestV2("POST", "/api/quest/check-atlas-task", {
+      tag: quest.taskType,
+      id: quest.taskId,
+      questId: quest._id,
+      page: "quest",
+    });
+
+    await apiRequestV2("POST", "/api/quest/claim-quest", { questId: quest._id });
+
+    toast({
+      title: "Task Completed",
+      description: "Reward claimed successfully",
+    });
+
+    await refetch?.();
+  } catch (error: any) {
+    toast({
+      title: "Error",
+      description: error?.message || "Could not verify the task. Please complete it and try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsVerifyingTask(null);
+  }
+};
+
 const handleSubmitQuest = async (questId: string, proof: string) => {
   console.log("[ACTION] handleSubmitQuest", { questId, proof });
 
@@ -245,6 +301,8 @@ const renderDefaultQuestCard = (quest: any, index: number = 0) => {
   const isExpanded =
     quest.taskType === "twitter" && activeQuestId === quest._id;
 
+  const isAtlasTask = ATLAS_TAGS.includes(quest.taskType);
+
   const buttonLabel = quest.isRelicQuest
     ? "Check Relic"
     : quest.taskType === "twitter"
@@ -254,6 +312,8 @@ const renderDefaultQuestCard = (quest: any, index: number = 0) => {
   const handleAction = () => {
     if (quest.isRelicQuest) {
       setRelicQuest({ id: quest._id, reward: Number(quest.reward) || 0 });
+    } else if (isAtlasTask) {
+      handleAtlasTask(quest);
     } else if (quest.taskType === "twitter") {
       setActiveQuestId(isExpanded ? null : quest._id);
     } else {
@@ -306,8 +366,8 @@ const renderDefaultQuestCard = (quest: any, index: number = 0) => {
           </div>
 
           <HaloButton
-            label={buttonLabel}
-            disabled={isStartingQuest === quest._id}
+            label={isAtlasTask && isVerifyingTask === quest._id ? "Verifying…" : buttonLabel}
+            disabled={isStartingQuest === quest._id || isVerifyingTask === quest._id}
             onClick={handleAction}
           />
         </div>
