@@ -914,7 +914,7 @@ export const checkRelics = async (req: GlobalRequest, res: GlobalResponse) => {
       return;
     }
 
-    const questAlreadyCompleted = await questCompleted.findOne({ category: questFound.category, quest: questFound._id, user: req.id }).lean();
+    const questAlreadyCompleted = await questCompleted.findOne({ quest: questFound._id, user: req.id }).lean();
     if (questAlreadyCompleted && questAlreadyCompleted?.done) {
       res.status(BAD_REQUEST).json({ error: "quest has already been completed" });
       return;
@@ -930,7 +930,7 @@ export const checkRelics = async (req: GlobalRequest, res: GlobalResponse) => {
       return;
     }
 
-    await questCompleted.create({ done: false, category: questFound.category, quest: questFound._id, user: req.id });
+    await questCompleted.create({ done: false, category: "one-time", quest: questFound._id, user: req.id });
 
     res.status(OK).json({ message: "relics verified", verified: true });
   } catch (error) {
@@ -957,7 +957,7 @@ export const claimRelicReward = async (req: GlobalRequest, res: GlobalResponse) 
       return;
     }
 
-    const isQuestCompleted = await questCompleted.findOne({ quest: questFound._id, category: questFound.category, user: req.id });
+    const isQuestCompleted = await questCompleted.findOne({ quest: questFound._id, user: req.id });
     if (!isQuestCompleted) {
       res.status(BAD_REQUEST).json({ error: "verify relic to proceed" });
       return;
