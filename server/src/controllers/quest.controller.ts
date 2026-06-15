@@ -28,7 +28,8 @@ import {
 	updateLevel,
   validateQuestData,
   getMissingFields,
-  validateSaveQuestData
+  validateSaveQuestData,
+  startOfDayUTC
 } from "@/utils/utils";
 import mongoose from "mongoose";
 import { hub, userHub } from "@/models/hub.model";
@@ -57,6 +58,31 @@ const PROOF_REQUIRED_CAMPAIGN_TAGS = new Set([
 	"create-post",
 	"wallet-address",
 ]);
+
+// Ensures each submission in a review lane carries the linked quest's category
+// (seasonal/featured/daily). New submissions store it at creation time; this
+// backfills any that predate the field by resolving miniQuestId -> quest.
+export const withSubmissionCategory = async (submissions: any[]): Promise<any[]> => {
+	const missing = submissions.filter((s) => !s.category && s.miniQuestId);
+	if (missing.length === 0) return submissions;
+
+	const miniQuestIds = [...new Set(missing.map((s) => String(s.miniQuestId)))]
+		.filter((id) => mongoose.Types.ObjectId.isValid(id));
+	if (miniQuestIds.length === 0) return submissions;
+
+	const miniQuests = await miniQuest.find({ _id: { $in: miniQuestIds } }).select("_id quest").lean();
+	const questIds = [...new Set(miniQuests.map((m: any) => m.quest?.toString()).filter(Boolean))];
+	const quests = await quest.find({ _id: { $in: questIds } }).select("_id category").lean();
+
+	const questCategoryById = new Map(quests.map((q: any) => [q._id.toString(), q.category]));
+	const categoryByMiniQuestId = new Map(
+		miniQuests.map((m: any) => [m._id.toString(), questCategoryById.get(m.quest?.toString())])
+	);
+
+	return submissions.map((s) =>
+		s.category ? s : { ...s, category: categoryByMiniQuestId.get(String(s.miniQuestId)) }
+	);
+};
 
 // todo: add ecosystem completed to eco quests
 export const fetchEcosystemDapps = async (
@@ -98,7 +124,9 @@ export const fetchQuests = async (req: GlobalRequest, res: GlobalResponse) => {
 		const questsInDB = await quest.find({ status: { $ne: "Save" } }).lean();
 		const completedQuests = await questCompleted.find({
 			user: new mongoose.Types.ObjectId(req.id),
-		}).lean().select("_id done");
+		}).lean().select("_id done quest updatedAt");
+
+		const startOfToday = startOfDayUTC();
 
 		const quests: any[] = [];
 
@@ -109,8 +137,15 @@ export const fetchQuests = async (req: GlobalRequest, res: GlobalResponse) => {
 
 			const mergedQuest: Record<any, unknown> = singleQuest;
 
-			mergedQuest.done = singleQuestCompleted ? singleQuestCompleted.done : false;
-			mergedQuest.joined = !!singleQuestCompleted;
+			// Daily quests reset each UTC day: a completion from a prior day reads
+			// as not-completed/not-joined so the user can redo it today.
+			const isStaleDaily =
+				singleQuest.category === "daily" &&
+				singleQuestCompleted &&
+				(!singleQuestCompleted.updatedAt || new Date(singleQuestCompleted.updatedAt) < startOfToday);
+
+			mergedQuest.done = singleQuestCompleted && !isStaleDaily ? singleQuestCompleted.done : false;
+			mergedQuest.joined = !!singleQuestCompleted && !isStaleDaily;
 
 			const temporalStatus = getTemporalQuestStatus(singleQuest);
 			if (temporalStatus && temporalStatus !== singleQuest.status && singleQuest.status !== "Save" && singleQuest.status !== "Ended") {
@@ -259,11 +294,31 @@ export const startQuest = async (req: GlobalRequest, res: GlobalResponse) => {
       return;
     }
 
-		const questStarted = await questCompleted.exists({ quest: id, user: req.id });
-		if (questStarted) {
-			res.status(OK).json({ message: "quest already started" });
-			return;
-    }
+		const existingCompletion = await questCompleted.findOne({ quest: id, user: req.id }).lean();
+		if (existingCompletion) {
+			// Daily quests reset each UTC day: if the prior attempt is stale (from an
+			// earlier UTC day) wipe this user's progress for the quest so they can redo it.
+			const isStaleDaily =
+				questExists.category === "daily" &&
+				(!existingCompletion.updatedAt || new Date(existingCompletion.updatedAt) < startOfDayUTC());
+
+			if (!isStaleDaily) {
+				res.status(OK).json({ message: "quest already started" });
+				return;
+			}
+
+			const userSubmissions = await submission.find({ user: req.id }).select("_id miniQuestId").lean();
+			const miniQuestIdsForQuest = (await miniQuest.find({ quest: id }).select("_id").lean()).map((m: any) => m._id.toString());
+			const submissionIdsToDelete = userSubmissions
+				.filter((s: any) => miniQuestIdsForQuest.includes(String(s.miniQuestId)))
+				.map((s: any) => s._id);
+
+			await Promise.all([
+				questCompleted.deleteOne({ _id: existingCompletion._id }),
+				miniQuestCompleted.deleteMany({ quest: id, user: req.id }),
+				submissionIdsToDelete.length ? submission.deleteMany({ _id: { $in: submissionIdsToDelete } }) : Promise.resolve(),
+			]);
+		}
 
     questExists.participants += 1;
 
@@ -676,7 +731,16 @@ export const claimQuest = async (req: GlobalRequest, res: GlobalResponse) => {
 			return;
 		}
 
-		if (isQuestCompleted.done) {
+		// Daily quests reset each UTC day: a "done" record from a prior UTC day does
+		// not block today's claim (seasonal/featured stay permanently claimed).
+		const dailyClaimedToday =
+			questFound.category === "daily" &&
+			isQuestCompleted.done &&
+			isQuestCompleted.updatedAt &&
+			new Date(isQuestCompleted.updatedAt) >= startOfDayUTC();
+		const blockReclaim = questFound.category === "daily" ? dailyClaimedToday : isQuestCompleted.done;
+
+		if (blockReclaim) {
 			res.status(FORBIDDEN).json({ error: "quest already claimed" });
 			return;
 		}
@@ -884,6 +948,7 @@ export const submitQuest = async (req: GlobalRequest, res: GlobalResponse) => {
 
 		let questExists;
 		let resolvedHub = hubId;
+		let questCategory: string | undefined;
 
 		if (page !== "campaign") {
 			questExists = await miniQuest.findById(id);
@@ -893,9 +958,10 @@ export const submitQuest = async (req: GlobalRequest, res: GlobalResponse) => {
 			}
 
 			// Resolve the hub from the parent quest so submissions always land in the creator's dashboard
-			if (!resolvedHub && questExists.quest) {
-				const parentQuest = await quest.findById(questExists.quest).select("hub").lean();
-				resolvedHub = parentQuest?.hub?.toString() || hubId;
+			if (questExists.quest) {
+				const parentQuest = await quest.findById(questExists.quest).select("hub category").lean();
+				if (!resolvedHub) resolvedHub = parentQuest?.hub?.toString() || hubId;
+				questCategory = parentQuest?.category;
 			}
 
 			notComplete = await miniQuestCompleted.create({ miniQuest: id, quest: questId, user: userId });
@@ -908,7 +974,7 @@ export const submitQuest = async (req: GlobalRequest, res: GlobalResponse) => {
 			notComplete = await campaignQuestCompleted.create({ campaign: questId, campaignQuest: id, user: userId });
 		}
 
-		await submission.create({ submissionLink, hub: resolvedHub ?? "nexura-hub", taskType: tag, address: userExists.address, username: userExists.socialProfiles?.x?.username || userExists.username, miniQuestId: id, user: userId, page, questCompleted: notComplete._id });
+		await submission.create({ submissionLink, hub: resolvedHub ?? "nexura-hub", taskType: tag, address: userExists.address, username: userExists.socialProfiles?.x?.username || userExists.username, miniQuestId: id, user: userId, page, questCompleted: notComplete._id, category: questCategory });
 
 		res.status(OK).json({ message: "quest submitted" });
 	} catch (error: any) {
